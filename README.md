@@ -1,4 +1,4 @@
-# BAccLLB Study Pro — Stellenbosch Personal Academic Command Centre
+# Nix StudyOS — Stellenbosch Personal Academic Command Centre
 
 A React + Vite + Firebase study system customised for a Stellenbosch University BAccLLB student.
 
