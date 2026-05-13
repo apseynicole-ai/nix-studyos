@@ -1,156 +1,479 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, Calculator, LineChart, Save, Target, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Calculator, CheckCircle2, LineChart, Save, Target, TrendingUp } from 'lucide-react';
 import { modules } from '../data/baccllb';
-import { readinessLabel, requiredMarkForTarget, riskTone } from '../lib/studyMetrics';
+import {
+  calcConLaw178,
+  calcDLA112,
+  calcDLA122,
+  calcEcon114,
+  calcFinAcc178,
+  calcLegalSkills114,
+  calcSDS188,
+  getModuleAssessmentModel,
+} from '../lib/marksEngine';
+import type { MarksOutput } from '../lib/marksEngine';
 
-interface MarkRow {
-  moduleId: string;
-  currentMark: number;
-  completedWeight: number;
-  nextWeight: number;
-  targetMark: number;
+type SupportedModuleId =
+  | 'econ114'
+  | 'dla112'
+  | 'dla122'
+  | 'finacc178'
+  | 'sds188'
+  | 'legalskills114'
+  | 'conlaw178';
+
+interface AssessmentDraftState {
+  completed: boolean;
+  status: 'pending' | 'completed' | 'missed';
+  mark: string;
+  validSubmission: boolean;
+  hoursLate: string;
+  notes: string;
 }
 
-const FALLBACK_COMPLETED_WEIGHT = 35;
-const FALLBACK_NEXT_WEIGHT = 20;
+interface ModuleDraftState {
+  assessments: Record<string, AssessmentDraftState>;
+}
 
-const defaultRows: MarkRow[] = modules.map((module) => {
-  const doneWeight = module.assessments
-    .filter((a) => a.status === 'done' && a.weight !== undefined)
-    .reduce((sum, a) => sum + (a.weight ?? 0), 0);
-  const nextAssessment = module.assessments.find(
-    (a) => (a.status === 'upcoming' || a.status === 'draft') && a.weight !== undefined,
-  );
-  return {
-    moduleId: module.id,
-    currentMark: module.currentMark ?? 0,
-    completedWeight: doneWeight > 0 ? doneWeight : FALLBACK_COMPLETED_WEIGHT,
-    nextWeight: nextAssessment?.weight ?? FALLBACK_NEXT_WEIGHT,
-    targetMark: module.target,
-  };
-});
+interface MarkEngineState {
+  selectedModuleId: SupportedModuleId;
+  modules: Record<SupportedModuleId, ModuleDraftState>;
+}
 
-const Marks: React.FC = () => {
-  const [rows, setRows] = useState<MarkRow[]>(() => {
-    const saved = localStorage.getItem('baccllb-mark-rows');
-    return saved ? JSON.parse(saved) : defaultRows;
-  });
-  const [savedPulse, setSavedPulse] = useState(false);
+interface ModuleMeta {
+  id: SupportedModuleId;
+  label: string;
+  shortName: string;
+  code: string;
+  colour: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  target: number;
+}
 
-  useEffect(() => {
-    localStorage.setItem('baccllb-mark-rows', JSON.stringify(rows));
-  }, [rows]);
+interface NeededMarkRow {
+  target: number;
+  needed: number | null;
+  feasible: boolean;
+  focusLabel: string;
+  status: string;
+}
 
-  const scenarios = useMemo(() => rows.map((row) => {
-    const module = modules.find((item) => item.id === row.moduleId) || modules[0];
-    const required = requiredMarkForTarget(row);
-    const weightedSoFar = (row.currentMark * row.completedWeight) / 100;
-    const remainingWeight = Math.max(0, 100 - row.completedWeight);
-    const projectedIfTarget = weightedSoFar + (row.targetMark * remainingWeight) / 100;
-    return { ...row, module, required, projectedIfTarget };
-  }), [rows]);
+const STORAGE_KEY = 'baccllb-mark-engine-state';
+const LEGACY_STORAGE_KEY = 'baccllb-mark-rows';
+const TARGETS = [50, 60, 70, 75, 80] as const;
+const SUPPORTED_MODULES: SupportedModuleId[] = [
+  'econ114',
+  'dla112',
+  'dla122',
+  'finacc178',
+  'sds188',
+  'legalskills114',
+  'conlaw178',
+];
 
-  const averageCurrent = Math.round(rows.reduce((sum, row) => sum + row.currentMark, 0) / rows.length);
-  const atRisk = scenarios.filter((scenario) => scenario.required > 80 || scenario.currentMark < 50).length;
+const baseModules = Object.fromEntries(modules.map((module) => [module.id, module])) as Record<string, (typeof modules)[number]>;
+const dlaBase = baseModules.dla112122;
 
-  const updateRow = (moduleId: string, key: keyof MarkRow, value: number) => {
-    setRows((current) => current.map((row) => row.moduleId === moduleId ? { ...row, [key]: value } : row));
-  };
-
-  const saveNow = () => {
-    localStorage.setItem('baccllb-mark-rows', JSON.stringify(rows));
-    setSavedPulse(true);
-    setTimeout(() => setSavedPulse(false), 1200);
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
-      <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-        <div>
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">marks forecasting</p>
-          <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Semester Mark Control Room</h1>
-          <p className="text-slate-500 max-w-3xl">Input your current mark, completed weight, next assessment weight and target. The app calculates the mark you should aim for next to stay on track.</p>
-        </div>
-        <button onClick={saveNow} className="maroon-gradient text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-stellenbosch-maroon/20 hover:scale-105 transition-transform">
-          <Save size={18} /> {savedPulse ? 'Saved' : 'Save scenarios'}
-        </button>
-      </header>
-
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Kpi icon={<LineChart />} label="Average current input" value={`${averageCurrent}%`} note={readinessLabel(averageCurrent)} tone={riskTone(averageCurrent)} />
-        <Kpi icon={<AlertTriangle />} label="Risk count" value={atRisk} note="Needs intervention" tone={atRisk ? 'bg-red-50 text-red-700 border-red-100' : 'bg-emerald-50 text-emerald-700 border-emerald-100'} />
-        <Kpi icon={<Target />} label="Goal" value="70–80%+" note="A2 distinction push" />
-      </section>
-
-      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
-        <div className="hidden lg:grid grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-3 px-6 py-4 bg-slate-50 text-[10px] uppercase font-bold tracking-wider text-slate-400">
-          <span>Module</span><span>Current %</span><span>Completed weight</span><span>Next weight</span><span>Target</span><span>Required next</span>
-        </div>
-        <div className="divide-y divide-slate-100">
-          {scenarios.map((scenario) => {
-            const Icon = scenario.module.icon;
-            const requiredTone = scenario.required > 90 ? 'text-red-700 bg-red-50 border-red-100' : scenario.required > 75 ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-emerald-700 bg-emerald-50 border-emerald-100';
-            return (
-              <motion.div layout key={scenario.moduleId} className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.9fr] gap-4 lg:gap-3 p-5 lg:items-center">
-                <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${scenario.module.colour} text-white flex items-center justify-center shrink-0`}><Icon size={22} /></div>
-                  <div>
-                    <p className="font-bold text-slate-800">{scenario.module.shortName}</p>
-                    <p className="text-xs text-slate-400">{scenario.module.code}</p>
-                  </div>
-                </div>
-                <NumberInput label="Current %" value={scenario.currentMark} onChange={(value) => updateRow(scenario.moduleId, 'currentMark', value)} />
-                <NumberInput label="Completed weight" value={scenario.completedWeight} onChange={(value) => updateRow(scenario.moduleId, 'completedWeight', value)} />
-                <NumberInput label="Next weight" value={scenario.nextWeight} onChange={(value) => updateRow(scenario.moduleId, 'nextWeight', value)} />
-                <NumberInput label="Target" value={scenario.targetMark} onChange={(value) => updateRow(scenario.moduleId, 'targetMark', value)} />
-                <div className={`rounded-2xl border p-4 ${requiredTone}`}>
-                  <p className="text-xs uppercase font-bold tracking-wider opacity-70 mb-1">Required next</p>
-                  <p className="font-display text-3xl">{Math.round(scenario.required)}%</p>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="glass rounded-[2.5rem] p-7 border-slate-200/50">
-          <h2 className="font-display text-3xl text-stellenbosch-maroon mb-4 flex items-center gap-2"><Calculator /> How to use this</h2>
-          <div className="space-y-3 text-sm text-slate-600">
-            <p><strong>Current %</strong> = your mark so far for the module, not the mark you want.</p>
-            <p><strong>Completed weight</strong> = how much of the final module mark has already been assessed.</p>
-            <p><strong>Next weight</strong> = the weighting of your next test/assignment. This is the “what must I aim for next?” calculation.</p>
-            <p><strong>Required next</strong> is conservative because it assumes future remaining marks hit your target. If it shows over 90%, the module needs an immediate rescue plan.</p>
-          </div>
-        </div>
-        <div className="bg-slate-950 text-white rounded-[2.5rem] p-7 shadow-2xl shadow-slate-950/20">
-          <h2 className="font-display text-3xl mb-4 flex items-center gap-2"><TrendingUp className="text-stellenbosch-gold" /> Rescue triggers</h2>
-          <div className="space-y-3 text-sm text-white/70">
-            <p>• Required next mark above 85% → switch from notes to exam practice.</p>
-            <p>• Current mark below 55% → create a weekly mistake loop and ask LexAI for a diagnostic plan.</p>
-            <p>• Confidence below 50% but current mark okay → pressure simulation is the missing layer.</p>
-            <p>• Calculations okay but exam marks weak → write the “why” next to every working.</p>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
+const MODULE_META: Record<SupportedModuleId, ModuleMeta> = {
+  econ114: {
+    id: 'econ114',
+    label: 'Economics 114',
+    shortName: 'Econ 114',
+    code: 'ECO114',
+    colour: baseModules.econ114.colour,
+    icon: baseModules.econ114.icon,
+    target: baseModules.econ114.target,
+  },
+  dla112: {
+    id: 'dla112',
+    label: 'DLA 112',
+    shortName: 'DLA 112',
+    code: 'DLA112',
+    colour: dlaBase.colour,
+    icon: dlaBase.icon,
+    target: dlaBase.target,
+  },
+  dla122: {
+    id: 'dla122',
+    label: 'DLA 122',
+    shortName: 'DLA 122',
+    code: 'DLA122',
+    colour: dlaBase.colour,
+    icon: dlaBase.icon,
+    target: dlaBase.target,
+  },
+  finacc178: {
+    id: 'finacc178',
+    label: 'Financial Accounting 178',
+    shortName: 'FinAcc 178',
+    code: 'FAF178',
+    colour: baseModules.finacc178.colour,
+    icon: baseModules.finacc178.icon,
+    target: baseModules.finacc178.target,
+  },
+  sds188: {
+    id: 'sds188',
+    label: 'Statistics and Data Science 188',
+    shortName: 'Stats 188',
+    code: 'SDS188',
+    colour: baseModules.sds188.colour,
+    icon: baseModules.sds188.icon,
+    target: baseModules.sds188.target,
+  },
+  legalskills114: {
+    id: 'legalskills114',
+    label: 'Legal Skills 114',
+    shortName: 'Legal Skills 114',
+    code: 'LSK114',
+    colour: baseModules.legalskills114.colour,
+    icon: baseModules.legalskills114.icon,
+    target: baseModules.legalskills114.target,
+  },
+  conlaw178: {
+    id: 'conlaw178',
+    label: 'Introduction to Constitutional Law and Statutory Interpretation 178',
+    shortName: 'Con Law 178',
+    code: 'CON178',
+    colour: baseModules.conlaw178.colour,
+    icon: baseModules.conlaw178.icon,
+    target: baseModules.conlaw178.target,
+  },
 };
 
-const NumberInput: React.FC<{ label: string; value: number; onChange: (value: number) => void }> = ({ label, value, onChange }) => (
-  <label className="block">
-    <span className="lg:hidden text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1 block">{label}</span>
-    <input
-      type="number"
-      min="0"
-      max="150"
-      value={value}
-      onChange={(event) => onChange(Number(event.target.value))}
-      className="w-full rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
-    />
-  </label>
-);
+function createAssessmentDraft(moduleId: SupportedModuleId, assessmentId: string): AssessmentDraftState {
+  const assessment = getModuleAssessmentModel(moduleId)?.assessments.find((item) => item.id === assessmentId);
+  return {
+    completed: false,
+    status: 'pending',
+    mark: '',
+    validSubmission: true,
+    hoursLate: '',
+    notes: '',
+  };
+}
+
+function createDefaultState(): MarkEngineState {
+  return {
+    selectedModuleId: 'econ114',
+    modules: SUPPORTED_MODULES.reduce((acc, moduleId) => {
+      const model = getModuleAssessmentModel(moduleId);
+      acc[moduleId] = {
+        assessments: Object.fromEntries(
+          (model?.assessments ?? []).map((assessment) => [assessment.id, createAssessmentDraft(moduleId, assessment.id)]),
+        ),
+      };
+      return acc;
+    }, {} as Record<SupportedModuleId, ModuleDraftState>),
+  };
+}
+
+function parseNumber(value: string): number | null {
+  if (value.trim() === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function getAssessmentMark(assessment: AssessmentDraftState): number | null {
+  if (assessment.status !== 'completed' || !assessment.completed) return null;
+  const parsed = parseNumber(assessment.mark);
+  return parsed === null ? null : Math.max(0, Math.min(100, parsed));
+}
+
+function isAssessmentAvailable(draft: AssessmentDraftState): boolean {
+  return draft.status === 'pending';
+}
+
+function isAssessmentBlocked(moduleId: SupportedModuleId, assessmentId: string, draft: AssessmentDraftState): boolean {
+  if (draft.status === 'missed') return true;
+  if (hasValidSubmissionField(moduleId, assessmentId) && draft.status === 'completed' && !draft.validSubmission) return true;
+  return false;
+}
+
+function loadInitialState(): MarkEngineState {
+  const fallback = createDefaultState();
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<MarkEngineState>;
+      return {
+        selectedModuleId:
+          parsed.selectedModuleId && SUPPORTED_MODULES.includes(parsed.selectedModuleId)
+            ? parsed.selectedModuleId
+            : fallback.selectedModuleId,
+        modules: SUPPORTED_MODULES.reduce((acc, moduleId) => {
+          const baseAssessments = fallback.modules[moduleId].assessments;
+          const savedAssessments = parsed.modules?.[moduleId]?.assessments ?? {};
+          acc[moduleId] = {
+            assessments: Object.fromEntries(
+              Object.entries(baseAssessments).map(([assessmentId, baseDraft]) => {
+                const saved = savedAssessments[assessmentId];
+                return [
+                  assessmentId,
+                  {
+                    completed: typeof saved?.completed === 'boolean' ? saved.completed : baseDraft.completed,
+                    status:
+                      saved?.status === 'completed' || saved?.status === 'missed' || saved?.status === 'pending'
+                        ? saved.status
+                        : (typeof saved?.completed === 'boolean' && saved.completed ? 'completed' : 'pending'),
+                    mark: typeof saved?.mark === 'string' ? saved.mark : baseDraft.mark,
+                    validSubmission:
+                      typeof saved?.validSubmission === 'boolean' ? saved.validSubmission : baseDraft.validSubmission,
+                    hoursLate: typeof saved?.hoursLate === 'string' ? saved.hoursLate : baseDraft.hoursLate,
+                    notes: typeof saved?.notes === 'string' ? saved.notes : baseDraft.notes,
+                  },
+                ];
+              }),
+            ),
+          };
+          return acc;
+        }, {} as Record<SupportedModuleId, ModuleDraftState>),
+      };
+    }
+
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw) as Array<{ moduleId?: string }>;
+      const firstSupported = parsed.find((row) => row.moduleId && SUPPORTED_MODULES.includes(row.moduleId as SupportedModuleId));
+      if (firstSupported?.moduleId) {
+        fallback.selectedModuleId = firstSupported.moduleId as SupportedModuleId;
+      }
+    }
+  } catch {
+    return fallback;
+  }
+
+  return fallback;
+}
+
+function hasValidSubmissionField(moduleId: SupportedModuleId, assessmentId: string): boolean {
+  return moduleId === 'dla122' && (assessmentId === 'A1' || assessmentId === 'A2');
+}
+
+function hasLateHoursField(moduleId: SupportedModuleId, assessmentId: string): boolean {
+  return moduleId === 'dla122' && (assessmentId === 'A1' || assessmentId === 'A2');
+}
+
+function calculateModuleOutput(moduleId: SupportedModuleId, moduleState: ModuleDraftState): MarksOutput {
+  const pick = (assessmentId: string) => getAssessmentMark(moduleState.assessments[assessmentId] ?? createAssessmentDraft(moduleId, assessmentId));
+
+  switch (moduleId) {
+    case 'econ114':
+      return calcEcon114({ a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
+    case 'dla112':
+      return calcDLA112({ af: pick('AF'), a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
+    case 'dla122':
+      return calcDLA122({
+        af: pick('AF'),
+        a1: pick('A1'),
+        a1Valid: moduleState.assessments.A1?.validSubmission ?? true,
+        a2: pick('A2'),
+        a2Valid: moduleState.assessments.A2?.validSubmission ?? true,
+        a3: pick('A3'),
+        hoursLateA1: parseNumber(moduleState.assessments.A1?.hoursLate ?? '') ?? 0,
+        hoursLateA2: parseNumber(moduleState.assessments.A2?.hoursLate ?? '') ?? 0,
+      });
+    case 'finacc178':
+      return calcFinAcc178({
+        a1s1: pick('A1S1'),
+        a2s1: pick('A2S1'),
+        a1s2: pick('A1S2'),
+        a2s2: pick('A2S2'),
+        afs2: pick('AFS2'),
+        a3: pick('A3'),
+      });
+    case 'sds188':
+      return calcSDS188({
+        afs1: pick('AFS1'),
+        a1s1: pick('A1S1'),
+        a2s1: pick('A2S1'),
+        afs2: pick('AFS2'),
+        a1s2: pick('A1S2'),
+        a2s2: pick('A2S2'),
+        a3: pick('A3'),
+      });
+    case 'legalskills114':
+      return calcLegalSkills114({
+        rt: pick('RT'),
+        lw: pick('LW'),
+        ao: pick('AO'),
+        t1: pick('T1'),
+        t2: pick('T2'),
+        ae: pick('AE'),
+        mq: pick('MQ'),
+      });
+    case 'conlaw178':
+      return calcConLaw178({
+        afs1: pick('AFS1'),
+        a1s1: pick('A1S1'),
+        a2s1: pick('A2S1'),
+        afs2: pick('AFS2'),
+        a1s2: pick('A1S2'),
+        a2s2: pick('A2S2'),
+        a3: pick('A3'),
+      });
+  }
+}
+
+function getCurrentFinal(output: MarksOutput): number | null {
+  return output.fm ?? output.fm2 ?? output.fm1 ?? output.mtd ?? output.my ?? null;
+}
+
+function getRiskLevel(output: MarksOutput): { label: string; tone: string } {
+  const current = getCurrentFinal(output);
+  const hasInvalidWarning = output.warnings.some((warning) => warning.includes('INVALID') || warning.includes('fail'));
+
+  if (!output.isValidFM || hasInvalidWarning) {
+    return { label: 'High', tone: 'bg-red-50 text-red-700 border-red-100' };
+  }
+  if (current !== null && current < 60) {
+    return { label: 'Medium', tone: 'bg-amber-50 text-amber-700 border-amber-100' };
+  }
+  if (output.warnings.length >= 3) {
+    return { label: 'Watch', tone: 'bg-sky-50 text-sky-700 border-sky-100' };
+  }
+  return { label: 'Low', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' };
+}
+
+function getA3Status(moduleId: SupportedModuleId, output: MarksOutput, moduleState: ModuleDraftState): string {
+  const model = getModuleAssessmentModel(moduleId);
+  const hasA3 = model?.assessments.some((assessment) => assessment.id === 'A3');
+  if (!hasA3 || moduleId === 'legalskills114') return 'No A3 for this module';
+  if (moduleState.assessments.A3?.completed) return 'A3 entered';
+  if (moduleId === 'dla122') {
+    if (!(moduleState.assessments.A1?.validSubmission ?? true) || !(moduleState.assessments.A2?.validSubmission ?? true)) {
+      return 'No access until A1 and A2 are valid';
+    }
+    if (output.fm1 !== null && output.fm1 < 50) return 'Likely A3 access if officially granted';
+    return 'A3 only if A2 was missed or official supplementary applies';
+  }
+  if (output.fm1 !== null && output.fm1 < 50) return 'Possible supplementary route';
+  if (!output.isValidFM) return 'Use A3 if a main assessment is missed';
+  return 'Not currently needed';
+}
+
+function getAssessmentModelNotes(moduleId: SupportedModuleId, assessmentId: string): string[] {
+  const assessment = getModuleAssessmentModel(moduleId)?.assessments.find((item) => item.id === assessmentId);
+  const notes = [assessment?.countRule, assessment?.notes].filter(Boolean) as string[];
+  if (hasLateHoursField(moduleId, assessmentId)) {
+    notes.push('Late penalties are cumulative and applied before DLA122 FM logic.');
+  }
+  return Array.from(new Set(notes));
+}
+
+function cloneModuleState(moduleState: ModuleDraftState): ModuleDraftState {
+  return {
+    assessments: Object.fromEntries(
+      Object.entries(moduleState.assessments).map(([assessmentId, draft]) => [assessmentId, { ...draft }]),
+    ),
+  };
+}
+
+function getFocusAssessment(moduleId: SupportedModuleId, moduleState: ModuleDraftState): { id: string; label: string } | null {
+  const model = getModuleAssessmentModel(moduleId);
+  if (!model) return null;
+  const incompleteRequired = model.assessments.find(
+    (assessment) => !assessment.isOptional && isAssessmentAvailable(moduleState.assessments[assessment.id]),
+  );
+  if (incompleteRequired) return { id: incompleteRequired.id, label: incompleteRequired.label };
+  const incompleteOptional = model.assessments.find(
+    (assessment) => assessment.isOptional && isAssessmentAvailable(moduleState.assessments[assessment.id]),
+  );
+  if (incompleteOptional) return { id: incompleteOptional.id, label: incompleteOptional.label };
+  return null;
+}
+
+function getNeededMarkRows(moduleId: SupportedModuleId, moduleState: ModuleDraftState): NeededMarkRow[] {
+  const model = getModuleAssessmentModel(moduleId);
+  const focus = getFocusAssessment(moduleId, moduleState);
+  if (!model) return [];
+
+  const blockedRequired = model.assessments.find((assessment) => (
+    !assessment.isOptional && isAssessmentBlocked(moduleId, assessment.id, moduleState.assessments[assessment.id])
+  ));
+
+  return TARGETS.map((target) => {
+    if (blockedRequired) {
+      return {
+        target,
+        needed: null,
+        feasible: false,
+        focusLabel: blockedRequired.label,
+        status: 'Blocked by missed/invalid required assessment',
+      };
+    }
+
+    if (!focus) {
+      return {
+        target,
+        needed: null,
+        feasible: false,
+        focusLabel: 'No remaining assessment',
+        status: 'Blocked or already finalised',
+      };
+    }
+
+    const simulate = (score: number): MarksOutput => {
+      const simulated = cloneModuleState(moduleState);
+      for (const assessment of model.assessments) {
+        const draft = simulated.assessments[assessment.id];
+        if (assessment.id === focus.id) {
+          draft.status = 'completed';
+          draft.completed = true;
+          draft.mark = String(score);
+          if (hasValidSubmissionField(moduleId, assessment.id)) draft.validSubmission = true;
+        } else if (isAssessmentAvailable(draft) && !assessment.isOptional) {
+          draft.status = 'completed';
+          draft.completed = true;
+          draft.mark = String(target);
+          if (hasValidSubmissionField(moduleId, assessment.id)) draft.validSubmission = true;
+        }
+      }
+      return calculateModuleOutput(moduleId, simulated);
+    };
+
+    const bestCase = simulate(100);
+    const bestCaseFinal = getCurrentFinal(bestCase);
+    if (!bestCase.isValidFM || bestCaseFinal === null || bestCaseFinal < target) {
+      return {
+        target,
+        needed: null,
+        feasible: false,
+        focusLabel: focus.label,
+        status: 'Impossible with remaining valid opportunities',
+      };
+    }
+
+    let answer: number | null = null;
+    let low = 0;
+    let high = 100;
+
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const result = simulate(mid);
+      const final = getCurrentFinal(result);
+      if (result.isValidFM && final !== null && final >= target) {
+        answer = mid;
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    }
+
+    return {
+      target,
+      needed: answer,
+      feasible: answer !== null,
+      focusLabel: focus.label,
+      status: answer !== null ? 'Reachable' : 'Impossible with remaining valid opportunities',
+    };
+  });
+}
+
+function formatMetric(value: number | null | undefined): string {
+  return value === null || value === undefined ? 'n/a' : `${value}%`;
+}
 
 const Kpi: React.FC<{ icon: React.ReactNode; label: string; value: string | number; note: string; tone?: string }> = ({ icon, label, value, note, tone }) => (
   <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
@@ -160,5 +483,284 @@ const Kpi: React.FC<{ icon: React.ReactNode; label: string; value: string | numb
     <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${tone || 'bg-slate-50 text-slate-500 border-slate-100'}`}>{note}</span>
   </div>
 );
+
+const Marks: React.FC = () => {
+  const [state, setState] = useState<MarkEngineState>(() => loadInitialState());
+  const [savedPulse, setSavedPulse] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
+
+  const selectedModule = MODULE_META[state.selectedModuleId];
+  const selectedModel = getModuleAssessmentModel(state.selectedModuleId);
+  const selectedModuleState = state.modules[state.selectedModuleId];
+
+  const output = useMemo(
+    () => calculateModuleOutput(state.selectedModuleId, selectedModuleState),
+    [state.selectedModuleId, selectedModuleState],
+  );
+
+  const risk = useMemo(() => getRiskLevel(output), [output]);
+  const neededRows = useMemo(
+    () => getNeededMarkRows(state.selectedModuleId, selectedModuleState),
+    [state.selectedModuleId, selectedModuleState],
+  );
+  const currentFinal = getCurrentFinal(output);
+  const extraWarnings = Object.entries(selectedModuleState.assessments)
+    .filter(([, draft]) => draft.status === 'completed' && parseNumber(draft.mark) === null)
+    .map(([assessmentId]) => `${assessmentId} is marked completed but has no numeric mark yet.`);
+
+  const updateAssessment = (assessmentId: string, patch: Partial<AssessmentDraftState>) => {
+    setState((current) => ({
+      ...current,
+      modules: {
+        ...current.modules,
+        [current.selectedModuleId]: {
+          assessments: {
+            ...current.modules[current.selectedModuleId].assessments,
+            [assessmentId]: {
+              ...current.modules[current.selectedModuleId].assessments[assessmentId],
+              ...patch,
+            },
+          },
+        },
+      },
+    }));
+  };
+
+  const updateAssessmentStatus = (assessmentId: string, status: AssessmentDraftState['status']) => {
+    const currentDraft = selectedModuleState.assessments[assessmentId];
+    updateAssessment(assessmentId, {
+      status,
+      completed: status === 'completed',
+      mark: status === 'missed' ? '' : currentDraft.mark,
+      hoursLate: status === 'missed' ? '' : currentDraft.hoursLate,
+    });
+  };
+
+  const saveNow = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    setSavedPulse(true);
+    setTimeout(() => setSavedPulse(false), 1200);
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+      <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+        <div>
+          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">marks engine dashboard</p>
+          <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Module-Specific Marks Control Room</h1>
+          <p className="text-slate-500 max-w-3xl">
+            Select a supported BAccLLB module, capture the exact assessment inputs, and let the audited marks engine
+            calculate MTD, FM paths, A3 status, warnings, and next-mark targets.
+          </p>
+        </div>
+        <button onClick={saveNow} className="maroon-gradient text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-stellenbosch-maroon/20 hover:scale-105 transition-transform">
+          <Save size={18} /> {savedPulse ? 'Saved' : 'Save marks state'}
+        </button>
+      </header>
+
+      <section className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {SUPPORTED_MODULES.map((moduleId) => {
+            const module = MODULE_META[moduleId];
+            const Icon = module.icon;
+            const active = moduleId === state.selectedModuleId;
+            return (
+              <button
+                key={moduleId}
+                type="button"
+                onClick={() => setState((current) => ({ ...current, selectedModuleId: moduleId }))}
+                className={`rounded-[2rem] border p-5 text-left transition-all ${
+                  active
+                    ? 'border-stellenbosch-maroon bg-white shadow-lg shadow-stellenbosch-maroon/10'
+                    : 'border-slate-100 bg-white/80 hover:border-slate-200'
+                }`}
+              >
+                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${module.colour} text-white flex items-center justify-center mb-4`}>
+                  <Icon size={22} />
+                </div>
+                <p className="font-bold text-slate-900">{module.label}</p>
+                <p className="text-xs text-slate-400 mt-1">{module.code}</p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-8">
+        <Kpi icon={<LineChart />} label="MY" value={formatMetric(output.my)} note="Year mark" />
+        <Kpi icon={<TrendingUp />} label="MTD" value={formatMetric(output.mtd)} note="Mark-to-date" />
+        <Kpi icon={<Calculator />} label="FM1" value={formatMetric(output.fm1)} note="Primary FM path" />
+        <Kpi icon={<Target />} label="FM2 / FM" value={formatMetric(output.fm ?? output.fm2)} note="Alternate/final path" />
+        <Kpi icon={<CheckCircle2 />} label="Valid FM" value={output.isValidFM ? 'Yes' : 'No'} note={getA3Status(state.selectedModuleId, output, selectedModuleState)} tone={output.isValidFM ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'} />
+        <Kpi icon={<AlertTriangle />} label="Risk" value={risk.label} note={currentFinal !== null ? `Current path ${currentFinal}%` : 'Waiting for enough inputs'} tone={risk.tone} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
+        <div className="px-6 py-5 border-b border-slate-100">
+          <h2 className="font-display text-3xl text-stellenbosch-maroon">{selectedModule.label}</h2>
+          <p className="text-sm text-slate-500 mt-2">Capture each assessment exactly as the module model expects. Use Pending for future opportunities, Completed for submitted work, and Missed when an opportunity is lost.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400">
+              <tr>
+                <th className="px-6 py-4 text-left font-bold">Assessment</th>
+                <th className="px-4 py-4 text-left font-bold">Weight</th>
+                <th className="px-4 py-4 text-left font-bold">Mark</th>
+                <th className="px-4 py-4 text-left font-bold">Status</th>
+                <th className="px-4 py-4 text-left font-bold">Valid submission</th>
+                <th className="px-4 py-4 text-left font-bold">Late hours</th>
+                <th className="px-4 py-4 text-left font-bold">Notes / warnings</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {selectedModel?.assessments.map((assessment) => {
+                const draft = selectedModuleState.assessments[assessment.id];
+                const notes = getAssessmentModelNotes(state.selectedModuleId, assessment.id);
+                return (
+                  <motion.tr layout key={assessment.id} className="align-top">
+                    <td className="px-6 py-5">
+                      <p className="font-bold text-slate-900">{assessment.label}</p>
+                      <p className="text-xs text-slate-400 mt-1">{assessment.id}{assessment.isOptional ? ' • optional' : ''}</p>
+                    </td>
+                    <td className="px-4 py-5 text-sm font-bold text-slate-700">{assessment.weight}%</td>
+                    <td className="px-4 py-5">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={draft.mark}
+                        disabled={draft.status !== 'completed'}
+                        onChange={(event) => updateAssessment(assessment.id, { mark: event.target.value })}
+                        className="w-28 rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 font-bold text-slate-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+                      />
+                    </td>
+                    <td className="px-4 py-5">
+                      <select
+                        value={draft.status}
+                        onChange={(event) => updateAssessmentStatus(assessment.id, event.target.value as AssessmentDraftState['status'])}
+                        className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-sm font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="completed">Completed</option>
+                        <option value="missed">Missed</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-5">
+                      {hasValidSubmissionField(state.selectedModuleId, assessment.id) ? (
+                        <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-600">
+                          <input
+                            type="checkbox"
+                            checked={draft.validSubmission}
+                            onChange={(event) => updateAssessment(assessment.id, { validSubmission: event.target.checked })}
+                            className="rounded border-slate-300 text-stellenbosch-maroon focus:ring-stellenbosch-maroon/30"
+                          />
+                          {draft.validSubmission ? 'Valid' : 'Invalid'}
+                        </label>
+                      ) : (
+                        <span className="text-sm text-slate-400">n/a</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-5">
+                      {hasLateHoursField(state.selectedModuleId, assessment.id) ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={draft.hoursLate}
+                          disabled={draft.status !== 'completed'}
+                          onChange={(event) => updateAssessment(assessment.id, { hoursLate: event.target.value })}
+                          className="w-24 rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 font-bold text-slate-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+                        />
+                      ) : (
+                        <span className="text-sm text-slate-400">n/a</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-5">
+                      <div className="space-y-3">
+                        {notes.length > 0 ? (
+                          <div className="space-y-2">
+                            {notes.map((note) => (
+                              <p key={note} className="text-xs text-slate-500 leading-relaxed">{note}</p>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-slate-400">No model notes.</span>
+                        )}
+                        <textarea
+                          value={draft.notes}
+                          onChange={(event) => updateAssessment(assessment.id, { notes: event.target.value })}
+                          placeholder="Your notes for this assessment"
+                          rows={3}
+                          className="w-full rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+                        />
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8 mb-8">
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100">
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Mark Needed Table</h2>
+            <p className="text-sm text-slate-500 mt-2">Needed on the next open assessment, assuming later required assessments land exactly on the target.</p>
+          </div>
+          <div className="divide-y divide-slate-100">
+            {neededRows.map((row) => (
+              <div key={row.target} className="grid grid-cols-3 gap-4 px-6 py-4 items-center">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">Target FM</p>
+                  <p className="font-display text-3xl text-slate-900">{row.target}%</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">Focus assessment</p>
+                  <p className="font-semibold text-slate-700">{row.focusLabel}</p>
+                </div>
+                <div className={`rounded-2xl border px-4 py-3 text-right ${row.feasible ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                  <p className="text-xs uppercase tracking-wider font-bold opacity-70">Needed mark</p>
+                  <p className="font-display text-3xl">{row.needed === null ? 'Blocked' : `${row.needed}%`}</p>
+                  <p className="mt-1 text-[11px] font-medium">{row.status}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-slate-950 text-white rounded-[2.5rem] p-7 shadow-2xl shadow-slate-950/20">
+          <h2 className="font-display text-3xl mb-4 flex items-center gap-2"><AlertTriangle className="text-stellenbosch-gold" /> Warnings</h2>
+          <div className="space-y-3 text-sm text-white/75">
+            {[...extraWarnings, ...output.warnings].length > 0 ? (
+              [...extraWarnings, ...output.warnings].map((warning) => <p key={warning}>• {warning}</p>)
+            ) : (
+              <p>• No engine warnings for the current input set.</p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <div className="glass rounded-[2.5rem] p-7 border-slate-200/50">
+          <h2 className="font-display text-3xl text-stellenbosch-maroon mb-4 flex items-center gap-2"><Calculator /> Formula explanation</h2>
+          <div className="space-y-3 text-sm text-slate-600">
+            {selectedModel?.formulaExplanation.map((line) => <p key={line}>{line}</p>)}
+          </div>
+        </div>
+        <div className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm">
+          <h2 className="font-display text-3xl text-stellenbosch-maroon mb-4 flex items-center gap-2"><Target /> Cautionary notes</h2>
+          <div className="space-y-3 text-sm text-slate-600">
+            {selectedModel?.cautionaryNotes.map((note) => <p key={note}>• {note}</p>)}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
 
 export default Marks;

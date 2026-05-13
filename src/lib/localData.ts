@@ -1,5 +1,6 @@
 export const BACKUP_KEYS = [
   'baccllb-mark-rows',
+  'baccllb-mark-engine-state',
   'baccllb-tasks',
   'baccllb-timer-sessions',
   'baccllb-mistake-log',
