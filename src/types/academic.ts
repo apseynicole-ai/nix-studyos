@@ -74,6 +74,7 @@ export interface ModuleAssessmentModel {
 // --- Calculation result types ---
 
 export interface MarksOutput {
+  my?: number | null;   // mid-year mark (year modules only)
   mtd: number | null;
   fm1: number | null;
   fm2: number | null;

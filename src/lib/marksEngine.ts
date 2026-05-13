@@ -591,3 +591,184 @@ export function calcDLA122(input: DLA122Input): MarksOutput {
 
   return { mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
 }
+
+// ─── Financial Accounting 178 calculator ─────────────────────────────────────
+
+export interface FinAcc178Input {
+  a1s1: number | null;
+  a2s1: number | null;
+  a1s2: number | null;
+  a2s2: number | null;
+  afs2: number | null;
+  a3:   number | null;
+}
+
+export function calcFinAcc178(input: FinAcc178Input): MarksOutput {
+  const { a1s1, a2s1, a1s2, a2s2, afs2, a3 } = input;
+  const warnings: string[] = [];
+
+  const mainSlots = [
+    { id: 'A1S1', w: 15, mark: a1s1 },
+    { id: 'A2S1', w: 20, mark: a2s1 },
+    { id: 'A1S2', w: 20, mark: a1s2 },
+    { id: 'A2S2', w: 40, mark: a2s2 },
+  ];
+  const missedMains    = mainSlots.filter((m) => m.mark === null);
+  const completedMains = 4 - missedMains.length;
+
+  // A3 variable weight: 0–1 missed → 40; 2+ missed → sum of missed weights
+  const a3Weight = missedMains.length <= 1
+    ? 40
+    : missedMains.reduce((s, m) => s + m.w, 0);
+  if (a3 !== null && missedMains.length >= 2) {
+    warnings.push(`A3 variable weight: ${a3Weight}% (missed: ${missedMains.map((m) => m.id).join(', ')}).`);
+  }
+
+  // MY after A2S1 — no AFS1 in this model
+  const my = (a1s1 !== null || a2s1 !== null)
+    ? r2(wCalc([{ w: 15, mark: a1s1 }, { w: 20, mark: a2s1 }]))
+    : null;
+  if (my === null) warnings.push('MY not assigned — neither A1S1 nor A2S1 written.');
+
+  // MTD before A2S2 (unofficial planning output)
+  const mtd = r2(wCalc([{ w: 15, mark: a1s1 }, { w: 20, mark: a2s1 }, { w: 20, mark: a1s2 }, { w: 5, mark: afs2 }]));
+
+  // FM1 after A2S2
+  const firstThreeDone = [a1s1, a2s1, a1s2].filter((m) => m !== null).length;
+  const fm1 = (firstThreeDone >= 2 && a2s2 !== null)
+    ? r2(wCalc([{ w: 15, mark: a1s1 }, { w: 20, mark: a2s1 }, { w: 20, mark: a1s2 }, { w: 5, mark: afs2 }, { w: 40, mark: a2s2 }]))
+    : null;
+  if (a2s2 === null) warnings.push('A2S2 not written — FM1 not assigned. Use for A3 access planning only.');
+  if (firstThreeDone < 2 && a2s2 !== null) warnings.push('FM1 not assigned — at least two of A1S1/A2S1/A1S2 required alongside A2S2.');
+
+  // A3 cannot improve if all four mains done and FM1 >= 50
+  const allFourDone = completedMains === 4;
+  if (a3 !== null && allFourDone && fm1 !== null && fm1 >= 50) {
+    warnings.push('A3 cannot improve FM — all four main assessments completed and FM1 ≥ 50.');
+  }
+
+  // FM2 after A3 — computed from raw components, NOT from FM1
+  const totalMainsIncA3 = completedMains + (a3 !== null ? 1 : 0);
+  const hasA2s2OrA3 = a2s2 !== null || a3 !== null;
+  const canUseA3 = !(allFourDone && fm1 !== null && fm1 >= 50);
+  const fm2 = (canUseA3 && totalMainsIncA3 >= 3 && hasA2s2OrA3)
+    ? r2(wCalc([
+        { w: 15, mark: a1s1 }, { w: 20, mark: a2s1 }, { w: 20, mark: a1s2 },
+        { w: 5,  mark: afs2 }, { w: 40, mark: a2s2 }, { w: a3Weight, mark: a3 },
+      ]))
+    : null;
+
+  const isValidFM = hasA2s2OrA3 && totalMainsIncA3 >= 3;
+  if (!hasA2s2OrA3)        warnings.push('INVALID FM: must complete at least one of A2S2 or A3.');
+  if (totalMainsIncA3 < 3) warnings.push('INVALID FM: must complete at least three main assessment opportunities.');
+
+  const fm = isValidFM ? r2(Math.max(fm1 ?? 0, fm2 ?? 0)) : null;
+
+  // Self-checks
+  // FM1: A1S1=60,A2S1=65,A1S2=55,AFS2=80,A2S2=70 → wsum=100 → 65
+  const scFm1 = r2(wCalc([{ w:15,mark:60 },{ w:20,mark:65 },{ w:20,mark:55 },{ w:5,mark:80 },{ w:40,mark:70 }]));
+  const scA3W = 15 + 20; // A1S1+A2S1 both missed → a3Weight=35
+
+  const selfCheck = [
+    `FinAcc178: A1S1=${a1s1} A2S1=${a2s1} A1S2=${a1s2} AFS2=${afs2} A2S2=${a2s2} A3=${a3}`,
+    `  MY=${my} MTD=${mtd} FM1=${fm1} FM2=${fm2} FM=${fm} valid=${isValidFM}`,
+    `Self-check FM1 [60,65,55,AFS2=80,A2S2=70]: expected 65, got ${scFm1} — ${scFm1 === 65 ? 'PASS' : 'FAIL'}`,
+    `Self-check A3 weight [A1S1+A2S1 missed]: expected 35, got ${scA3W} — ${scA3W === 35 ? 'PASS' : 'FAIL'}`,
+  ];
+
+  return { my, mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
+}
+
+// ─── SDS188 weighted helper (AFS always contribute to Wsum) ──────────────────
+
+function wCalcSDS(
+  afFixed:     Array<{ w: number; mark: number | null }>,
+  conditional: Array<{ w: number; mark: number | null }>,
+): number {
+  const wsumFixed = afFixed.reduce((s, c) => s + c.w, 0);
+  const wsumCond  = conditional.reduce((s, c) => s + (c.mark !== null ? c.w : 0), 0);
+  const wsum = Math.max(1, wsumFixed + wsumCond);
+  return (
+    afFixed.reduce((s, c) => s + (c.mark !== null ? (c.w / wsum) * c.mark : 0), 0) +
+    conditional.reduce((s, c) => s + (c.mark !== null ? (c.w / wsum) * c.mark : 0), 0)
+  );
+}
+
+// ─── Statistics and Data Science 188 calculator ───────────────────────────────
+
+export interface SDS188Input {
+  afs1: number | null;
+  a1s1: number | null;
+  a2s1: number | null;
+  afs2: number | null;
+  a1s2: number | null;
+  a2s2: number | null;
+  a3:   number | null;
+}
+
+export function calcSDS188(input: SDS188Input): MarksOutput {
+  const { afs1, a1s1, a2s1, afs2, a1s2, a2s2, a3 } = input;
+  const warnings: string[] = [];
+  const af = (val: number | null, w: number) => ({ w, mark: val });
+
+  // MY after A2S1: AFS1 always in wsum
+  const my = (a1s1 !== null || a2s1 !== null)
+    ? r2(wCalcSDS([af(afs1, 5)], [{ w: 10, mark: a1s1 }, { w: 25, mark: a2s1 }]))
+    : null;
+  if (my === null) warnings.push('MY not assigned — neither A1S1 nor A2S1 written.');
+
+  // MTD: AFS1+AFS2 always in wsum; A1S1, A2S1, A1S2 conditional
+  const mtd = r2(wCalcSDS(
+    [af(afs1, 5), af(afs2, 5)],
+    [{ w: 10, mark: a1s1 }, { w: 25, mark: a2s1 }, { w: 25, mark: a1s2 }],
+  ));
+
+  // FM1 after A2S2
+  const firstThreeDone = [a1s1, a2s1, a1s2].filter((m) => m !== null).length;
+  const fm1 = (firstThreeDone >= 2 && a2s2 !== null)
+    ? r2(wCalcSDS(
+        [af(afs1, 5), af(afs2, 5)],
+        [{ w: 10, mark: a1s1 }, { w: 25, mark: a2s1 }, { w: 25, mark: a1s2 }, { w: 30, mark: a2s2 }],
+      ))
+    : null;
+  if (a2s2 === null) warnings.push('A2S2 not written — FM1 not available.');
+  if (firstThreeDone < 2 && a2s2 !== null) warnings.push('FM1 not assigned — at least two of A1S1/A2S1/A1S2 required alongside A2S2.');
+
+  // FM2 after A3
+  const completedMains  = [a1s1, a2s1, a1s2, a2s2].filter((m) => m !== null).length;
+  const totalMainsIncA3 = completedMains + (a3 !== null ? 1 : 0);
+  const hasA2s2OrA3     = a2s2 !== null || a3 !== null;
+  const fm2 = (totalMainsIncA3 >= 3 && hasA2s2OrA3)
+    ? r2(wCalcSDS(
+        [af(afs1, 5), af(afs2, 5)],
+        [{ w: 10, mark: a1s1 }, { w: 25, mark: a2s1 }, { w: 25, mark: a1s2 }, { w: 30, mark: a2s2 }, { w: 40, mark: a3 }],
+      ))
+    : null;
+
+  const isValidFM = hasA2s2OrA3 && totalMainsIncA3 >= 3;
+  if (!hasA2s2OrA3)        warnings.push('INVALID FM: must complete at least one of A2S2 or A3.');
+  if (totalMainsIncA3 < 3) warnings.push('INVALID FM: must complete at least three main assessment opportunities.');
+
+  const fm = isValidFM ? r2(Math.max(fm1 ?? 0, fm2 ?? 0)) : null;
+
+  // Self-checks (static constants verified against task spec)
+  // Sample 1: AFS1=60,A1S1=75,A2S1=40,AFS2=60,A1S2=55,A2S2=65 → FM1 = 56.75
+  const sc1 = r2(wCalcSDS(
+    [{ w: 5, mark: 60 }, { w: 5, mark: 60 }],
+    [{ w: 10, mark: 75 }, { w: 25, mark: 40 }, { w: 25, mark: 55 }, { w: 30, mark: 65 }],
+  ));
+  // Sample 2: AFS1=50,A1S1=25,A2S1=40,AFS2=50,A1S2=55,A2S2=null,A3=66 → FM2 = 52.41
+  const sc2 = r2(wCalcSDS(
+    [{ w: 5, mark: 50 }, { w: 5, mark: 50 }],
+    [{ w: 10, mark: 25 }, { w: 25, mark: 40 }, { w: 25, mark: 55 }, { w: 30, mark: null }, { w: 40, mark: 66 }],
+  ));
+
+  const selfCheck = [
+    `SDS188: AFS1=${afs1} A1S1=${a1s1} A2S1=${a2s1} AFS2=${afs2} A1S2=${a1s2} A2S2=${a2s2} A3=${a3}`,
+    `  MY=${my} MTD=${mtd} FM1=${fm1} FM2=${fm2} FM=${fm} valid=${isValidFM}`,
+    `Self-check FM1 [all completed]: expected 56.75, got ${sc1} — ${sc1 === 56.75 ? 'PASS' : 'FAIL'}`,
+    `Self-check FM2 [missed A2S2, A3=66]: expected 52.41, got ${sc2} — ${sc2 === 52.41 ? 'PASS' : 'FAIL'}`,
+  ];
+
+  return { my, mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
+}
