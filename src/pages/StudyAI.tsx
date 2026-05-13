@@ -15,6 +15,7 @@ const StudyAI: React.FC = () => {
   const [summaries, setSummaries] = useState<any[]>([]);
   const [currentSummary, setCurrentSummary] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const selectedModule = useMemo(() => modules.find((module) => module.id === moduleId) || modules[0], [moduleId]);
 
@@ -60,8 +61,21 @@ Response rules:
 
     setLoading(true);
     setCurrentSummary(null);
+    setErrorMessage(null);
     try {
-      const response = await askGemini(input, buildContext());
+      const response = await askGemini({
+        prompt: input,
+        context: buildContext(),
+        moduleId,
+        moduleName: selectedModule.name,
+        promptMode: 'study-ai',
+        weakPoints: selectedModule.weakPoints,
+        options: {
+          moduleArea: selectedModule.area,
+          targetMark: selectedModule.target,
+          confidence: selectedModule.confidence,
+        },
+      });
       setCurrentSummary(response);
       await addDoc(collection(db, 'summaries'), {
         userId: user.uid,
@@ -75,6 +89,7 @@ Response rules:
       setInput('');
     } catch (error) {
       console.error(error);
+      setErrorMessage(error instanceof Error ? error.message : 'StudyAI request failed.');
     } finally {
       setLoading(false);
     }
@@ -195,6 +210,11 @@ Response rules:
             </motion.div>
           )}
         </AnimatePresence>
+        {errorMessage && (
+          <div className="mt-6 rounded-[2rem] border border-red-100 bg-red-50 px-5 py-4 text-sm font-medium text-red-800">
+            {errorMessage}
+          </div>
+        )}
       </div>
 
       <aside className="space-y-6">
