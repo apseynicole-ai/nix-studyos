@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Public and private user information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "studentNumber": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Task": {
+      "title": "Study Task",
+      "description": "Tasks related to accounting or law courses.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "text": { "type": "string" },
+        "done": { "type": "boolean" },
+        "category": { "type": "string", "enum": ["Accounting", "Law", "General"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "text", "done"]
+    },
+    "StudySession": {
+      "title": "Study Session",
+      "description": "Pomodoro sessions tracked for analytics.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "durationMinutes": { "type": "number" },
+        "subject": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "durationMinutes"]
+    },
+    "Summary": {
+      "title": "Legal/Accounting Summary",
+      "description": "AI-generated summaries of cases or standards.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "originalText": { "type": "string" },
+        "type": { "type": "string", "enum": ["case-law", "accounting-standard", "statute"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Individual study tasks."
+    },
+    "/sessions/{sessionId}": {
+      "schema": "StudySession",
+      "description": "Pomodoro tracking logs."
+    },
+    "/summaries/{summaryId}": {
+      "schema": "Summary",
+      "description": "AI study summaries."
+    }
+  }
+}
