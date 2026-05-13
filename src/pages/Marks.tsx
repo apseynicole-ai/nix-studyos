@@ -19,6 +19,7 @@ type SupportedModuleId =
   | 'dla112'
   | 'dla122'
   | 'finacc178'
+  | 'foundations178'
   | 'sds188'
   | 'legalskills114'
   | 'conlaw178';
@@ -67,6 +68,7 @@ const SUPPORTED_MODULES: SupportedModuleId[] = [
   'dla112',
   'dla122',
   'finacc178',
+  'foundations178',
   'sds188',
   'legalskills114',
   'conlaw178',
@@ -111,6 +113,15 @@ const MODULE_META: Record<SupportedModuleId, ModuleMeta> = {
     colour: baseModules.finacc178.colour,
     icon: baseModules.finacc178.icon,
     target: baseModules.finacc178.target,
+  },
+  foundations178: {
+    id: 'foundations178',
+    label: 'Foundations of Law 178',
+    shortName: 'Foundations 178',
+    code: 'FOL178',
+    colour: baseModules.foundations178.colour,
+    icon: baseModules.foundations178.icon,
+    target: baseModules.foundations178.target,
   },
   sds188: {
     id: 'sds188',
@@ -281,6 +292,16 @@ function calculateModuleOutput(moduleId: SupportedModuleId, moduleState: ModuleD
         a1s2: pick('A1S2'),
         a2s2: pick('A2S2'),
         afs2: pick('AFS2'),
+        a3: pick('A3'),
+      });
+    case 'foundations178':
+      return calcConLaw178({
+        afs1: pick('AFS1'),
+        a1s1: pick('A1S1'),
+        a2s1: pick('A2S1'),
+        afs2: pick('AFS2'),
+        a1s2: pick('A1S2'),
+        a2s2: pick('A2S2'),
         a3: pick('A3'),
       });
     case 'sds188':

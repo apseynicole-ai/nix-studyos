@@ -361,6 +361,17 @@ const conlaw178Model: ModuleAssessmentModel = {
   needsVerification: false,
 };
 
+const foundations178Model: ModuleAssessmentModel = {
+  ...conlaw178Model,
+  moduleId: 'foundations178',
+  moduleName: 'Foundations of Law 178',
+  cautionaryNotes: [
+    ...conlaw178Model.cautionaryNotes,
+    'Foundations of Law 178 is currently using the public-law flexible-year assessment model and should be verified against the official Foundations module framework.',
+  ],
+  needsVerification: true,
+};
+
 // ─── Module model registry ────────────────────────────────────────────────────
 
 export const moduleAssessmentModels: Record<string, ModuleAssessmentModel> = {
@@ -368,6 +379,7 @@ export const moduleAssessmentModels: Record<string, ModuleAssessmentModel> = {
   dla112:         dla112Model,
   dla122:         dla122Model,
   finacc178:      finacc178Model,
+  foundations178: foundations178Model,
   sds188:         sds188Model,
   legalskills114: legalskills114Model,
   conlaw178:      conlaw178Model,
