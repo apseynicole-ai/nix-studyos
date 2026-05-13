@@ -1,4 +1,4 @@
-// BAccLLB marks-engine types — foundation layer only, formulas not wired yet
+// BAccLLB marks-engine types
 
 export type AssessmentModelType =
   | 'STANDARD'             // fixed weights, one exam opportunity
@@ -52,8 +52,8 @@ export interface A3Rule {
 }
 
 export interface LatePenaltyBand {
-  daysLate: number;
-  penaltyPercent: number;
+  hoursAfterDeadline: number;   // upper bound of band (hours, exclusive upper)
+  cumulativeDeduction: number;  // total marks deducted at this point (out of 100)
   description?: string;
 }
 
@@ -71,7 +71,17 @@ export interface ModuleAssessmentModel {
   needsVerification: boolean;
 }
 
-// --- Calculation result types (shell only — formulas not implemented yet) ---
+// --- Calculation result types ---
+
+export interface MarksOutput {
+  mtd: number | null;
+  fm1: number | null;
+  fm2: number | null;
+  fm: number | null;
+  isValidFM: boolean;
+  warnings: string[];
+  selfCheck: string[];
+}
 
 export interface CalculationResult {
   finalMark: number | null;

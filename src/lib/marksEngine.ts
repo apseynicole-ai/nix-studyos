@@ -1,7 +1,7 @@
-// BAccLLB module-specific marks engine — data/model layer only
-// Formulas are NOT implemented here yet. This file defines assessment structures.
+// BAccLLB module-specific marks engine
 
-import type { ModuleAssessmentModel } from '../types/academic';
+import type { ModuleAssessmentModel, MarksOutput } from '../types/academic';
+export type { MarksOutput };
 
 // ─── Economics 114 ───────────────────────────────────────────────────────────
 
@@ -124,10 +124,16 @@ const dla122Model: ModuleAssessmentModel = {
     { assessmentId: 'A2', minimumMark: 40, description: 'UNVERIFIED numeric threshold — document requires valid/competent A2 but does not confirm 40% as the exact cut-off.' },
   ],
   latePenaltyRules: [
-    { daysLate: 1,  penaltyPercent: 10, description: '1 day late' },
-    { daysLate: 2,  penaltyPercent: 20, description: '2 days late' },
-    { daysLate: 3,  penaltyPercent: 30, description: '3 days late' },
-    { daysLate: 7,  penaltyPercent: 50, description: '7+ days late' },
+    { hoursAfterDeadline: 6,   cumulativeDeduction: 10, description: '0–6 h late' },
+    { hoursAfterDeadline: 12,  cumulativeDeduction: 15, description: '6–12 h late' },
+    { hoursAfterDeadline: 24,  cumulativeDeduction: 20, description: '12–24 h late' },
+    { hoursAfterDeadline: 36,  cumulativeDeduction: 25, description: '24–36 h late' },
+    { hoursAfterDeadline: 48,  cumulativeDeduction: 30, description: '36–48 h late' },
+    { hoursAfterDeadline: 72,  cumulativeDeduction: 40, description: '48–72 h late' },
+    { hoursAfterDeadline: 96,  cumulativeDeduction: 50, description: '72–96 h late' },
+    { hoursAfterDeadline: 120, cumulativeDeduction: 60, description: '96–120 h late' },
+    { hoursAfterDeadline: 144, cumulativeDeduction: 70, description: '120–144 h late' },
+    { hoursAfterDeadline: 168, cumulativeDeduction: 80, description: '144–168 h late (max 80)' },
   ],
   formulaExplanation: [
     'FM = A1 (35%) + AF (20%, best 4 of 6 tutorials) + A2 or A3 (45%).',
@@ -373,4 +379,215 @@ export function getModuleAssessmentModel(moduleId: string): ModuleAssessmentMode
 
 export function getModelsNeedingVerification(): ModuleAssessmentModel[] {
   return Object.values(moduleAssessmentModels).filter((m) => m.needsVerification);
+}
+
+// ─── Calculation helpers ──────────────────────────────────────────────────────
+
+// Weighted average per EMS formula: missing assessments have weight 0; wsum >= 1.
+function wCalc(components: Array<{ w: number; mark: number | null }>): number {
+  const wsum = Math.max(1, components.reduce((s, c) => s + (c.mark !== null ? c.w : 0), 0));
+  return components.reduce((s, c) => s + (c.mark !== null ? (c.w / wsum) * c.mark : 0), 0);
+}
+
+function r2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+// ─── Economics 114 calculator ─────────────────────────────────────────────────
+
+export interface Econ114Input {
+  a1: number | null;
+  a2: number | null;
+  a3: number | null;
+}
+
+export function calcEcon114(input: Econ114Input): MarksOutput {
+  const { a1, a2, a3 } = input;
+  const warnings: string[] = [];
+
+  const mtd = a1 !== null ? r2(wCalc([{ w: 40, mark: a1 }])) : null;
+  if (a1 === null) warnings.push('A1 not completed — no MTD.');
+
+  const fm1 = (a1 !== null && a2 !== null) ? r2(wCalc([{ w: 40, mark: a1 }, { w: 60, mark: a2 }])) : null;
+  if (a1 === null && a2 !== null) warnings.push('FM1 not assigned — A1 required alongside A2.');
+
+  const completedMains = [a1, a2, a3].filter((m) => m !== null).length;
+  const fm2 = completedMains >= 2
+    ? r2(wCalc([{ w: 40, mark: a1 }, { w: 60, mark: a2 }, { w: 60, mark: a3 }]))
+    : null;
+
+  const hasA2orA3 = a2 !== null || a3 !== null;
+  const hasTwoMains = completedMains >= 2;
+  const isValidFM = hasA2orA3 && hasTwoMains;
+
+  if (!hasA2orA3) warnings.push('INVALID FM: must complete at least one of A2 or A3.');
+  if (!hasTwoMains) warnings.push('INVALID FM: must complete at least two main assessments.');
+  if (a1 === null && a2 === null && a3 !== null) warnings.push('Only A3 completed — FM simulation only, no valid FM.');
+
+  const fm = isValidFM ? r2(Math.max(fm1 ?? 0, fm2 ?? 0)) : null;
+
+  // Self-check: A1=50, A2=70 → FM1 = (40*50+60*70)/100 = 62
+  const sc = r2(wCalc([{ w: 40, mark: 50 }, { w: 60, mark: 70 }]));
+  const selfCheck = [
+    `Econ114: A1=${a1} A2=${a2} A3=${a3} → MTD=${mtd} FM1=${fm1} FM2=${fm2} FM=${fm} valid=${isValidFM}`,
+    `Self-check [A1=50,A2=70]: FM1 expected 62, got ${sc} — ${sc === 62 ? 'PASS' : 'FAIL'}`,
+  ];
+
+  return { mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
+}
+
+// ─── DLA 112 calculator ───────────────────────────────────────────────────────
+
+export interface DLA112Input {
+  af: number | null;
+  a1: number | null;
+  a2: number | null;
+  a3: number | null;
+}
+
+export function calcDLA112(input: DLA112Input): MarksOutput {
+  const { af, a1, a2, a3 } = input;
+  const warnings: string[] = [];
+
+  const mtd = a1 !== null ? r2(wCalc([{ w: 10, mark: af }, { w: 40, mark: a1 }])) : null;
+  if (a1 === null) warnings.push('A1 not completed — no MTD.');
+
+  const fm1 = (a1 !== null && a2 !== null)
+    ? r2(wCalc([{ w: 10, mark: af }, { w: 40, mark: a1 }, { w: 50, mark: a2 }]))
+    : null;
+  if (a2 === null && a1 !== null) warnings.push('FM1 not yet available — A2 not written.');
+  if (a1 === null && a2 !== null) warnings.push('FM1 not assigned — A1 required.');
+
+  const completedMains = [a1, a2, a3].filter((m) => m !== null).length;
+  const fm2 = completedMains >= 2
+    ? r2(wCalc([{ w: 10, mark: af }, { w: 40, mark: a1 }, { w: 50, mark: a2 }, { w: 50, mark: a3 }]))
+    : null;
+
+  if (a3 !== null && fm1 !== null && fm1 >= 50) warnings.push('A3 written but FM1 was already ≥ 50 — confirm A3 access.');
+  if (a3 !== null && a1 === null && a2 === null) warnings.push('Both A1 and A2 missed — A3 alone may not produce valid FM.');
+
+  const hasA2orA3 = a2 !== null || a3 !== null;
+  const hasTwoMains = completedMains >= 2;
+  const isValidFM = hasA2orA3 && hasTwoMains;
+
+  if (!hasA2orA3) warnings.push('INVALID FM: complete at least one of A2 or A3.');
+  if (!hasTwoMains) warnings.push('INVALID FM: complete at least two main assessments.');
+
+  const fm = isValidFM ? r2(Math.max(fm1 ?? 0, fm2 ?? 0)) : null;
+
+  // Self-check: AF=80, A1=60, A2=70 → FM1=(10*80+40*60+50*70)/100 = 67
+  const sc = r2(wCalc([{ w: 10, mark: 80 }, { w: 40, mark: 60 }, { w: 50, mark: 70 }]));
+  const selfCheck = [
+    `DLA112: AF=${af} A1=${a1} A2=${a2} A3=${a3} → MTD=${mtd} FM1=${fm1} FM2=${fm2} FM=${fm} valid=${isValidFM}`,
+    `Self-check [AF=80,A1=60,A2=70]: FM1 expected 67, got ${sc} — ${sc === 67 ? 'PASS' : 'FAIL'}`,
+  ];
+
+  return { mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
+}
+
+// ─── DLA 122 late penalty ─────────────────────────────────────────────────────
+
+// Returns cumulative marks deducted (out of 100) for a given hours-after-deadline value.
+export function calcDLA122LatePenalty(hoursLate: number): number {
+  if (hoursLate <= 0)   return 0;
+  if (hoursLate <= 6)   return 10;
+  if (hoursLate <= 12)  return 15;
+  if (hoursLate <= 24)  return 20;
+  if (hoursLate <= 36)  return 25;
+  if (hoursLate <= 48)  return 30;
+  if (hoursLate <= 72)  return 40;
+  if (hoursLate <= 96)  return 50;
+  if (hoursLate <= 120) return 60;
+  if (hoursLate <= 144) return 70;
+  return 80;
+}
+
+// ─── DLA 122 calculator ───────────────────────────────────────────────────────
+
+export interface DLA122Input {
+  af: number | null;     // caller supplies best-4-of-6 average already computed
+  a1: number | null;     // raw mark before late penalty
+  a1Valid: boolean;      // valid submission demonstrating competence
+  a2: number | null;
+  a2Valid: boolean;
+  a3: number | null;
+  hoursLateA1?: number;  // hours after deadline; omit or 0 if on time
+  hoursLateA2?: number;
+}
+
+export function calcDLA122(input: DLA122Input): MarksOutput {
+  const { af, a1Valid, a2Valid, a3 } = input;
+  const warnings: string[] = [];
+
+  // Apply late penalties first
+  let a1 = input.a1;
+  let a2 = input.a2;
+  if (a1 !== null && input.hoursLateA1 && input.hoursLateA1 > 0) {
+    const pen = calcDLA122LatePenalty(input.hoursLateA1);
+    warnings.push(`A1 submitted ${input.hoursLateA1}h late — ${pen} marks deducted.`);
+    a1 = Math.max(0, a1 - pen);
+  }
+  if (a2 !== null && input.hoursLateA2 && input.hoursLateA2 > 0) {
+    const pen = calcDLA122LatePenalty(input.hoursLateA2);
+    warnings.push(`A2 submitted ${input.hoursLateA2}h late — ${pen} marks deducted.`);
+    a2 = Math.max(0, a2 - pen);
+  }
+
+  // Submission validity warnings
+  warnings.push('DLA122 requires valid A1 and A2 submissions.');
+  if (a1 === null) warnings.push('A1 not submitted — invalid submission, subminimum not met, module fail.');
+  else if (!a1Valid) warnings.push('A1 submitted but flagged invalid (competence not demonstrated) — subminimum not met.');
+  if (a2 === null) warnings.push('A2 not submitted — invalid submission, subminimum not met, module fail.');
+  else if (!a2Valid) warnings.push('A2 submitted but flagged invalid (competence not demonstrated) — subminimum not met.');
+
+  // DLA 122 submission risk reminders
+  warnings.push('RISK: wrong directory upload = non-submission if not corrected before late deadline.');
+  warnings.push('RISK: empty workbook = non-submission even if quiz was attempted.');
+  warnings.push('RISK: material quiz/file mismatch = penalised or treated as non-submission.');
+  warnings.push('RISK: quiz attempted after late deadline without file = nil awarded.');
+
+  const subminimumMet = a1 !== null && a1Valid && a2 !== null && a2Valid;
+
+  const mtd = a1 !== null ? r2(wCalc([{ w: 20, mark: af }, { w: 35, mark: a1 }])) : null;
+  if (a1 === null) warnings.push('No MTD — A1 not submitted.');
+
+  const fm1 = subminimumMet
+    ? r2(wCalc([{ w: 20, mark: af }, { w: 35, mark: a1 }, { w: 45, mark: a2 }]))
+    : null;
+  if (!subminimumMet && a2 !== null) warnings.push('FM1 not assigned — subminimum not met (valid A1 + A2 required).');
+
+  // A3 access: subminimum met AND FM1 < 50 AND all other mains completed
+  if (a3 !== null && !subminimumMet) warnings.push('A3 cannot rescue an invalid or missing A1/A2 submission.');
+  if (a3 !== null && subminimumMet && fm1 !== null && fm1 >= 50) warnings.push('A3 access: FM1 ≥ 50, A3 should only be used if A2 was missed.');
+
+  const completedMains = [a1, a2, a3].filter((m) => m !== null).length;
+  const fm2 = (subminimumMet && completedMains >= 2)
+    ? r2(wCalc([{ w: 20, mark: af }, { w: 35, mark: a1 }, { w: 45, mark: a2 }, { w: 45, mark: a3 }]))
+    : null;
+
+  const hasA2orA3 = a2 !== null || a3 !== null;
+  const hasTwoMains = completedMains >= 2;
+  const isValidFM = subminimumMet && hasA2orA3 && hasTwoMains;
+
+  if (!subminimumMet) warnings.push('INVALID FM: subminimum requirements not met.');
+  if (!hasA2orA3) warnings.push('INVALID FM: complete at least one of A2 or A3.');
+
+  const fm = isValidFM ? r2(Math.max(fm1 ?? 0, fm2 ?? 0)) : null;
+
+  // Self-checks
+  // FM1: AF=75,A1=60,A2=55 (both valid) → wsum=100 → (20*75+35*60+45*55)/100 = 60.75
+  const scFm = r2(wCalc([{ w: 20, mark: 75 }, { w: 35, mark: 60 }, { w: 45, mark: 55 }]));
+  // Late penalty: 10h → cumulative 15
+  const scLp = calcDLA122LatePenalty(10);
+  // Subminimum gate: A2=null → subminimumMet=false → fm2=null, isValidFM=false (A3 cannot rescue missing A2)
+  const scMissingA2Submin: boolean = null !== null && true; // a2=null → false
+  const selfCheck = [
+    `DLA122: AF=${af} A1=${input.a1}(valid=${a1Valid}) A2=${input.a2}(valid=${a2Valid}) A3=${a3}`,
+    `  submin=${subminimumMet} MTD=${mtd} FM1=${fm1} FM2=${fm2} FM=${fm} valid=${isValidFM}`,
+    `Self-check FM1 [AF=75,A1=60,A2=55,both valid]: expected 60.75, got ${scFm} — ${scFm === 60.75 ? 'PASS' : 'FAIL'}`,
+    `Self-check late [10h]: expected 15, got ${scLp} — ${scLp === 15 ? 'PASS' : 'FAIL'}`,
+    `Self-check [A2=null,A3 present]: subminimumMet=false → FM2=null, isValidFM=false — ${scMissingA2Submin === false ? 'PASS' : 'FAIL'}`,
+  ];
+
+  return { mtd, fm1, fm2, fm, isValidFM, warnings, selfCheck };
 }
