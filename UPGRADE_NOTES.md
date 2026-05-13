@@ -1,4 +1,4 @@
-# BAccLLB Study Pro — Personalised Upgrade Notes
+# Nix StudyOS — Personalised Upgrade Notes
 
 This version upgrades the original generic Stellenbosch study app into a personalised BAccLLB command centre for Nix/Nicole's Year 1 study workflow.
 

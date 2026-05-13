@@ -12,13 +12,24 @@ interface MarkRow {
   targetMark: number;
 }
 
-const defaultRows: MarkRow[] = modules.map((module) => ({
-  moduleId: module.id,
-  currentMark: module.currentMark ?? 0,
-  completedWeight: module.currentMark ? 35 : 0,
-  nextWeight: 20,
-  targetMark: module.target,
-}));
+const FALLBACK_COMPLETED_WEIGHT = 35;
+const FALLBACK_NEXT_WEIGHT = 20;
+
+const defaultRows: MarkRow[] = modules.map((module) => {
+  const doneWeight = module.assessments
+    .filter((a) => a.status === 'done' && a.weight !== undefined)
+    .reduce((sum, a) => sum + (a.weight ?? 0), 0);
+  const nextAssessment = module.assessments.find(
+    (a) => (a.status === 'upcoming' || a.status === 'draft') && a.weight !== undefined,
+  );
+  return {
+    moduleId: module.id,
+    currentMark: module.currentMark ?? 0,
+    completedWeight: doneWeight > 0 ? doneWeight : FALLBACK_COMPLETED_WEIGHT,
+    nextWeight: nextAssessment?.weight ?? FALLBACK_NEXT_WEIGHT,
+    targetMark: module.target,
+  };
+});
 
 const Marks: React.FC = () => {
   const [rows, setRows] = useState<MarkRow[]>(() => {
