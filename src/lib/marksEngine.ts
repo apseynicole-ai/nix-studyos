@@ -120,14 +120,14 @@ const dla122Model: ModuleAssessmentModel = {
     },
   ],
   subminimumRules: [
-    { assessmentId: 'A1', minimumMark: 40, description: 'UNVERIFIED threshold — confirm exact value in 2026 DLA122 guide.' },
-    { assessmentId: 'A2', minimumMark: 40, description: 'UNVERIFIED threshold — confirm exact value in 2026 DLA122 guide.' },
+    { assessmentId: 'A1', minimumMark: 40, description: 'UNVERIFIED numeric threshold — document requires valid/competent A1 but does not confirm 40% as the exact cut-off.' },
+    { assessmentId: 'A2', minimumMark: 40, description: 'UNVERIFIED numeric threshold — document requires valid/competent A2 but does not confirm 40% as the exact cut-off.' },
   ],
   latePenaltyRules: [
-    { daysLate: 1,  penaltyPercent: 10, description: 'UNVERIFIED — indicative band only' },
-    { daysLate: 2,  penaltyPercent: 20, description: 'UNVERIFIED — indicative band only' },
-    { daysLate: 3,  penaltyPercent: 30, description: 'UNVERIFIED — indicative band only' },
-    { daysLate: 7,  penaltyPercent: 50, description: 'UNVERIFIED — confirm cap with faculty submission policy' },
+    { daysLate: 1,  penaltyPercent: 10, description: '1 day late' },
+    { daysLate: 2,  penaltyPercent: 20, description: '2 days late' },
+    { daysLate: 3,  penaltyPercent: 30, description: '3 days late' },
+    { daysLate: 7,  penaltyPercent: 50, description: '7+ days late' },
   ],
   formulaExplanation: [
     'FM = A1 (35%) + AF (20%, best 4 of 6 tutorials) + A2 or A3 (45%).',
@@ -135,8 +135,9 @@ const dla122Model: ModuleAssessmentModel = {
     'A3 substitutes A2 when A2 is missed; it does not override A1/A2 subminimum failures.',
   ],
   cautionaryNotes: [
-    'Subminimum thresholds (currently 40) and late penalty bands are unverified — check 2026 module guide.',
+    'UNVERIFIED: exact numeric competence threshold for A1 and A2 subminimum — 40% is a placeholder pending 2026 module guide confirmation.',
     'A3 cannot rescue an invalid A1 regardless of A3 mark.',
+    'A3 cannot rescue an invalid A2 — subminimum rules still apply after substitution.',
   ],
   needsVerification: true,
 };
