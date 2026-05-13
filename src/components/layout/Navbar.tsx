@@ -10,6 +10,7 @@ import {
   LineChart,
   CalendarDays,
   ShieldCheck,
+  Settings,
 } from 'lucide-react';
 import { auth } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/marks', icon: <LineChart size={21} />, label: 'Marks' },
   { to: '/planner', icon: <CalendarDays size={21} />, label: 'Plan' },
   { to: '/exam-vault', icon: <ShieldCheck size={21} />, label: 'Vault' },
+  { to: '/settings', icon: <Settings size={21} />, label: 'Settings' },
 ];
 
 const Navbar: React.FC = () => {

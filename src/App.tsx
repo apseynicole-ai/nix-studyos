@@ -9,6 +9,7 @@ import Modules from './pages/Modules';
 import Marks from './pages/Marks';
 import Planner from './pages/Planner';
 import ExamVault from './pages/ExamVault';
+import Settings from './pages/Settings';
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
               <Route path="/exam-vault" element={<ExamVault />} />
               <Route path="/ai" element={<StudyAI />} />
               <Route path="/timer" element={<Timer />} />
+              <Route path="/settings" element={<Settings />} />
             </Routes>
             <Navbar />
           </div>
