@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Download, LogIn, LogOut, Upload, Trash2, UserRound } from 'lucide-react';
+import { Download, LogIn, LogOut, Scale, Upload, Trash2, UserRound } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
@@ -227,6 +228,24 @@ const Settings: React.FC = () => {
           buttonClass="bg-red-600 text-white"
           onClick={handleReset}
         />
+
+        <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-stellenbosch-maroon"><Scale size={20} /></span>
+              <p className="font-bold text-slate-800">Legal Citation Checker</p>
+            </div>
+            <p className="text-sm text-slate-500">
+              Run a local-only citation review for footnotes, bibliography gaps, placeholders, and manual Writing Guide checks.
+            </p>
+          </div>
+          <Link
+            to="/legal-verifier"
+            className="shrink-0 px-5 py-2.5 rounded-2xl font-bold text-sm bg-stellenbosch-maroon text-white hover:scale-105 transition-transform text-center"
+          >
+            Open checker
+          </Link>
+        </section>
       </div>
 
       {status && (

@@ -10,6 +10,7 @@ const Marks = lazy(() => import('./pages/Marks'));
 const Planner = lazy(() => import('./pages/Planner'));
 const ExamVault = lazy(() => import('./pages/ExamVault'));
 const MistakeBank = lazy(() => import('./pages/MistakeBank'));
+const LegalVerifier = lazy(() => import('./pages/LegalVerifier'));
 const StudyAI = lazy(() => import('./pages/StudyAI'));
 const Timer = lazy(() => import('./pages/Timer'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -29,6 +30,7 @@ export default function App() {
                 <Route path="/planner" element={<Planner />} />
                 <Route path="/exam-vault" element={<ExamVault />} />
                 <Route path="/mistakes" element={<MistakeBank />} />
+                <Route path="/legal-verifier" element={<LegalVerifier />} />
                 <Route path="/ai" element={<StudyAI />} />
                 <Route path="/timer" element={<Timer />} />
                 <Route path="/settings" element={<Settings />} />
