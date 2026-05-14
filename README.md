@@ -6,9 +6,11 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
 
 - Personalised BAccLLB dashboard
 - Module command centre
+- Topic Mastery Tracker inside `src/pages/Modules.tsx`, saved locally on-device
 - Module-specific marks engine with local-first marks storage
 - Module-specific tasks and template bank
 - A2 planner and nightly reset checklist
+- Mistake Bank at `/mistakes`, saved locally on-device
 - Final Boss exam template vault
 - AI prompt packs and LexAI context injection
 - Module-aware focus timer and study session logging
@@ -20,17 +22,19 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
   - Module-specific marks scenarios in `src/pages/Marks.tsx`
   - Local marks state under `baccllb-mark-engine-state`
   - Local backup, import, and reset via `src/lib/localData.ts`
+  - Topic Mastery Tracker inside Modules under `baccllb-topic-mastery`
+  - Mistake Bank at `/mistakes` under `baccllb-mistake-bank`
   - Local profile, tasks, timer sessions, and StudyAI summaries saved on-device
 - Cloud-backed:
   - Optional Firebase Auth sign-in
   - Optional future Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a database exists
 - Planned:
   - Firestore marks sync
-  - Topic trackers
-  - Mistake log
   - PWA support
 
 Nix StudyOS currently runs local-first without billing or Blaze. Firebase Auth and Firestore sync are optional future layers, not requirements for opening the app. Marks, tasks, timer sessions, and AI summaries can all work locally in this phase.
+
+Topic Mastery Tracker and Mistake Bank are already implemented in this branch. Topic mastery lives inside the Modules screen, Mistake Bank lives at `/mistakes`, and both are stored locally and included in backup/export/import flows where applicable.
 
 Marks are intentionally local-first in this phase. They do not sync to Firestore yet, and the current formulas and backup/import/reset flow should be preserved until a dedicated marks-sync phase is planned.
 
