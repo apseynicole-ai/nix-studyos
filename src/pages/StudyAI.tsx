@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, BrainCircuit, Sparkles, Scale, BookOpen, Calculator, History, Trash2, Copy, Wand2, FileText, Target } from 'lucide-react';
 import { askGemini } from '../lib/gemini';
 import { useAuth } from '../components/auth/AuthGuard';
-import { db, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, OperationType, handleFirestoreError } from '../lib/firebase';
+import { db, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, isFirestoreUnavailableError } from '../lib/firebase';
 import ReactMarkdown from 'react-markdown';
 import { modules, promptPacks, USER_ACADEMIC_PROFILE } from '../data/baccllb';
+import { LOCAL_SUMMARIES_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
 
 const StudyAI: React.FC = () => {
-  const { user } = useAuth();
+  const { user, localFirstMode } = useAuth();
   const [input, setInput] = useState('');
   const [moduleId, setModuleId] = useState(modules[0].id);
   const [loading, setLoading] = useState(false);
@@ -21,14 +22,28 @@ const StudyAI: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
+    const loadLocalSummaries = () => {
+      setSummaries(readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.userId === user.uid));
+    };
+
+    if (localFirstMode) {
+      loadLocalSummaries();
+      return;
+    }
+
     const q = query(collection(db, 'summaries'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setSummaries(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'summaries');
+      if (isFirestoreUnavailableError(error)) {
+        loadLocalSummaries();
+        return;
+      }
+      console.error('Summaries sync failed:', error instanceof Error ? error.message : String(error));
+      loadLocalSummaries();
     });
     return () => unsubscribe();
-  }, [user]);
+  }, [user, localFirstMode]);
 
   const buildContext = () => `
 Student profile:
@@ -77,7 +92,8 @@ Response rules:
         },
       });
       setCurrentSummary(response);
-      await addDoc(collection(db, 'summaries'), {
+      const newSummary = {
+        id: crypto.randomUUID(),
         userId: user.uid,
         title: input.slice(0, 70) + (input.length > 70 ? '...' : ''),
         content: response,
@@ -85,10 +101,25 @@ Response rules:
         moduleId,
         moduleName: selectedModule.shortName,
         createdAt: new Date().toISOString(),
-      });
+      };
+      if (localFirstMode) {
+        writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
+        setSummaries((current) => [...current, newSummary]);
+      } else {
+        try {
+          await addDoc(collection(db, 'summaries'), newSummary);
+        } catch (error) {
+          if (isFirestoreUnavailableError(error)) {
+            writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
+            setSummaries((current) => [...current, newSummary]);
+          } else {
+            throw error;
+          }
+        }
+      }
       setInput('');
     } catch (error) {
-      console.error(error);
+      console.error('StudyAI generation failed:', error instanceof Error ? error.message : String(error));
       setErrorMessage(error instanceof Error ? error.message : 'StudyAI request failed.');
     } finally {
       setLoading(false);
@@ -97,9 +128,21 @@ Response rules:
 
   const deleteSummary = async (id: string) => {
     try {
+      if (localFirstMode) {
+        const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
+        writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
+        setSummaries(nextSummaries.filter((summary) => summary.userId === user?.uid));
+        return;
+      }
       await deleteDoc(doc(db, 'summaries', id));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'summaries');
+      if (isFirestoreUnavailableError(error)) {
+        const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
+        writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
+        setSummaries(nextSummaries.filter((summary) => summary.userId === user?.uid));
+        return;
+      }
+      console.error('Summary delete failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -130,6 +173,7 @@ Response rules:
             </div>
           </div>
           <p className="text-slate-500 max-w-3xl">Now injected with your BAccLLB module map, weak points, A2 goals, exam preferences and study-system logic before it answers.</p>
+          {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: saved AI summaries stay on this device.</p>}
         </header>
 
         <section className="grid grid-cols-1 lg:grid-cols-[0.72fr_0.28fr] gap-6 mb-8">

@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckSquare, Clock, Filter, Plus, Sparkles, Tag, Trash2, Wand2 } from 'lucide-react';
-import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, OperationType, handleFirestoreError } from '../lib/firebase';
+import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, OperationType, isFirestoreUnavailableError } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 import { modules, taskTemplates } from '../data/baccllb';
+import { LOCAL_TASKS_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
 
 type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 type TaskType = 'Study' | 'Practice' | 'Admin' | 'Submission' | 'Revision' | 'Health';
@@ -18,13 +19,19 @@ interface StudyTask {
   type: TaskType;
   minutes: number;
   points: number;
-  dueDate?: string;
+  dueDate?: string | null;
   createdAt: string;
 }
 
+interface StoredStudyTask extends StudyTask {
+  userId: string;
+  why?: string;
+  completedAt?: string | null;
+}
+
 const Tasks: React.FC = () => {
-  const { user } = useAuth();
-  const [tasks, setTasks] = useState<StudyTask[]>([]);
+  const { user, localFirstMode } = useAuth();
+  const [tasks, setTasks] = useState<StoredStudyTask[]>([]);
   const [input, setInput] = useState('');
   const [moduleId, setModuleId] = useState(modules[0].id);
   const [priority, setPriority] = useState<Priority>('High');
@@ -36,36 +43,69 @@ const Tasks: React.FC = () => {
 
   useEffect(() => {
     if (!user) return;
+    const loadLocalTasks = () => {
+      setTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => task.userId === user.uid));
+    };
+
+    if (localFirstMode) {
+      loadLocalTasks();
+      return;
+    }
+
     const q = query(collection(db, 'tasks'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setTasks(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as StudyTask)));
+      setTasks(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as StoredStudyTask)));
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'tasks');
+      if (isFirestoreUnavailableError(error)) {
+        loadLocalTasks();
+        return;
+      }
+      console.error('Tasks sync failed:', error instanceof Error ? error.message : String(error));
+      loadLocalTasks();
     });
     return () => unsubscribe();
-  }, [user]);
+  }, [user, localFirstMode]);
+
+  const saveLocalTasks = (nextTasks: StoredStudyTask[]) => {
+    writeLocalJson(LOCAL_TASKS_KEY, nextTasks);
+    setTasks(nextTasks.filter((task) => task.userId === user?.uid));
+  };
 
   const addTask = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!input.trim() || !user) return;
     const module = modules.find((item) => item.id === moduleId);
+    const newTask = {
+      id: crypto.randomUUID(),
+      userId: user.uid,
+      text: input,
+      done: false,
+      moduleId,
+      category: module?.area || 'General',
+      priority,
+      type,
+      minutes,
+      points,
+      dueDate: dueDate || null,
+      createdAt: new Date().toISOString(),
+    } satisfies StoredStudyTask;
     try {
+      if (localFirstMode) {
+        saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
+        setInput('');
+        return;
+      }
       await addDoc(collection(db, 'tasks'), {
-        userId: user.uid,
-        text: input,
-        done: false,
-        moduleId,
-        category: module?.area || 'General',
-        priority,
-        type,
-        minutes,
-        points,
-        dueDate: dueDate || null,
-        createdAt: new Date().toISOString(),
+        ...newTask,
       });
       setInput('');
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'tasks');
+      if (isFirestoreUnavailableError(error)) {
+        saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
+        setInput('');
+        return;
+      }
+      console.error('Task create failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -74,31 +114,44 @@ const Tasks: React.FC = () => {
     const template = taskTemplates.find((item) => item.id === templateId);
     if (!template) return;
     const module = modules.find((item) => item.id === template.moduleId);
+    const newTask = {
+      id: crypto.randomUUID(),
+      userId: user.uid,
+      text: template.title,
+      done: false,
+      moduleId: template.moduleId,
+      category: module?.area || 'General',
+      priority: template.priority,
+      type: template.type,
+      minutes: template.minutes,
+      points: template.points,
+      dueDate: null,
+      why: template.why,
+      createdAt: new Date().toISOString(),
+    };
     try {
+      if (localFirstMode) {
+        saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
+        return;
+      }
       await addDoc(collection(db, 'tasks'), {
-        userId: user.uid,
-        text: template.title,
-        done: false,
-        moduleId: template.moduleId,
-        category: module?.area || 'General',
-        priority: template.priority,
-        type: template.type,
-        minutes: template.minutes,
-        points: template.points,
-        dueDate: null,
-        why: template.why,
-        createdAt: new Date().toISOString(),
+        ...newTask,
       });
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'template task');
+      if (isFirestoreUnavailableError(error)) {
+        saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
+        return;
+      }
+      console.error('Template task create failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
   const seedBossDay = async () => {
     if (!user) return;
-    for (const template of taskTemplates.slice(0, 6)) {
+    const seededTasks = taskTemplates.slice(0, 6).map((template) => {
       const module = modules.find((item) => item.id === template.moduleId);
-      await addDoc(collection(db, 'tasks'), {
+      return {
+        id: crypto.randomUUID(),
         userId: user.uid,
         text: template.title,
         done: false,
@@ -111,23 +164,62 @@ const Tasks: React.FC = () => {
         dueDate: null,
         why: template.why,
         createdAt: new Date().toISOString(),
-      });
+      };
+    });
+
+    if (localFirstMode) {
+      saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), ...seededTasks]);
+      return;
+    }
+
+    try {
+      for (const task of seededTasks) {
+        await addDoc(collection(db, 'tasks'), task);
+      }
+    } catch (error) {
+      if (isFirestoreUnavailableError(error)) {
+        saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), ...seededTasks]);
+        return;
+      }
+      console.error('Boss day seed failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
   const toggleTask = async (id: string, done: boolean) => {
     try {
+      if (localFirstMode) {
+        const nextTasks = readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).map((task) =>
+          task.id === id ? { ...task, done: !done, completedAt: !done ? new Date().toISOString() : null } : task,
+        );
+        saveLocalTasks(nextTasks);
+        return;
+      }
       await updateDoc(doc(db, 'tasks', id), { done: !done, completedAt: !done ? new Date().toISOString() : null });
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'tasks');
+      if (isFirestoreUnavailableError(error)) {
+        const nextTasks = readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).map((task) =>
+          task.id === id ? { ...task, done: !done, completedAt: !done ? new Date().toISOString() : null } : task,
+        );
+        saveLocalTasks(nextTasks);
+        return;
+      }
+      console.error('Task update failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
   const deleteTask = async (id: string) => {
     try {
+      if (localFirstMode) {
+        saveLocalTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => task.id !== id));
+        return;
+      }
       await deleteDoc(doc(db, 'tasks', id));
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, 'tasks');
+      if (isFirestoreUnavailableError(error)) {
+        saveLocalTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => task.id !== id));
+        return;
+      }
+      console.error('Task delete failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -148,6 +240,7 @@ const Tasks: React.FC = () => {
           <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">execution layer</p>
           <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Task Bank + Daily Sprint</h1>
           <p className="text-slate-500 max-w-3xl">Module-specific tasks with priority, points, time estimates and templates so your daily plan is concrete instead of vague.</p>
+          {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: tasks are being stored on this device.</p>}
         </div>
         <button onClick={seedBossDay} className="maroon-gradient text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-stellenbosch-maroon/20 hover:scale-105 transition-transform">
           <Wand2 size={18} /> Build Final Boss day

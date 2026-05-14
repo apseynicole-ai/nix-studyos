@@ -68,7 +68,7 @@ interface SignUpInput {
 }
 
 interface SignInInput {
-  identifier: string;
+  email: string;
   password: string;
 }
 
@@ -138,47 +138,21 @@ function buildUserProfileRecord(
   };
 }
 
-async function resolveEmailFromIdentifier(identifier: string) {
-  const trimmed = identifier.trim();
-  if (!trimmed) {
-    throw new AuthFlowError('account-not-found', 'Account not found.');
+export async function signInWithEmail({ email, password }: SignInInput) {
+  const cleanEmail = email.trim().toLowerCase();
+  if (!cleanEmail) {
+    throw new AuthFlowError('invalid-email', 'Email is required.');
   }
 
-  if (trimmed.includes('@')) {
-    return trimmed.toLowerCase();
-  }
-
-  const usernameLowercase = validateUsername(trimmed);
-  const usernameRef = doc(db, 'usernames', usernameLowercase);
-  const usernameSnap = await withTimeout(
-    getDoc(usernameRef),
-    'lookup-timeout',
-    'Username lookup timed out. Check your connection and try again.',
-  );
-
-  if (!usernameSnap.exists()) {
-    throw new AuthFlowError('account-not-found', 'Account not found.');
-  }
-
-  const usernameData = usernameSnap.data() as Partial<UsernameRecord>;
-  if (!usernameData.email) {
-    throw new AuthFlowError('account-not-found', 'Account not found.');
-  }
-
-  return usernameData.email;
-}
-
-export async function signInWithIdentifier({ identifier, password }: SignInInput) {
-  const email = await resolveEmailFromIdentifier(identifier);
   return withTimeout(
-    signInWithEmailAndPassword(auth, email, password),
+    signInWithEmailAndPassword(auth, cleanEmail, password),
     'auth-timeout',
     'Sign-in timed out. Check your connection and try again.',
   );
 }
 
 export async function signUpWithEmailAndUsername({ username, email, password }: SignUpInput) {
-  const usernameLowercase = validateUsername(username);
+  const usernameLowercase = username.trim() ? validateUsername(username) : '';
   const cleanEmail = email.trim().toLowerCase();
 
   if (!cleanEmail) {
@@ -193,35 +167,42 @@ export async function signUpWithEmailAndUsername({ username, email, password }: 
   const now = new Date().toISOString();
 
   try {
+    const displayName = usernameLowercase || cleanEmail.split('@')[0] || 'student';
     await withTimeout(
-      updateProfile(credential.user, { displayName: usernameLowercase }),
+      updateProfile(credential.user, { displayName }),
       'profile-timeout',
       'Profile setup timed out. Try again.',
     );
-    await withTimeout(runTransaction(db, async (transaction) => {
-      const usernameRef = doc(db, 'usernames', usernameLowercase);
-      const userRef = doc(db, 'users', credential.user.uid);
-      const usernameSnap = await transaction.get(usernameRef);
 
-      if (usernameSnap.exists()) {
-        throw new AuthFlowError('username-taken', 'Username already taken.');
-      }
+    if (usernameLowercase) {
+      await withTimeout(runTransaction(db, async (transaction) => {
+        const usernameRef = doc(db, 'usernames', usernameLowercase);
+        const userRef = doc(db, 'users', credential.user.uid);
+        const usernameSnap = await transaction.get(usernameRef);
 
-      transaction.set(usernameRef, buildUsernameRecord(credential.user.uid, usernameLowercase, cleanEmail, now));
-      transaction.set(
-        userRef,
-        buildUserProfileRecord(
-          credential.user.uid,
-          usernameLowercase,
-          cleanEmail,
-          usernameLowercase,
-          'password',
-          now,
-          now,
-        ),
-      );
-    }), 'profile-timeout', 'Profile setup timed out. Try again.');
+        if (usernameSnap.exists()) {
+          throw new AuthFlowError('username-taken', 'Username already taken.');
+        }
+
+        transaction.set(usernameRef, buildUsernameRecord(credential.user.uid, usernameLowercase, cleanEmail, now));
+        transaction.set(
+          userRef,
+          buildUserProfileRecord(
+            credential.user.uid,
+            usernameLowercase,
+            cleanEmail,
+            displayName,
+            'password',
+            now,
+            now,
+          ),
+        );
+      }), 'profile-timeout', 'Profile setup timed out. Try again.');
+    }
   } catch (error) {
+    if (isFirestoreUnavailableError(error)) {
+      return credential;
+    }
     await deleteUser(credential.user).catch(() => undefined);
     throw error;
   }
@@ -322,6 +303,11 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   };
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
+}
+
+export function isFirestoreUnavailableError(error: unknown) {
+  const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code: unknown }).code) : '';
+  return ['permission-denied', 'unavailable', 'not-found', 'failed-precondition'].includes(code);
 }
 
 export {

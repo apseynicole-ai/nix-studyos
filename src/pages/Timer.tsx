@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Play, Pause, RotateCcw, BookMarked, Volume2, VolumeX, CheckCircle2, Flame, Target, Coffee } from 'lucide-react';
-import { db, collection, addDoc, handleFirestoreError, OperationType } from '../lib/firebase';
+import { db, collection, addDoc, isFirestoreUnavailableError } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 import { modules } from '../data/baccllb';
+import { LOCAL_TIMER_SESSIONS_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
 
 type TimerMode = 'micro' | 'pomodoro' | 'deep' | 'break';
 
@@ -17,7 +18,7 @@ const modeConfig = {
 const sessionTypes = ['MegaNote build', 'Timed practice', 'Memo marking', 'Teach aloud', 'Mistake correction', 'Admin / submission'] as const;
 
 const Timer: React.FC = () => {
-  const { user } = useAuth();
+  const { user, localFirstMode } = useAuth();
   const [mode, setMode] = useState<TimerMode>('pomodoro');
   const [timeLeft, setTimeLeft] = useState(modeConfig.pomodoro.minutes * 60);
   const [isActive, setIsActive] = useState(false);
@@ -54,23 +55,41 @@ const Timer: React.FC = () => {
 
   const saveSession = async (autoCompleted = false) => {
     if (!user) return;
+    const newSession = {
+      id: crypto.randomUUID(),
+      userId: user.uid,
+      moduleId,
+      moduleName: selectedModule.shortName,
+      durationMinutes: modeConfig[mode].minutes,
+      mode,
+      sessionType,
+      reflection,
+      autoCompleted,
+      createdAt: new Date().toISOString(),
+    };
     try {
+      if (localFirstMode) {
+        writeLocalJson(LOCAL_TIMER_SESSIONS_KEY, [...readLocalJson<any[]>(LOCAL_TIMER_SESSIONS_KEY, []), newSession]);
+        setSaved(true);
+        setReflection('');
+        setTimeout(() => setSaved(false), 1400);
+        return;
+      }
       await addDoc(collection(db, 'sessions'), {
-        userId: user.uid,
-        moduleId,
-        moduleName: selectedModule.shortName,
-        durationMinutes: modeConfig[mode].minutes,
-        mode,
-        sessionType,
-        reflection,
-        autoCompleted,
-        createdAt: new Date().toISOString(),
+        ...newSession,
       });
       setSaved(true);
       setReflection('');
       setTimeout(() => setSaved(false), 1400);
     } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, 'sessions');
+      if (isFirestoreUnavailableError(error)) {
+        writeLocalJson(LOCAL_TIMER_SESSIONS_KEY, [...readLocalJson<any[]>(LOCAL_TIMER_SESSIONS_KEY, []), newSession]);
+        setSaved(true);
+        setReflection('');
+        setTimeout(() => setSaved(false), 1400);
+        return;
+      }
+      console.error('Session save failed:', error instanceof Error ? error.message : String(error));
     }
   };
 
@@ -97,6 +116,7 @@ const Timer: React.FC = () => {
         <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">focus + logging</p>
         <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Pressure-Safe Study Timer</h1>
         <p className="text-slate-500 font-medium">Log module, session type and reflection so timer sessions become useful evidence, not just minutes.</p>
+        {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: session logs are being stored on this device.</p>}
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8 items-start">

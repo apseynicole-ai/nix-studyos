@@ -1,41 +1,40 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, completeUsernameSetup, db, doc, getDoc, onSnapshot, signInWithIdentifier, signOutUser, signUpWithEmailAndUsername, type UserProfileRecord } from '../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
+import { auth, db, doc, getDoc, isFirestoreUnavailableError, signInWithEmail, signOutUser, signUpWithEmailAndUsername, type UserProfileRecord } from '../../lib/firebase';
+import { LOCAL_PROFILE_KEY, readLocalJson, writeLocalJson } from '../../lib/localData';
 
 interface AuthContextType {
   user: FirebaseUser | null;
   loading: boolean;
+  localFirstMode: boolean;
   profile: UserProfileRecord | null;
 }
 
 type AuthMode = 'signin' | 'signup';
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true, profile: null });
+const AuthContext = createContext<AuthContextType>({ user: null, loading: true, localFirstMode: false, profile: null });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<UserProfileRecord | null>(null);
+  const [localFirstMode, setLocalFirstMode] = useState(false);
 
   useEffect(() => {
-    let unsubscribeProfile: (() => void) | null = null;
     let cancelled = false;
 
     const unsubscribeAuth = auth.onAuthStateChanged(async (nextUser) => {
-      if (unsubscribeProfile) {
-        unsubscribeProfile();
-        unsubscribeProfile = null;
-      }
-
       setUser(nextUser);
 
       if (!nextUser) {
         setProfile(null);
+        setLocalFirstMode(false);
         setLoading(false);
         return;
       }
 
       setLoading(true);
+
       try {
         const snapshot = await Promise.race([
           getDoc(doc(db, 'users', nextUser.uid)),
@@ -44,48 +43,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }),
         ]);
 
-        if (!cancelled) {
-          setProfile((snapshot.data() as UserProfileRecord | undefined) || null);
+        if (cancelled) return;
+
+        const cloudProfile = (snapshot.data() as UserProfileRecord | undefined) || null;
+        if (cloudProfile) {
+          setProfile(cloudProfile);
+          writeLocalJson(LOCAL_PROFILE_KEY, cloudProfile);
+          setLocalFirstMode(false);
+        } else {
+          const fallbackProfile = buildLocalProfile(nextUser);
+          setProfile(fallbackProfile);
+          writeLocalJson(LOCAL_PROFILE_KEY, fallbackProfile);
+          setLocalFirstMode(true);
         }
       } catch (error) {
-        console.error('Profile bootstrap error:', error instanceof Error ? error.message : String(error));
-        if (!cancelled) {
-          setProfile(null);
-        }
+        console.error('Profile bootstrap fallback:', getSafeErrorDetail(error));
+        if (cancelled) return;
+
+        const fallbackProfile = buildLocalProfile(nextUser);
+        setProfile(fallbackProfile);
+        writeLocalJson(LOCAL_PROFILE_KEY, fallbackProfile);
+        setLocalFirstMode(true);
       } finally {
         if (!cancelled) {
           setLoading(false);
         }
       }
-
-      unsubscribeProfile = onSnapshot(
-        doc(db, 'users', nextUser.uid),
-        (snapshot) => {
-          setProfile((snapshot.data() as UserProfileRecord | undefined) || null);
-          setLoading(false);
-        },
-        (error) => {
-          console.error('Profile fetch error:', error);
-          setProfile(null);
-          setLoading(false);
-        },
-      );
     });
 
     return () => {
       cancelled = true;
-      if (unsubscribeProfile) unsubscribeProfile();
       unsubscribeAuth();
     };
   }, []);
 
-  return <AuthContext.Provider value={{ user, loading, profile }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, loading, localFirstMode, profile }}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, profile } = useAuth();
+  const { user, loading, localFirstMode } = useAuth();
 
   if (loading) {
     return (
@@ -99,18 +97,25 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
     return <AuthScreen />;
   }
 
-  if (!profile?.username) {
-    return <UsernameSetupScreen user={user} />;
-  }
-
-  return <>{children}</>;
+  return (
+    <>
+      {localFirstMode && (
+        <div className="sticky top-0 z-50 px-4 pt-4">
+          <div className="mx-auto max-w-5xl rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 shadow-sm">
+            Cloud profile sync is unavailable. Nix StudyOS is running in local-first mode.
+          </div>
+        </div>
+      )}
+      {children}
+    </>
+  );
 };
 
 const AuthScreen: React.FC = () => {
   const [mode, setMode] = useState<AuthMode>('signin');
-  const [identifier, setIdentifier] = useState('');
-  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [signupEmail, setSignupEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -128,7 +133,7 @@ const AuthScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      await signInWithIdentifier({ identifier, password });
+      await signInWithEmail({ email, password });
     } catch (err) {
       console.error('Sign-in failed:', getSafeErrorDetail(err));
       setError(getAuthMessage(err));
@@ -149,8 +154,8 @@ const AuthScreen: React.FC = () => {
     setLoading(true);
 
     try {
-      await signUpWithEmailAndUsername({ username, email, password });
-      setInfo('Account created. You are now signed in.');
+      await signUpWithEmailAndUsername({ username, email: signupEmail, password });
+      setInfo('Account created. Cloud profile sync may stay local-first until Firestore is available.');
     } catch (err) {
       console.error('Account creation failed:', getSafeErrorDetail(err));
       setError(getAuthMessage(err));
@@ -168,13 +173,13 @@ const AuthScreen: React.FC = () => {
             <p className="uppercase tracking-[0.35em] text-xs text-white/70 font-bold mb-4">secure sign-in</p>
             <h1 className="font-display text-5xl md:text-6xl mb-4">Nix StudyOS</h1>
             <p className="text-white/80 text-lg max-w-xl">
-              Sign in with your app username or email, keep passwords inside Firebase Auth, and keep cloud data private to its owner.
+              Sign in with email and password, then continue in local-first mode while Firestore sync is postponed.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
-              <InfoPill label="Username identity" value="Unique app-level handle" />
-              <InfoPill label="Password security" value="Handled by Firebase Auth" />
-              <InfoPill label="Cloud data" value="Protected by owner-only rules" />
-              <InfoPill label="Marks engine" value="Still local-first in this phase" />
+              <InfoPill label="Login" value="Firebase Auth email/password" />
+              <InfoPill label="Profile" value="Falls back to local storage" />
+              <InfoPill label="Tasks + logs" value="Use local-first fallback" />
+              <InfoPill label="Marks engine" value="Already local-first" />
             </div>
           </div>
         </section>
@@ -192,11 +197,12 @@ const AuthScreen: React.FC = () => {
           {mode === 'signin' ? (
             <form onSubmit={handleSignIn} className="space-y-4">
               <Field
-                label="Username or email"
-                value={identifier}
-                onChange={setIdentifier}
-                placeholder="e.g. nicole or nicole@example.com"
-                autoComplete="username"
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                placeholder="you@example.com"
+                type="email"
+                autoComplete="email"
               />
               <Field
                 label="Password"
@@ -220,13 +226,13 @@ const AuthScreen: React.FC = () => {
                 label="Username"
                 value={username}
                 onChange={setUsername}
-                placeholder="3-24 chars, lowercase letters, numbers, _ or -"
+                placeholder="Optional cloud username if Firestore becomes available later"
                 autoComplete="username"
               />
               <Field
                 label="Email"
-                value={email}
-                onChange={setEmail}
+                value={signupEmail}
+                onChange={setSignupEmail}
                 placeholder="you@example.com"
                 type="email"
                 autoComplete="email"
@@ -258,72 +264,12 @@ const AuthScreen: React.FC = () => {
           )}
 
           <p className="text-xs text-slate-400 mt-5">
-            Sign in with your email address or your app username. Username-based sign-in depends on the stored username mapping for that account.
+            Username-based sign-in is paused for this phase. Use email and password, and the app will keep a local profile if cloud sync is unavailable.
           </p>
 
           {error && <StatusMessage tone="error" message={error} />}
           {info && <StatusMessage tone="ok" message={info} />}
         </section>
-      </div>
-    </div>
-  );
-};
-
-const UsernameSetupScreen: React.FC<{ user: FirebaseUser }> = ({ user }) => {
-  const [username, setUsername] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      await completeUsernameSetup(username, user);
-    } catch (err) {
-      console.error('Username setup failed:', getSafeErrorDetail(err));
-      setError(getAuthMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-stellenbosch-cream">
-      <div className="w-full max-w-xl glass rounded-[2.5rem] p-8 shadow-xl border border-slate-200/60">
-        <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">finish setup</p>
-        <h1 className="font-display text-4xl text-stellenbosch-maroon mb-3">Choose your username</h1>
-        <p className="text-slate-500 mb-6">
-          This account is signed in as {user.email || 'your account'}, but it still needs a unique Nix StudyOS username before cloud data access is enabled.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Field
-            label="Username"
-            value={username}
-            onChange={setUsername}
-            placeholder="3-24 chars, lowercase letters, numbers, _ or -"
-            autoComplete="username"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full maroon-gradient text-white py-4 rounded-2xl font-bold hover:scale-[1.01] transition-transform disabled:opacity-60"
-          >
-            {loading ? 'Saving username...' : 'Save username'}
-          </button>
-        </form>
-
-        <button
-          type="button"
-          onClick={() => signOutUser()}
-          className="w-full mt-4 py-3 rounded-2xl bg-white border border-slate-200 text-slate-600 font-bold hover:bg-slate-50 transition-colors"
-        >
-          Sign out
-        </button>
-
-        {error && <StatusMessage tone="error" message={error} />}
       </div>
     </div>
   );
@@ -379,6 +325,25 @@ const StatusMessage: React.FC<{ message: string; tone: 'error' | 'ok' }> = ({ me
   </div>
 );
 
+function buildLocalProfile(user: FirebaseUser): UserProfileRecord {
+  const storedProfile = readLocalJson<Partial<UserProfileRecord> | null>(LOCAL_PROFILE_KEY, null);
+  const email = user.email?.trim().toLowerCase() || '';
+  const emailPrefix = email.split('@')[0] || 'student';
+  const username = storedProfile?.username || storedProfile?.usernameLowercase || emailPrefix;
+  const now = new Date().toISOString();
+
+  return {
+    uid: user.uid,
+    email,
+    displayName: storedProfile?.displayName || user.displayName || emailPrefix,
+    username,
+    usernameLowercase: username.toLowerCase(),
+    authProvider: 'password',
+    createdAt: storedProfile?.createdAt || now,
+    updatedAt: now,
+  };
+}
+
 function getAuthMessage(error: unknown) {
   const maybeCode = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code: unknown }).code) : '';
 
@@ -387,7 +352,6 @@ function getAuthMessage(error: unknown) {
       return 'Username already taken.';
     case 'invalid-username':
       return 'Invalid username. Use 3-24 lowercase letters, numbers, underscores, or hyphens.';
-    case 'lookup-timeout':
     case 'auth-timeout':
     case 'profile-timeout':
       return 'The request took too long. Check your connection and try again.';
@@ -404,19 +368,12 @@ function getAuthMessage(error: unknown) {
     case 'auth/wrong-password':
       return 'Wrong password or account details.';
     case 'auth/user-not-found':
-    case 'account-not-found':
-      return 'Username not found or account does not exist.';
+      return 'Account not found.';
     case 'auth/network-request-failed':
       return 'Network error. Check your connection and try again.';
     case 'permission-denied':
     case 'auth/insufficient-permission':
-      return 'Permission denied. Check Firestore rules and Firebase setup.';
-    case 'missing-email':
-      return 'This account does not expose an email address, so username setup cannot finish yet.';
-    case 'username-already-set':
-      return 'This account already has a different username.';
-    case 'not-authenticated':
-      return 'Please sign in again and retry.';
+      return 'Permission denied. Check Firebase setup.';
     default:
       return error instanceof Error ? error.message : 'Authentication failed.';
   }
@@ -425,6 +382,10 @@ function getAuthMessage(error: unknown) {
 function getSafeErrorDetail(error: unknown) {
   if (typeof error === 'object' && error !== null && 'code' in error) {
     return String((error as { code: unknown }).code);
+  }
+
+  if (isFirestoreUnavailableError(error)) {
+    return 'firestore-unavailable';
   }
 
   return error instanceof Error ? error.message : String(error);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { useAuth } from '../components/auth/AuthGuard';
-import { db, collection, query, where, getDocs, OperationType, handleFirestoreError } from '../lib/firebase';
+import { db, collection, query, where, getDocs, isFirestoreUnavailableError } from '../lib/firebase';
 import {
   ArrowRight,
   BookOpen,
@@ -21,14 +21,31 @@ import {
 } from 'lucide-react';
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
 import { averageConfidence, priorityScore, readinessLabel, riskTone, upcomingAssessments } from '../lib/studyMetrics';
+import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, localFirstMode, profile } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, sessions: 0, summaries: 0, completedTasks: 0 });
 
   useEffect(() => {
     if (!user) return;
-    
+    const loadLocalStats = () => {
+      const tasks = readLocalJson<any[]>(LOCAL_TASKS_KEY, []).filter((task) => task.userId === user.uid);
+      const sessions = readLocalJson<any[]>(LOCAL_TIMER_SESSIONS_KEY, []).filter((session) => session.userId === user.uid);
+      const summaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.userId === user.uid);
+      setStats({
+        tasks: tasks.length,
+        completedTasks: tasks.filter((task) => task.done).length,
+        sessions: sessions.length,
+        summaries: summaries.length,
+      });
+    };
+
+    if (localFirstMode) {
+      loadLocalStats();
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         const tasksSnap = await getDocs(query(collection(db, 'tasks'), where('userId', '==', user.uid)));
@@ -42,12 +59,17 @@ const Dashboard: React.FC = () => {
           summaries: summarySnap.size,
         });
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, 'dashboard stats');
+        if (isFirestoreUnavailableError(error)) {
+          loadLocalStats();
+          return;
+        }
+        console.error('Dashboard stats failed:', error instanceof Error ? error.message : String(error));
+        loadLocalStats();
       }
     };
 
     fetchStats();
-  }, [user]);
+  }, [user, localFirstMode]);
 
   const avgConfidence = averageConfidence();
   const nextAssessments = upcomingAssessments().slice(0, 5);
@@ -66,10 +88,11 @@ const Dashboard: React.FC = () => {
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_30%)]" />
           <div className="relative z-10">
             <p className="uppercase tracking-[0.35em] text-xs text-white/70 font-bold mb-4">{USER_ACADEMIC_PROFILE.institution}</p>
-            <h1 className="font-display text-4xl md:text-6xl mb-3">Goeiedag, {USER_ACADEMIC_PROFILE.preferredName}</h1>
+            <h1 className="font-display text-4xl md:text-6xl mb-3">Goeiedag, {profile?.displayName || USER_ACADEMIC_PROFILE.preferredName}</h1>
             <p className="text-white/80 text-lg max-w-2xl">
               Your personalised {USER_ACADEMIC_PROFILE.programme} command centre: modules, marks, tasks, A2 pressure prep, mistake loops and AI study systems in one place.
             </p>
+            {localFirstMode && <p className="mt-4 text-sm font-medium text-white/85">Local-first mode active while Firestore cloud sync is unavailable.</p>}
             <div className="flex flex-wrap gap-3 mt-8">
               <HeroPill icon={<Target size={16} />} text={USER_ACADEMIC_PROFILE.academicGoal} />
               <HeroPill icon={<Mic2 size={16} />} text="Teach-aloud revision" />

@@ -3,10 +3,17 @@ export const BACKUP_KEYS = [
   'baccllb-mark-engine-state',
   'baccllb-tasks',
   'baccllb-timer-sessions',
+  'baccllb-studyai-summaries',
+  'baccllb-profile',
   'baccllb-mistake-log',
   'baccllb-checklist',
   'baccllb-planner',
 ];
+
+export const LOCAL_PROFILE_KEY = 'baccllb-profile';
+export const LOCAL_TASKS_KEY = 'baccllb-tasks';
+export const LOCAL_TIMER_SESSIONS_KEY = 'baccllb-timer-sessions';
+export const LOCAL_SUMMARIES_KEY = 'baccllb-studyai-summaries';
 
 function appKeys(): string[] {
   const keys: string[] = [];
@@ -67,4 +74,19 @@ export function importBackup(file: File): Promise<{ keys: string[] }> {
 
 export function resetAppData(): void {
   [...BACKUP_KEYS, ...appKeys()].forEach((key) => localStorage.removeItem(key));
+}
+
+export function readLocalJson<T>(key: string, fallback: T): T {
+  const raw = localStorage.getItem(key);
+  if (!raw) return fallback;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function writeLocalJson<T>(key: string, value: T): void {
+  localStorage.setItem(key, JSON.stringify(value));
 }

@@ -20,18 +20,21 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
   - Module-specific marks scenarios in `src/pages/Marks.tsx`
   - Local marks state under `baccllb-mark-engine-state`
   - Local backup, import, and reset via `src/lib/localData.ts`
+  - Local fallback profile, tasks, timer sessions, and StudyAI summaries when Firestore is unavailable
 - Cloud-backed:
-  - Tasks
-  - Timer sessions
-  - AI summaries
-  - Dashboard stats
+  - Firebase Auth login
+  - Optional Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a Firestore database exists
 - Planned:
   - Firestore marks sync
   - Topic trackers
   - Mistake log
   - PWA support
 
+Current phase can run without billing or Blaze. Firebase Auth is used for login, while Firestore cloud sync is optional and postponed until a database is created and deployed. Tasks, sessions, summaries, and profile data may run in local-first fallback mode until then.
+
 Marks are intentionally local-first in this phase. They do not sync to Firestore yet, and the current formulas and backup/import/reset flow should be preserved until a dedicated marks-sync phase is planned.
+
+Firestore and any Blaze-dependent cloud sync can be revisited later once the project is ready for that phase.
 
 Before clearing browser storage, changing browsers, or switching devices, use backup/export so your local marks data is not lost.
 
