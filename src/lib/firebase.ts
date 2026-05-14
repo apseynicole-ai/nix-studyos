@@ -3,9 +3,7 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   getAuth,
-  GoogleAuthProvider,
   signInWithEmailAndPassword,
-  signInWithPopup,
   signOut,
   updateProfile,
   type User,
@@ -30,12 +28,10 @@ import firebaseConfig from '../../firebase-applet-config.json';
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
 export const signOutUser = () => signOut(auth);
 
 const USERNAME_PATTERN = /^[a-z0-9][a-z0-9_-]{2,23}$/;
+const AUTH_TIMEOUT_MS = 12000;
 
 export class AuthFlowError extends Error {
   code: string;
@@ -78,6 +74,20 @@ interface SignInInput {
 
 export function normalizeUsername(value: string) {
   return value.trim().toLowerCase();
+}
+
+function withTimeout<T>(promise: Promise<T>, code: string, message: string, timeoutMs = AUTH_TIMEOUT_MS) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new AuthFlowError(code, message));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
+  });
 }
 
 export function validateUsername(value: string) {
@@ -140,7 +150,11 @@ async function resolveEmailFromIdentifier(identifier: string) {
 
   const usernameLowercase = validateUsername(trimmed);
   const usernameRef = doc(db, 'usernames', usernameLowercase);
-  const usernameSnap = await getDoc(usernameRef);
+  const usernameSnap = await withTimeout(
+    getDoc(usernameRef),
+    'lookup-timeout',
+    'Username lookup timed out. Check your connection and try again.',
+  );
 
   if (!usernameSnap.exists()) {
     throw new AuthFlowError('account-not-found', 'Account not found.');
@@ -156,7 +170,11 @@ async function resolveEmailFromIdentifier(identifier: string) {
 
 export async function signInWithIdentifier({ identifier, password }: SignInInput) {
   const email = await resolveEmailFromIdentifier(identifier);
-  return signInWithEmailAndPassword(auth, email, password);
+  return withTimeout(
+    signInWithEmailAndPassword(auth, email, password),
+    'auth-timeout',
+    'Sign-in timed out. Check your connection and try again.',
+  );
 }
 
 export async function signUpWithEmailAndUsername({ username, email, password }: SignUpInput) {
@@ -167,12 +185,20 @@ export async function signUpWithEmailAndUsername({ username, email, password }: 
     throw new AuthFlowError('invalid-email', 'Email is required.');
   }
 
-  const credential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+  const credential = await withTimeout(
+    createUserWithEmailAndPassword(auth, cleanEmail, password),
+    'auth-timeout',
+    'Account creation timed out. Check your connection and try again.',
+  );
   const now = new Date().toISOString();
 
   try {
-    await updateProfile(credential.user, { displayName: usernameLowercase });
-    await runTransaction(db, async (transaction) => {
+    await withTimeout(
+      updateProfile(credential.user, { displayName: usernameLowercase }),
+      'profile-timeout',
+      'Profile setup timed out. Try again.',
+    );
+    await withTimeout(runTransaction(db, async (transaction) => {
       const usernameRef = doc(db, 'usernames', usernameLowercase);
       const userRef = doc(db, 'users', credential.user.uid);
       const usernameSnap = await transaction.get(usernameRef);
@@ -194,7 +220,7 @@ export async function signUpWithEmailAndUsername({ username, email, password }: 
           now,
         ),
       );
-    });
+    }), 'profile-timeout', 'Profile setup timed out. Try again.');
   } catch (error) {
     await deleteUser(credential.user).catch(() => undefined);
     throw error;
@@ -218,7 +244,7 @@ export async function completeUsernameSetup(username: string, user: User = auth.
   const now = new Date().toISOString();
   const displayName = user.displayName?.trim() || usernameLowercase;
 
-  await runTransaction(db, async (transaction) => {
+  await withTimeout(runTransaction(db, async (transaction) => {
     const usernameRef = doc(db, 'usernames', usernameLowercase);
     const userRef = doc(db, 'users', user.uid);
     const usernameSnap = await transaction.get(usernameRef);
@@ -249,10 +275,14 @@ export async function completeUsernameSetup(username: string, user: User = auth.
         now,
       ),
     );
-  });
+  }), 'profile-timeout', 'Username setup timed out. Try again.');
 
   if (user.displayName !== displayName) {
-    await updateProfile(user, { displayName });
+    await withTimeout(
+      updateProfile(user, { displayName }),
+      'profile-timeout',
+      'Username setup timed out. Try again.',
+    );
   }
 }
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, completeUsernameSetup, db, doc, onSnapshot, signInWithGoogle, signInWithIdentifier, signOutUser, signUpWithEmailAndUsername, type UserProfileRecord } from '../../lib/firebase';
+import { auth, completeUsernameSetup, db, doc, getDoc, onSnapshot, signInWithIdentifier, signOutUser, signUpWithEmailAndUsername, type UserProfileRecord } from '../../lib/firebase';
 import { User as FirebaseUser } from 'firebase/auth';
 
 interface AuthContextType {
@@ -19,8 +19,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let unsubscribeProfile: (() => void) | null = null;
+    let cancelled = false;
 
-    const unsubscribeAuth = auth.onAuthStateChanged((nextUser) => {
+    const unsubscribeAuth = auth.onAuthStateChanged(async (nextUser) => {
       if (unsubscribeProfile) {
         unsubscribeProfile();
         unsubscribeProfile = null;
@@ -35,6 +36,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setLoading(true);
+      try {
+        const snapshot = await Promise.race([
+          getDoc(doc(db, 'users', nextUser.uid)),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error('Profile load timed out.')), 8000);
+          }),
+        ]);
+
+        if (!cancelled) {
+          setProfile((snapshot.data() as UserProfileRecord | undefined) || null);
+        }
+      } catch (error) {
+        console.error('Profile bootstrap error:', error instanceof Error ? error.message : String(error));
+        if (!cancelled) {
+          setProfile(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+
       unsubscribeProfile = onSnapshot(
         doc(db, 'users', nextUser.uid),
         (snapshot) => {
@@ -50,6 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => {
+      cancelled = true;
       if (unsubscribeProfile) unsubscribeProfile();
       unsubscribeAuth();
     };
@@ -106,6 +130,7 @@ const AuthScreen: React.FC = () => {
     try {
       await signInWithIdentifier({ identifier, password });
     } catch (err) {
+      console.error('Sign-in failed:', getSafeErrorDetail(err));
       setError(getAuthMessage(err));
     } finally {
       setLoading(false);
@@ -127,20 +152,7 @@ const AuthScreen: React.FC = () => {
       await signUpWithEmailAndUsername({ username, email, password });
       setInfo('Account created. You are now signed in.');
     } catch (err) {
-      setError(getAuthMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    resetFeedback();
-    setLoading(true);
-
-    try {
-      await signInWithGoogle();
-      setInfo('Signed in with Google. Choose a username to finish setup.');
-    } catch (err) {
+      console.error('Account creation failed:', getSafeErrorDetail(err));
       setError(getAuthMessage(err));
     } finally {
       setLoading(false);
@@ -245,24 +257,8 @@ const AuthScreen: React.FC = () => {
             </form>
           )}
 
-          <div className="my-5 flex items-center gap-3 text-slate-400 text-xs uppercase font-bold tracking-[0.25em]">
-            <span className="h-px flex-1 bg-slate-200" />
-            Optional
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="w-full py-4 px-6 rounded-2xl bg-white border border-slate-200 flex items-center justify-center gap-3 hover:bg-slate-50 transition-all font-medium shadow-sm disabled:opacity-60"
-          >
-            <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-            Continue with Google
-          </button>
-
-          <p className="text-xs text-slate-400 mt-4">
-            Google sign-in is still available, but accounts without a username will be asked to choose one before entering the app.
+          <p className="text-xs text-slate-400 mt-5">
+            Sign in with your email address or your app username. Username-based sign-in depends on the stored username mapping for that account.
           </p>
 
           {error && <StatusMessage tone="error" message={error} />}
@@ -286,6 +282,7 @@ const UsernameSetupScreen: React.FC<{ user: FirebaseUser }> = ({ user }) => {
     try {
       await completeUsernameSetup(username, user);
     } catch (err) {
+      console.error('Username setup failed:', getSafeErrorDetail(err));
       setError(getAuthMessage(err));
     } finally {
       setLoading(false);
@@ -390,6 +387,10 @@ function getAuthMessage(error: unknown) {
       return 'Username already taken.';
     case 'invalid-username':
       return 'Invalid username. Use 3-24 lowercase letters, numbers, underscores, or hyphens.';
+    case 'lookup-timeout':
+    case 'auth-timeout':
+    case 'profile-timeout':
+      return 'The request took too long. Check your connection and try again.';
     case 'auth/email-already-in-use':
       return 'That email address is already in use.';
     case 'auth/invalid-email':
@@ -397,14 +398,19 @@ function getAuthMessage(error: unknown) {
       return 'Please enter a valid email address.';
     case 'auth/weak-password':
       return 'Weak password. Choose a stronger password.';
+    case 'auth/operation-not-allowed':
+      return 'Email/password sign-in is not enabled in Firebase yet.';
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
       return 'Wrong password or account details.';
     case 'auth/user-not-found':
     case 'account-not-found':
-      return 'Account not found.';
-    case 'auth/popup-closed-by-user':
-      return 'Google sign-in was closed before completion.';
+      return 'Username not found or account does not exist.';
+    case 'auth/network-request-failed':
+      return 'Network error. Check your connection and try again.';
+    case 'permission-denied':
+    case 'auth/insufficient-permission':
+      return 'Permission denied. Check Firestore rules and Firebase setup.';
     case 'missing-email':
       return 'This account does not expose an email address, so username setup cannot finish yet.';
     case 'username-already-set':
@@ -414,4 +420,12 @@ function getAuthMessage(error: unknown) {
     default:
       return error instanceof Error ? error.message : 'Authentication failed.';
   }
+}
+
+function getSafeErrorDetail(error: unknown) {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    return String((error as { code: unknown }).code);
+  }
+
+  return error instanceof Error ? error.message : String(error);
 }
