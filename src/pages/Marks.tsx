@@ -62,6 +62,7 @@ interface NeededMarkRow {
 
 const STORAGE_KEY = 'baccllb-mark-engine-state';
 const LEGACY_STORAGE_KEY = 'baccllb-mark-rows';
+const MODULE_TARGETS_KEY = 'baccllb-module-targets';
 const TARGETS = [50, 60, 70, 75, 80] as const;
 const SUPPORTED_MODULES: SupportedModuleId[] = [
   'econ114',
@@ -185,6 +186,10 @@ function parseNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+function clampPercentage(value: number): number {
+  return Math.max(0, Math.min(100, Number.isNaN(value) ? 0 : value));
+}
+
 function getAssessmentMark(assessment: AssessmentDraftState): number | null {
   if (assessment.status !== 'completed' || !assessment.completed) return null;
   const parsed = parseNumber(assessment.mark);
@@ -256,6 +261,20 @@ function loadInitialState(): MarkEngineState {
   }
 
   return fallback;
+}
+
+function loadModuleTargets(): Partial<Record<SupportedModuleId, number>> {
+  try {
+    const raw = localStorage.getItem(MODULE_TARGETS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const entries = Object.entries(parsed).filter(
+      ([moduleId, value]) => SUPPORTED_MODULES.includes(moduleId as SupportedModuleId) && typeof value === 'number' && Number.isFinite(value),
+    );
+    return Object.fromEntries(entries.map(([moduleId, value]) => [moduleId, clampPercentage(value as number)])) as Partial<Record<SupportedModuleId, number>>;
+  } catch {
+    return {};
+  }
 }
 
 function hasValidSubmissionField(moduleId: SupportedModuleId, assessmentId: string): boolean {
@@ -405,7 +424,7 @@ function getFocusAssessment(moduleId: SupportedModuleId, moduleState: ModuleDraf
   return null;
 }
 
-function getNeededMarkRows(moduleId: SupportedModuleId, moduleState: ModuleDraftState): NeededMarkRow[] {
+function getNeededMarkRows(moduleId: SupportedModuleId, moduleState: ModuleDraftState, targets: readonly number[] = TARGETS): NeededMarkRow[] {
   const model = getModuleAssessmentModel(moduleId);
   const focus = getFocusAssessment(moduleId, moduleState);
   if (!model) return [];
@@ -414,7 +433,7 @@ function getNeededMarkRows(moduleId: SupportedModuleId, moduleState: ModuleDraft
     !assessment.isOptional && isAssessmentBlocked(moduleId, assessment.id, moduleState.assessments[assessment.id])
   ));
 
-  return TARGETS.map((target) => {
+  return targets.map((target) => {
     if (blockedRequired) {
       return {
         target,
@@ -492,6 +511,11 @@ function getNeededMarkRows(moduleId: SupportedModuleId, moduleState: ModuleDraft
   });
 }
 
+function getTargetChoices(overallGoal: number): number[] {
+  const merged = Array.from(new Set([...TARGETS, Math.round(overallGoal)])).sort((left, right) => left - right);
+  return merged;
+}
+
 function formatMetric(value: number | null | undefined): string {
   return value === null || value === undefined ? 'n/a' : `${value}%`;
 }
@@ -505,17 +529,49 @@ const Kpi: React.FC<{ icon: React.ReactNode; label: string; value: string | numb
   </div>
 );
 
+const EditableGoalKpi: React.FC<{
+  value: number;
+  onChange: (value: number) => void;
+}> = ({ value, onChange }) => (
+  <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
+    <div className="w-12 h-12 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center mb-5">
+      <Target />
+    </div>
+    <p className="text-xs uppercase tracking-wider text-slate-400 font-bold">OVERALL GOAL</p>
+    <div className="flex items-end gap-2 my-1">
+      <input
+        type="number"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(event) => onChange(clampPercentage(Number(event.target.value)))}
+        className="w-24 rounded-2xl bg-slate-50 border border-slate-100 px-3 py-2 font-display text-4xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+      />
+      <span className="font-display text-4xl text-slate-900">%</span>
+    </div>
+    <span className="inline-flex rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-slate-50 text-slate-500 border-slate-100">
+      Final module target
+    </span>
+  </div>
+);
+
 const Marks: React.FC = () => {
   const [state, setState] = useState<MarkEngineState>(() => loadInitialState());
+  const [moduleTargets, setModuleTargets] = useState<Partial<Record<SupportedModuleId, number>>>(() => loadModuleTargets());
   const [savedPulse, setSavedPulse] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
+  useEffect(() => {
+    localStorage.setItem(MODULE_TARGETS_KEY, JSON.stringify(moduleTargets));
+  }, [moduleTargets]);
+
   const selectedModule = MODULE_META[state.selectedModuleId];
   const selectedModel = getModuleAssessmentModel(state.selectedModuleId);
   const selectedModuleState = state.modules[state.selectedModuleId];
+  const selectedOverallGoal = moduleTargets[state.selectedModuleId] ?? selectedModule.target;
 
   const output = useMemo(
     () => calculateModuleOutput(state.selectedModuleId, selectedModuleState),
@@ -523,9 +579,10 @@ const Marks: React.FC = () => {
   );
 
   const risk = useMemo(() => getRiskLevel(output), [output]);
+  const targetChoices = useMemo(() => getTargetChoices(selectedOverallGoal), [selectedOverallGoal]);
   const neededRows = useMemo(
-    () => getNeededMarkRows(state.selectedModuleId, selectedModuleState),
-    [state.selectedModuleId, selectedModuleState],
+    () => getNeededMarkRows(state.selectedModuleId, selectedModuleState, targetChoices),
+    [state.selectedModuleId, selectedModuleState, targetChoices],
   );
   const currentFinal = getCurrentFinal(output);
   const extraWarnings = Object.entries(selectedModuleState.assessments)
@@ -558,6 +615,13 @@ const Marks: React.FC = () => {
       mark: status === 'missed' ? '' : currentDraft.mark,
       hoursLate: status === 'missed' ? '' : currentDraft.hoursLate,
     });
+  };
+
+  const updateOverallGoal = (value: number) => {
+    setModuleTargets((current) => ({
+      ...current,
+      [state.selectedModuleId]: clampPercentage(value),
+    }));
   };
 
   const saveNow = () => {
@@ -610,8 +674,9 @@ const Marks: React.FC = () => {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mb-8">
+      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 mb-8">
         <Kpi icon={<LineChart />} label="MY" value={formatMetric(output.my)} note="Year mark" />
+        <EditableGoalKpi value={selectedOverallGoal} onChange={updateOverallGoal} />
         <Kpi icon={<TrendingUp />} label="MTD" value={formatMetric(output.mtd)} note="Mark-to-date" />
         <Kpi icon={<Calculator />} label="FM1" value={formatMetric(output.fm1)} note="Primary FM path" />
         <Kpi icon={<Target />} label="FM2 / FM" value={formatMetric(output.fm ?? output.fm2)} note="Alternate/final path" />
@@ -731,7 +796,7 @@ const Marks: React.FC = () => {
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100">
             <h2 className="font-display text-3xl text-stellenbosch-maroon">Mark Needed Table</h2>
-            <p className="text-sm text-slate-500 mt-2">Needed on the next open assessment, assuming later required assessments land exactly on the target.</p>
+            <p className="text-sm text-slate-500 mt-2">Needed on the next open assessment, assuming later required assessments land exactly on the target. Overall Goal is your final module target. Next assessment goal stays assessment-specific.</p>
           </div>
           <div className="divide-y divide-slate-100">
             {neededRows.map((row) => (
