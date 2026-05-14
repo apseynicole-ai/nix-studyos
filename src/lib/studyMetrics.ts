@@ -1,4 +1,4 @@
-import { modules } from '../data/baccllb';
+import { modules, type ModuleInfo } from '../data/baccllb';
 
 export interface MarkScenario {
   currentMark: number;
@@ -42,8 +42,58 @@ export function getModule(moduleId?: string) {
   return modules.find((module) => module.id === moduleId) || modules[0];
 }
 
+export function hasMissingCurrentMark(module: ModuleInfo) {
+  if (module.currentMarks.overall !== null && module.currentMarks.overall !== undefined) return false;
+  return module.currentMarks.byAssessment.every((assessment) => assessment.value === null);
+}
+
+export function hasSourceWarning(module: ModuleInfo) {
+  return module.sourceStatus.items.some((item) => item.status === 'missing' || item.status === 'partial' || item.status === 'needs-verification');
+}
+
+export function isHighRiskModule(module: ModuleInfo) {
+  return module.confidence < 50 || Boolean(module.assessmentRules.impossibleTargetNote);
+}
+
+export function moduleFlags(module: ModuleInfo) {
+  const flags: Array<{ label: string; tone: string }> = [];
+
+  if (module.needsVerification) {
+    flags.push({ label: 'Needs verification', tone: 'bg-amber-50 text-amber-800 border-amber-100' });
+  }
+  if (hasSourceWarning(module)) {
+    flags.push({ label: 'Source warning', tone: 'bg-orange-50 text-orange-800 border-orange-100' });
+  }
+  if (hasMissingCurrentMark(module)) {
+    flags.push({ label: 'Current mark missing', tone: 'bg-slate-100 text-slate-700 border-slate-200' });
+  }
+  if (isHighRiskModule(module)) {
+    flags.push({ label: 'High risk', tone: 'bg-red-50 text-red-800 border-red-100' });
+  }
+  if (module.assessmentRules.impossibleTargetNote) {
+    flags.push({ label: 'Impossible target', tone: 'bg-red-50 text-red-800 border-red-100' });
+  }
+  if (module.assessmentRules.a2A3LogicUncertain) {
+    flags.push({ label: 'A2/A3 logic uncertain', tone: 'bg-yellow-50 text-yellow-800 border-yellow-100' });
+  }
+
+  return flags;
+}
+
 export function averageConfidence() {
   return Math.round(modules.reduce((sum, module) => sum + module.confidence, 0) / modules.length);
+}
+
+export function modulesMissingCurrentMarks() {
+  return modules.filter((module) => hasMissingCurrentMark(module));
+}
+
+export function modulesWithSourceWarnings() {
+  return modules.filter((module) => hasSourceWarning(module));
+}
+
+export function highRiskModules() {
+  return modules.filter((module) => isHighRiskModule(module));
 }
 
 export function upcomingAssessments() {

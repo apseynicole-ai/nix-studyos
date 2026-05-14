@@ -70,7 +70,13 @@ export function deleteTopicMastery(id: string) {
 }
 
 export function topicSuggestionsForModule(module: ModuleInfo) {
-  return dedupeStrings([...module.weakPoints, ...module.examFocus, ...module.nextActions]);
+  return dedupeStrings([
+    ...module.topics.map((topic) => topic.title),
+    ...module.topics.flatMap((topic) => topic.subtopics),
+    ...module.weakPoints,
+    ...module.examFocus,
+    ...module.nextActions,
+  ]);
 }
 
 export function averageTopicConfidence(records: TopicMasteryRecord[]) {

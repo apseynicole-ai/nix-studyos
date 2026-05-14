@@ -1,12 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ClipboardCheck, Copy, FileText, Filter, ShieldCheck, Sparkles } from 'lucide-react';
-import { examTemplates, promptPacks } from '../data/baccllb';
+import { examTemplates, modules, promptPacks } from '../data/baccllb';
 
 const ExamVault: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'Law' | 'Accounting' | 'Quantitative' | 'Universal'>('All');
   const [copied, setCopied] = useState<string | null>(null);
   const templates = useMemo(() => examTemplates.filter((template) => filter === 'All' || template.area === filter), [filter]);
+  const finalBossModules = useMemo(
+    () =>
+      modules.filter((module) => {
+        if (filter === 'All' || filter === 'Universal') return module.finalBossVaultItems.length > 0;
+        return module.area === filter && module.finalBossVaultItems.length > 0;
+      }),
+    [filter],
+  );
 
   const copyText = async (id: string, text: string) => {
     await navigator.clipboard.writeText(text);
@@ -80,6 +88,34 @@ const ExamVault: React.FC = () => {
                 <p className="mt-3 text-sm text-white/70 whitespace-pre-wrap bg-black/20 rounded-2xl p-4 border border-white/10">{pack.prompt}</p>
               </details>
               {copied === pack.id && <p className="text-xs text-emerald-300 font-bold mt-3">Copied to clipboard.</p>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-8 bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm">
+        <div className="flex items-center justify-between gap-4 mb-6">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">module-specific vault items</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Final Boss by Module</h2>
+          </div>
+          <span className="text-sm font-bold text-slate-500">{finalBossModules.length} modules mapped</span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {finalBossModules.map((module) => (
+            <div key={module.id} className="rounded-[2rem] border border-slate-100 bg-slate-50/70 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{module.code}</span>
+                <h3 className="font-bold text-slate-800">{module.shortName}</h3>
+              </div>
+              <div className="space-y-3">
+                {module.finalBossVaultItems.map((item) => (
+                  <div key={item.id} className="rounded-2xl bg-white border border-slate-100 p-4">
+                    <p className="font-bold text-slate-800">{item.title}</p>
+                    <p className="text-sm text-slate-500 mt-1">{item.description}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

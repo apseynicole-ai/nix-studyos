@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { useAuth } from '../components/auth/AuthGuard';
 import { db, collection, query, where, getDocs, isFirestoreUnavailableError } from '../lib/firebase';
 import {
+  AlertTriangle,
   ArrowRight,
   BookOpen,
   BrainCircuit,
@@ -20,7 +21,17 @@ import {
   TimerReset,
 } from 'lucide-react';
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
-import { averageConfidence, priorityScore, readinessLabel, riskTone, upcomingAssessments } from '../lib/studyMetrics';
+import {
+  averageConfidence,
+  highRiskModules,
+  moduleFlags,
+  modulesMissingCurrentMarks,
+  modulesWithSourceWarnings,
+  priorityScore,
+  readinessLabel,
+  riskTone,
+  upcomingAssessments,
+} from '../lib/studyMetrics';
 import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
@@ -86,6 +97,9 @@ const Dashboard: React.FC = () => {
   const unresolvedMistakeCount = unresolvedMistakes(mistakeRecords).length;
   const mistakeRetests = mistakeRetestsDueThisWeek(mistakeRecords).length;
   const topMistakeModule = moduleWithMostUnresolvedMistakes(mistakeRecords);
+  const highRisk = highRiskModules().slice(0, 4);
+  const missingMarks = modulesMissingCurrentMarks().slice(0, 4);
+  const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -202,6 +216,74 @@ const Dashboard: React.FC = () => {
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full bg-white text-stellenbosch-maroon border border-stellenbosch-maroon/10">{assessment.status}</span>
                 </div>
                 {assessment.notes && <p className="text-xs text-slate-500 mt-2">{assessment.notes}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+        <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+              <ShieldAlert size={22} />
+            </div>
+            <div>
+              <h2 className="font-display text-2xl text-stellenbosch-maroon">High-risk modules</h2>
+              <p className="text-sm text-slate-500">Confidence and assessment-rule flags combined.</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {highRisk.map((module) => (
+              <div key={module.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="font-bold text-slate-800">{module.shortName}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {moduleFlags(module).slice(0, 3).map((flag) => (
+                    <span key={flag.label} className={`text-[10px] uppercase font-bold tracking-wider border rounded-full px-2 py-1 ${flag.tone}`}>
+                      {flag.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-700 flex items-center justify-center">
+              <GraduationCap size={22} />
+            </div>
+            <div>
+              <h2 className="font-display text-2xl text-stellenbosch-maroon">Missing marks</h2>
+              <p className="text-sm text-slate-500">Modules that still need current-mark data.</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {missingMarks.map((module) => (
+              <div key={module.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="font-bold text-slate-800">{module.shortName}</p>
+                <p className="text-sm text-slate-500 mt-1">{module.currentMarks.note || 'Current mark still missing.'}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
+              <AlertTriangle size={22} />
+            </div>
+            <div>
+              <h2 className="font-display text-2xl text-stellenbosch-maroon">Source warnings</h2>
+              <p className="text-sm text-slate-500">Frameworks or source packs still incomplete.</p>
+            </div>
+          </div>
+          <div className="space-y-3">
+            {sourceWarnings.map((module) => (
+              <div key={module.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="font-bold text-slate-800">{module.shortName}</p>
+                <p className="text-sm text-slate-500 mt-1">{module.sourceStatus.summary}</p>
               </div>
             ))}
           </div>
