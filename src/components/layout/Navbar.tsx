@@ -11,6 +11,7 @@ import {
   CalendarDays,
   ShieldCheck,
   Settings,
+  ClipboardList,
 } from 'lucide-react';
 import { signOutUser } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/tasks', icon: <CheckSquare size={21} />, label: 'Tasks' },
   { to: '/marks', icon: <LineChart size={21} />, label: 'Marks' },
   { to: '/planner', icon: <CalendarDays size={21} />, label: 'Plan' },
+  { to: '/mistakes', icon: <ClipboardList size={21} />, label: 'Mistakes' },
   { to: '/exam-vault', icon: <ShieldCheck size={21} />, label: 'Vault' },
   { to: '/settings', icon: <Settings size={21} />, label: 'Settings' },
 ];

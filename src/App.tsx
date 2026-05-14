@@ -10,6 +10,7 @@ import Marks from './pages/Marks';
 import Planner from './pages/Planner';
 import ExamVault from './pages/ExamVault';
 import Settings from './pages/Settings';
+import MistakeBank from './pages/MistakeBank';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
               <Route path="/marks" element={<Marks />} />
               <Route path="/planner" element={<Planner />} />
               <Route path="/exam-vault" element={<ExamVault />} />
+              <Route path="/mistakes" element={<MistakeBank />} />
               <Route path="/ai" element={<StudyAI />} />
               <Route path="/timer" element={<Timer />} />
               <Route path="/settings" element={<Settings />} />
