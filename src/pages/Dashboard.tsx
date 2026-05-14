@@ -22,6 +22,7 @@ import {
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
 import { averageConfidence, priorityScore, readinessLabel, riskTone, upcomingAssessments } from '../lib/studyMetrics';
 import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
+import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 
 const Dashboard: React.FC = () => {
   const { user, localFirstMode, profile } = useAuth();
@@ -76,6 +77,10 @@ const Dashboard: React.FC = () => {
   const weakestModules = [...modules].sort((a, b) => a.confidence - b.confidence).slice(0, 4);
   const nextBestTasks = taskTemplates.slice(0, 5);
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
+  const topicRecords = readTopicMastery();
+  const urgentTopics = urgentTopicsCount(topicRecords);
+  const topicConfidence = averageTopicConfidence(topicRecords);
+  const retestsThisWeek = topicsDueThisWeek(topicRecords).length;
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -122,11 +127,12 @@ const Dashboard: React.FC = () => {
         </section>
       </header>
 
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         <MetricCard icon={<BookOpen />} label="Active modules" value={modules.length} note="S1 + S2 shells" />
         <MetricCard icon={<LineChart />} label="Avg confidence" value={`${avgConfidence}%`} note={readinessLabel(avgConfidence)} tone={riskTone(avgConfidence)} />
         <MetricCard icon={<CalendarClock />} label="Upcoming checks" value={quickStats.semesterOneAssessments} note="Assessments + evidence" />
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
+        <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8 mb-10">

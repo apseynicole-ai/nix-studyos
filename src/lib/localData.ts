@@ -8,12 +8,36 @@ export const BACKUP_KEYS = [
   'baccllb-mistake-log',
   'baccllb-checklist',
   'baccllb-planner',
+  'baccllb-settings',
+  'baccllb-dashboard',
+  'baccllb-topic-mastery',
+  'baccllb-mistake-bank',
 ];
 
 export const LOCAL_PROFILE_KEY = 'baccllb-profile';
 export const LOCAL_TASKS_KEY = 'baccllb-tasks';
 export const LOCAL_TIMER_SESSIONS_KEY = 'baccllb-timer-sessions';
 export const LOCAL_SUMMARIES_KEY = 'baccllb-studyai-summaries';
+export const LOCAL_TOPIC_MASTERY_KEY = 'baccllb-topic-mastery';
+export const LOCAL_BACKUP_META_KEY = 'baccllb-last-backup-meta';
+export const BACKUP_SCHEMA_VERSION = 1;
+export const BACKUP_APP_NAME = 'Nix StudyOS';
+
+interface BackupMeta {
+  exportedAt: string;
+  fileName: string;
+}
+
+export interface StudyOSBackupFile {
+  appName: string;
+  exportedAt: string;
+  schemaVersion: number;
+  data: Record<string, unknown>;
+  placeholders: {
+    topicMastery: unknown[];
+    mistakeBank: unknown[];
+  };
+}
 
 function appKeys(): string[] {
   const keys: string[] = [];
@@ -39,11 +63,26 @@ export function collectBackup(): Record<string, unknown> {
 }
 
 export function exportBackup(): void {
-  const blob = new Blob([JSON.stringify(collectBackup(), null, 2)], { type: 'application/json' });
+  const exportedAt = new Date().toISOString();
+  const fileName = `nix-studyos-backup-${exportedAt.slice(0, 10)}.json`;
+  const backupFile: StudyOSBackupFile = {
+    appName: BACKUP_APP_NAME,
+    exportedAt,
+    schemaVersion: BACKUP_SCHEMA_VERSION,
+    data: collectBackup(),
+    placeholders: {
+      topicMastery: readLocalJson<unknown[]>('baccllb-topic-mastery', []),
+      mistakeBank: readLocalJson<unknown[]>('baccllb-mistake-bank', []),
+    },
+  };
+
+  writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, { exportedAt, fileName });
+
+  const blob = new Blob([JSON.stringify(backupFile, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `nix-studyos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -54,14 +93,34 @@ export function importBackup(file: File): Promise<{ keys: string[] }> {
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (typeof data !== 'object' || data === null || Array.isArray(data)) {
-          reject(new Error('Invalid backup: expected a JSON object.')); return;
+
+        if (!isValidBackupShape(data)) {
+          reject(new Error('Invalid backup: this does not appear to be a Nix StudyOS backup file.'));
+          return;
         }
+
+        if (data.schemaVersion !== BACKUP_SCHEMA_VERSION) {
+          reject(new Error(`Unsupported backup schema version: ${String(data.schemaVersion)}.`));
+          return;
+        }
+
         const keys: string[] = [];
-        for (const [key, value] of Object.entries(data)) {
+        for (const [key, value] of Object.entries(data.data)) {
           localStorage.setItem(key, JSON.stringify(value));
           keys.push(key);
         }
+        if (!('baccllb-topic-mastery' in data.data)) {
+          localStorage.setItem('baccllb-topic-mastery', JSON.stringify(data.placeholders.topicMastery ?? []));
+          keys.push('baccllb-topic-mastery');
+        }
+        if (!('baccllb-mistake-bank' in data.data)) {
+          localStorage.setItem('baccllb-mistake-bank', JSON.stringify(data.placeholders.mistakeBank ?? []));
+          keys.push('baccllb-mistake-bank');
+        }
+        writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, {
+          exportedAt: data.exportedAt,
+          fileName: file.name,
+        });
         resolve({ keys });
       } catch {
         reject(new Error('Could not parse file. Make sure it is a valid JSON backup.'));
@@ -89,4 +148,24 @@ export function readLocalJson<T>(key: string, fallback: T): T {
 
 export function writeLocalJson<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+export function getLastBackupMeta(): BackupMeta | null {
+  return readLocalJson<BackupMeta | null>(LOCAL_BACKUP_META_KEY, null);
+}
+
+function isValidBackupShape(value: unknown): value is StudyOSBackupFile {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+
+  const candidate = value as Partial<StudyOSBackupFile>;
+  return (
+    candidate.appName === BACKUP_APP_NAME &&
+    typeof candidate.exportedAt === 'string' &&
+    typeof candidate.schemaVersion === 'number' &&
+    typeof candidate.data === 'object' &&
+    candidate.data !== null &&
+    !Array.isArray(candidate.data) &&
+    typeof candidate.placeholders === 'object' &&
+    candidate.placeholders !== null
+  );
 }

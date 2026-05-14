@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Download, LogIn, LogOut, Upload, Trash2, UserRound } from 'lucide-react';
-import { exportBackup, importBackup, resetAppData } from '../lib/localData';
+import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 
@@ -16,9 +16,11 @@ const Settings: React.FC = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [lastBackupMeta, setLastBackupMeta] = useState(() => getLastBackupMeta());
 
   const handleExport = () => {
     exportBackup();
+    setLastBackupMeta(getLastBackupMeta());
     setStatus({ type: 'ok', msg: 'Backup downloaded.' });
   };
 
@@ -32,6 +34,7 @@ const Settings: React.FC = () => {
     if (!confirmed) return;
     try {
       const { keys } = await importBackup(file);
+      setLastBackupMeta(getLastBackupMeta());
       setStatus({ type: 'ok', msg: `Imported ${keys.length} key${keys.length === 1 ? '' : 's'}: ${keys.join(', ')}` });
     } catch (err) {
       setStatus({ type: 'err', msg: err instanceof Error ? err.message : 'Import failed.' });
@@ -179,10 +182,28 @@ const Settings: React.FC = () => {
       </section>
 
       <div className="space-y-4">
+        <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <div>
+              <h2 className="font-display text-3xl text-stellenbosch-maroon">Backup & restore</h2>
+              <p className="text-sm text-slate-500">Export a backup before clearing browser data or changing devices.</p>
+            </div>
+            {lastBackupMeta && (
+              <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Last backup</p>
+                <p className="text-sm font-semibold text-slate-700">{new Date(lastBackupMeta.exportedAt).toLocaleString()}</p>
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-slate-600">
+            Backups include your local marks state, tasks, timer sessions, AI summaries, local profile, planner-related local data, and compatible placeholders for future local study tracking data.
+          </p>
+        </section>
+
         <ActionCard
           icon={<Download size={20} />}
           title="Export backup"
-          description="Downloads all local app data as a JSON file. Use this regularly because your study data is currently device-local."
+          description="Downloads a versioned Nix StudyOS JSON backup of your local-first study data."
           buttonLabel="Export JSON"
           buttonClass="maroon-gradient text-white"
           onClick={handleExport}
@@ -191,7 +212,7 @@ const Settings: React.FC = () => {
         <ActionCard
           icon={<Upload size={20} />}
           title="Import backup"
-          description="Restores data from a previously exported JSON file. You will be asked to confirm before any data is overwritten."
+          description="Restores a validated Nix StudyOS backup file. You will be asked to confirm before any local data is overwritten."
           buttonLabel="Import JSON"
           buttonClass="bg-slate-800 text-white"
           onClick={() => fileRef.current?.click()}
