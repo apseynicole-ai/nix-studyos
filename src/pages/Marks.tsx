@@ -75,7 +75,7 @@ const SUPPORTED_MODULES: SupportedModuleId[] = [
 ];
 
 const baseModules = Object.fromEntries(modules.map((module) => [module.id, module])) as Record<string, (typeof modules)[number]>;
-const dlaBase = baseModules.dla112122;
+const dlaBase = baseModules.dla122 || baseModules.dla112;
 
 const MODULE_META: Record<SupportedModuleId, ModuleMeta> = {
   econ114: {

@@ -55,18 +55,32 @@ Student profile:
 
 Selected module:
 - ${selectedModule.name} (${selectedModule.code})
+- Aliases: ${selectedModule.aliases.join('; ') || 'None'}
 - Area: ${selectedModule.area}
+- Semester: ${selectedModule.semester}
+- Programme context: ${selectedModule.programmeContext}
 - Target: ${selectedModule.target}%
 - Confidence: ${selectedModule.confidence}%
+- Current mark: ${selectedModule.currentMarks.overall === null ? 'Missing / not confirmed yet' : `${selectedModule.currentMarks.overall}%`}
 - Weak points: ${selectedModule.weakPoints.join('; ')}
 - Exam focus: ${selectedModule.examFocus.join('; ')}
 - Next actions: ${selectedModule.nextActions.join('; ')}
+- Study method preference: ${selectedModule.studyMethodPreference.join('; ')}
+- Topic map: ${selectedModule.topics.map((topic) => `${topic.title}${topic.subtopics.length ? ` (${topic.subtopics.join(', ')})` : ''}`).join('; ')}
+- Assessment structure: ${selectedModule.assessmentStructure.map((assessment) => `${assessment.title}${assessment.weight != null ? ` ${assessment.weight}%` : ''}${assessment.format ? ` ${assessment.format}` : ''}${assessment.date ? ` on ${assessment.date}` : ''}${assessment.needsVerification ? ' [needs verification]' : ''}`).join('; ')}
+- Assessment rules: ${selectedModule.assessmentRules.formulaSummary.join('; ')}
+- Source status: ${selectedModule.sourceStatus.summary}
+- Source items: ${selectedModule.sourceStatus.items.map((item) => `${item.label}: ${item.status}${item.note ? ` (${item.note})` : ''}`).join('; ')}
+- Mistake categories: ${selectedModule.mistakeBankCategories.join('; ')}
+- Hard rules: ${selectedModule.hardRules.join('; ')}
+- Needs verification: ${selectedModule.needsVerification ? `Yes - ${selectedModule.verificationNotes.join('; ')}` : 'No'}
 
 Response rules:
 - Be specific to Stellenbosch BAccLLB where possible.
 - For accounting: explain simply first, then formal treatment, then exam workflow and traps.
 - For law: use issue/rule/authority/application/conclusion where helpful; do not invent cases or sources.
 - For planning: make tasks concrete, timed, and ADHD-friendly.
+- Respect module hard rules and separation rules.
 - Be honest when more official material is needed.
 `;
 

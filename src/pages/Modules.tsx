@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCap, ListChecks, Pencil, Plus, Search, Target, Trash2 } from 'lucide-react';
 import { modules, ModuleArea } from '../data/baccllb';
-import { priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
+import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
 import {
   averageTopicConfidence,
   deleteTopicMastery,
@@ -35,7 +35,21 @@ const Modules: React.FC = () => {
     return modules.filter((module) => {
       const matchesArea = area === 'All' || module.area === area;
       const query = search.toLowerCase();
-      const matchesSearch = !query || [module.name, module.code, module.shortName, ...module.weakPoints].join(' ').toLowerCase().includes(query);
+      const matchesSearch =
+        !query ||
+        [
+          module.name,
+          module.code,
+          module.shortName,
+          module.programmeContext,
+          ...module.aliases,
+          ...module.weakPoints,
+          ...module.topics.map((topic) => topic.title),
+          ...module.subtopics,
+        ]
+          .join(' ')
+          .toLowerCase()
+          .includes(query);
       return matchesArea && matchesSearch;
     });
   }, [area, search]);
@@ -150,6 +164,11 @@ const Modules: React.FC = () => {
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <h3 className="font-bold text-slate-800">{module.shortName}</h3>
                       <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{module.code}</span>
+                      {moduleFlags(module).slice(0, 2).map((flag) => (
+                        <span key={flag.label} className={`text-[10px] uppercase font-bold tracking-wider border rounded-full px-2 py-1 ${flag.tone}`}>
+                          {flag.label}
+                        </span>
+                      ))}
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2 mb-4">{module.weakPoints.slice(0, 2).join(' • ')}</p>
                     <div className="flex items-center justify-between gap-3">
@@ -173,6 +192,13 @@ const Modules: React.FC = () => {
               <h2 className="font-display text-4xl mb-2">{selected.name}</h2>
               <p className="text-white/80">Target: {selected.target}% • Confidence: {selected.confidence}% • Priority score: {priorityScore(selected.confidence, selected.target)}</p>
               <span className="mt-4 inline-flex bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs uppercase tracking-wider font-bold">{readinessLabel(selected.confidence)}</span>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {moduleFlags(selected).map((flag) => (
+                  <span key={flag.label} className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-wider font-bold text-white">
+                    {flag.label}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -188,6 +214,17 @@ const Modules: React.FC = () => {
             </InfoPanel>
             <InfoPanel icon={<ListChecks size={19} />} title="Next actions" tone="blue">
               {selected.nextActions.map((point) => <Bullet key={point} text={point} />)}
+            </InfoPanel>
+            <InfoPanel icon={<BookMarked size={19} />} title="Source status" tone="gold">
+              {selected.sourceStatus.items.slice(0, 5).map((item) => (
+                <Bullet
+                  key={item.label}
+                  text={`${item.label}: ${item.status}${item.note ? ` - ${item.note}` : ''}`}
+                />
+              ))}
+            </InfoPanel>
+            <InfoPanel icon={<FileText size={19} />} title="Assessment rules" tone="blue">
+              {selected.assessmentRules.riskWarnings.slice(0, 4).map((point) => <Bullet key={point} text={point} />)}
             </InfoPanel>
           </div>
 
@@ -207,9 +244,28 @@ const Modules: React.FC = () => {
             </div>
           </div>
 
+          <div className="px-7 pb-7">
+            <h3 className="font-display text-2xl text-stellenbosch-maroon mb-4">Exact topic map</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {selected.topics.slice(0, 6).map((topic) => (
+                <div key={topic.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="font-bold text-slate-800">{topic.title}</p>
+                    {topic.needsVerification && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider border rounded-full px-2 py-1 bg-amber-50 text-amber-800 border-amber-100">
+                        Needs verification
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500">{topic.subtopics.slice(0, 4).join(' • ') || 'Subtopics still being mapped.'}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="px-7 pb-7 grid grid-cols-1 md:grid-cols-3 gap-3">
             <MiniMetric icon={<GraduationCap size={18} />} label="Target" value={`${selected.target}%`} />
-            <MiniMetric icon={<FileText size={18} />} label="Area" value={selected.area} />
+            <MiniMetric icon={<FileText size={18} />} label="Current mark" value={selected.currentMarks.overall === null ? 'Missing' : `${selected.currentMarks.overall}%`} />
             <MiniMetric icon={<CheckCircle2 size={18} />} label="Status" value={readinessLabel(selected.confidence)} tone={riskTone(selected.confidence)} />
           </div>
         </section>

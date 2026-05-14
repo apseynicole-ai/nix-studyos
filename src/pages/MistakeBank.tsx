@@ -26,6 +26,11 @@ const MistakeBank: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MistakeRecord>(() => emptyMistakeDraft(modules[0].id));
 
+  const selectedModule = useMemo(() => modules.find((module) => module.id === draft.moduleId) || modules[0], [draft.moduleId]);
+  const categoryOptions = useMemo(
+    () => selectedModule.mistakeBankCategories.map((category) => ({ label: category, value: category })),
+    [selectedModule],
+  );
   const topicOptions = useMemo(() => readTopicOptionsForModule(draft.moduleId), [draft.moduleId, records]);
 
   const filteredRecords = useMemo(() => {
@@ -38,6 +43,7 @@ const MistakeBank: React.FC = () => {
         if (!query) return true;
         return [
           item.mistakeTitle,
+          item.mistakeCategory,
           item.mistakeDescription,
           item.whyItHappened,
           item.correctionRule,
@@ -134,6 +140,27 @@ const MistakeBank: React.FC = () => {
         <section className="glass rounded-[2.5rem] p-7 border-slate-200/50 shadow-sm">
           <h2 className="font-display text-3xl text-stellenbosch-maroon mb-5">{editingId ? 'Edit mistake' : 'Log a mistake'}</h2>
           <form onSubmit={handleSave} className="space-y-4">
+            {categoryOptions.length > 0 && (
+              <div className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Suggested categories for {selectedModule.shortName}</p>
+                <div className="flex flex-wrap gap-2">
+                  {selectedModule.mistakeBankCategories.slice(0, 8).map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setDraft((current) => ({ ...current, mistakeCategory: category }))}
+                      className={`px-3 py-2 rounded-xl border text-sm ${
+                        draft.mistakeCategory === category
+                          ? 'bg-stellenbosch-maroon text-white border-stellenbosch-maroon'
+                          : 'bg-white text-slate-600 border-slate-100 hover:border-stellenbosch-maroon/20'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <SelectField
                 label="Module"
@@ -147,6 +174,14 @@ const MistakeBank: React.FC = () => {
                 onChange={(value) => setDraft((current) => ({ ...current, sourceType: value as MistakeSourceType }))}
                 options={sourceTypes.map((item) => ({ label: labelise(item), value: item }))}
               />
+              {categoryOptions.length > 0 && (
+                <SelectField
+                  label="Mistake category (optional)"
+                  value={draft.mistakeCategory || ''}
+                  onChange={(value) => setDraft((current) => ({ ...current, mistakeCategory: value }))}
+                  options={[{ label: 'No category selected', value: '' }, ...categoryOptions]}
+                />
+              )}
               {topicOptions.length > 0 && (
                 <SelectField
                   label="Linked topic (optional)"
@@ -294,6 +329,11 @@ const MistakeBank: React.FC = () => {
                         <span className={`text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 ${record.resolved ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                           {record.resolved ? 'Resolved' : 'Unresolved'}
                         </span>
+                        {record.mistakeCategory && (
+                          <span className="text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 bg-blue-50 text-blue-700">
+                            {record.mistakeCategory}
+                          </span>
+                        )}
                         <span className="text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 bg-white text-slate-500 border border-slate-100">
                           {labelise(record.sourceType)}
                         </span>

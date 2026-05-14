@@ -13,6 +13,7 @@ export type MistakeSourceType =
 export interface MistakeRecord {
   id: string;
   moduleId: string;
+  mistakeCategory?: string;
   topicId?: string;
   topicName?: string;
   mistakeTitle: string;
@@ -35,6 +36,7 @@ export function emptyMistakeDraft(moduleId: string): MistakeRecord {
   return {
     id: '',
     moduleId,
+    mistakeCategory: '',
     topicId: '',
     topicName: '',
     mistakeTitle: '',
