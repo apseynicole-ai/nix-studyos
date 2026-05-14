@@ -20,21 +20,21 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
   - Module-specific marks scenarios in `src/pages/Marks.tsx`
   - Local marks state under `baccllb-mark-engine-state`
   - Local backup, import, and reset via `src/lib/localData.ts`
-  - Local fallback profile, tasks, timer sessions, and StudyAI summaries when Firestore is unavailable
+  - Local profile, tasks, timer sessions, and StudyAI summaries saved on-device
 - Cloud-backed:
-  - Firebase Auth login
-  - Optional Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a Firestore database exists
+  - Optional Firebase Auth sign-in
+  - Optional future Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a database exists
 - Planned:
   - Firestore marks sync
   - Topic trackers
   - Mistake log
   - PWA support
 
-Current phase can run without billing or Blaze. Firebase Auth is used for login, while Firestore cloud sync is optional and postponed until a database is created and deployed. Tasks, sessions, summaries, and profile data may run in local-first fallback mode until then.
+Nix StudyOS currently runs local-first without billing or Blaze. Firebase Auth and Firestore sync are optional future layers, not requirements for opening the app. Marks, tasks, timer sessions, and AI summaries can all work locally in this phase.
 
 Marks are intentionally local-first in this phase. They do not sync to Firestore yet, and the current formulas and backup/import/reset flow should be preserved until a dedicated marks-sync phase is planned.
 
-Firestore and any Blaze-dependent cloud sync can be revisited later once the project is ready for that phase.
+Firestore and any Blaze-dependent cloud sync can be revisited later once the project is ready for that phase. Until then, users should export backups regularly before clearing browser storage, changing browsers, or switching devices.
 
 Before clearing browser storage, changing browsers, or switching devices, use backup/export so your local marks data is not lost.
 
@@ -64,11 +64,10 @@ npm run build
 
 ## Firebase security
 
-- Enable Firebase Email/Password authentication in the Firebase console before using the username or email sign-in flow.
-- Username is the app-level identity in Nix StudyOS. Passwords are handled by Firebase Auth only, and the app does not store custom password hashes or custom password records.
-- Usernames are mapped through `usernames/{usernameLowercase}` so the app can resolve username-based sign-in to the correct Firebase Auth email.
-- Firestore rules protect user-owned cloud data. Each authenticated user may only read and write their own `users`, `tasks`, `sessions`, and `summaries` documents, and planned future collections follow the same owner-only pattern.
-- Marks are still local-first in this phase. The marks engine and marks state are not being moved into shared Firestore by these auth changes.
+- Enable Firebase Email/Password authentication in the Firebase console only if you want optional sign-in during this local-first phase.
+- Passwords are handled by Firebase Auth only, and the app does not store custom password hashes or custom password records.
+- Firestore rules and cloud sync can be added later if and when a Firestore database is created.
+- Marks are still local-first in this phase. The marks engine and marks state are not being moved into shared Firestore by these changes.
 - Deploy updated Firestore rules with the Firebase CLI:
 
 ```bash
