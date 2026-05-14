@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   Settings,
 } from 'lucide-react';
-import { auth } from '../../lib/firebase';
+import { signOutUser } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
 
 const navItems = [
@@ -41,7 +41,7 @@ const Navbar: React.FC = () => {
       <NavItem to="/timer" icon={<Timer size={21} />} label="Timer" />
       {user && (
         <button 
-          onClick={() => auth.signOut()}
+          onClick={() => signOutUser()}
           className="flex flex-col items-center gap-1 text-slate-400 hover:text-stellenbosch-maroon transition-colors px-2 shrink-0"
         >
           <LogOut size={21} />

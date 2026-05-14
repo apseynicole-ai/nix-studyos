@@ -59,6 +59,23 @@ npm run lint
 npm run build
 ```
 
+## Firebase security
+
+- Enable Firebase Email/Password authentication in the Firebase console before using the username or email sign-in flow.
+- Username is the app-level identity in Nix StudyOS. Passwords are handled by Firebase Auth only, and the app does not store custom password hashes or custom password records.
+- Usernames are mapped through `usernames/{usernameLowercase}` so the app can resolve username-based sign-in to the correct Firebase Auth email.
+- Firestore rules protect user-owned cloud data. Each authenticated user may only read and write their own `users`, `tasks`, `sessions`, and `summaries` documents, and planned future collections follow the same owner-only pattern.
+- Marks are still local-first in this phase. The marks engine and marks state are not being moved into shared Firestore by these auth changes.
+- Deploy updated Firestore rules with the Firebase CLI:
+
+```bash
+firebase deploy --only firestore:rules
+```
+
+- Restrict Firebase API keys in the Google Cloud Console or Firebase console so they are limited to the intended app origins and APIs.
+- If a Firebase key or other credential was ever committed publicly, rotate it in Google Cloud or Firebase and update all environments.
+- Never commit `.env.local`.
+
 ## Notes for Codex
 
 The main source of personalised academic data is `src/data/baccllb.ts`. Start there when adding modules, topics, marks, assessments, task templates, AI prompt packs or exam templates.

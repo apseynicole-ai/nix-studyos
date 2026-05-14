@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './components/auth/AuthGuard';
+import { AuthGuard, AuthProvider } from './components/auth/AuthGuard';
 import Navbar from './components/layout/Navbar';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -15,6 +15,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <AuthGuard>
           <div className="min-h-screen">
             <Routes>
               <Route path="/" element={<Dashboard />} />
@@ -29,6 +30,7 @@ export default function App() {
             </Routes>
             <Navbar />
           </div>
+        </AuthGuard>
       </AuthProvider>
     </BrowserRouter>
   );

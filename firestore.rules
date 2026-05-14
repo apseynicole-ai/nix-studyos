@@ -13,31 +13,106 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    function isUsernameDoc(usernameLowercase) {
+      return request.resource.data.usernameLowercase == usernameLowercase
+        && request.resource.data.username == usernameLowercase;
+    }
+
+    function incomingOwner() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function existingOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function ownerOnlyCreate() {
+      return incomingOwner();
+    }
+
+    function ownerOnlyRead() {
+      return existingOwner();
+    }
+
+    function ownerOnlyUpdate() {
+      return existingOwner() && incomingOwner();
+    }
+
+    function ownerOnlyDelete() {
+      return existingOwner();
+    }
+
+    match /usernames/{usernameLowercase} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if isSignedIn()
+        && !exists(/databases/$(database)/documents/usernames/$(usernameLowercase))
+        && request.resource.data.uid == request.auth.uid
+        && isUsernameDoc(usernameLowercase);
+      allow update, delete: if false;
     }
 
     match /users/{userId} {
-      allow get: if isSignedIn();
+      allow get: if isOwner(userId);
       allow list: if false; // Profiles are private
-      allow create: if isOwner(userId) && request.resource.data.uid == userId;
-      allow update: if isOwner(userId);
+      allow create, update: if isOwner(userId) && request.resource.data.uid == userId;
+      allow delete: if isOwner(userId);
     }
 
     match /tasks/{taskId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow write: if isSignedIn() && (request.resource.data.userId == request.auth.uid || resource.data.userId == request.auth.uid);
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
     }
 
     match /sessions/{sessionId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
     }
 
     match /summaries/{summaryId} {
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
+    }
+
+    match /marks/{markId} {
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
+    }
+
+    match /moduleMastery/{moduleMasteryId} {
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
+    }
+
+    match /topicTrackers/{topicTrackerId} {
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
+    }
+
+    match /mistakes/{mistakeId} {
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
+    }
+
+    match /backups/{backupId} {
+      allow create: if ownerOnlyCreate();
+      allow get, list: if ownerOnlyRead();
+      allow update: if ownerOnlyUpdate();
+      allow delete: if ownerOnlyDelete();
     }
   }
 }
