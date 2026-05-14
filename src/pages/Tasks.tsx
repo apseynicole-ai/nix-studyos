@@ -5,6 +5,9 @@ import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc,
 import { useAuth } from '../components/auth/AuthGuard';
 import { modules, taskTemplates } from '../data/baccllb';
 import { LOCAL_TASKS_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
+import { calculateTaskProgress, clampProgress } from '../lib/progressMetrics';
 
 type Priority = 'Low' | 'Medium' | 'High' | 'Critical';
 type TaskType = 'Study' | 'Practice' | 'Admin' | 'Submission' | 'Revision' | 'Health';
@@ -232,6 +235,11 @@ const Tasks: React.FC = () => {
   const openTasks = tasks.filter((task) => !task.done);
   const completedPoints = tasks.filter((task) => task.done).reduce((sum, task) => sum + (task.points || 0), 0);
   const plannedMinutes = openTasks.reduce((sum, task) => sum + (task.minutes || 0), 0);
+  const completedTasks = tasks.filter((task) => task.done).length;
+  const taskProgress = calculateTaskProgress(tasks);
+  const dueSoonOpenTasks = openTasks.filter((task) => task.dueDate && withinDays(task.dueDate, 7)).length;
+  const overdueOpenTasks = openTasks.filter((task) => task.dueDate && task.dueDate < new Date().toISOString().slice(0, 10)).length;
+  const dueSoonProgress = openTasks.length ? clampProgress(((openTasks.length - dueSoonOpenTasks) / openTasks.length) * 100) : 0;
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -251,6 +259,18 @@ const Tasks: React.FC = () => {
         <TaskKpi label="Open tasks" value={openTasks.length} icon={<CheckSquare />} />
         <TaskKpi label="Planned time" value={`${Math.round(plannedMinutes / 60)}h ${plannedMinutes % 60}m`} icon={<Clock />} />
         <TaskKpi label="Completed points" value={completedPoints} icon={<Sparkles />} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-wrap gap-2 mb-5">
+          <ProgressBadge value={taskProgress} label="Tasks complete" tone="emerald" />
+          <ProgressBadge value={dueSoonProgress} label="Week under control" tone="amber" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProgressBar value={taskProgress} label="Completed vs total tasks" helper={tasks.length ? `${completedTasks} of ${tasks.length} tasks completed` : 'No tasks yet'} tone="emerald" />
+          <ProgressBar value={dueSoonProgress} label="This week task pressure" helper={openTasks.length ? `${dueSoonOpenTasks} due within 7 days • ${overdueOpenTasks} overdue` : 'No open due-dated tasks'} tone="amber" />
+          <ProgressBar value={openTasks.length ? clampProgress((plannedMinutes / Math.max(60, plannedMinutes + completedPoints)) * 100) : 0} label="Current sprint load" helper={openTasks.length ? `${plannedMinutes} planned minutes still open` : 'No open sprint load right now'} tone="maroon" />
+        </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-8">
@@ -388,5 +408,14 @@ const TaskKpi: React.FC<{ icon: React.ReactNode; label: string; value: number | 
     <p className="font-display text-4xl text-slate-900">{value}</p>
   </div>
 );
+
+function withinDays(dateValue: string | null | undefined, days: number) {
+  if (!dateValue) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(`${dateValue}T00:00:00`);
+  const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+  return diff >= 0 && diff <= days;
+}
 
 export default Tasks;

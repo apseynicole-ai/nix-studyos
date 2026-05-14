@@ -4,6 +4,8 @@ import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCa
 import { modules, ModuleArea } from '../data/baccllb';
 import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
 import {
   averageTopicConfidence,
   deleteTopicMastery,
@@ -17,6 +19,7 @@ import {
   type TopicMasteryRecord,
   type TopicStatus,
 } from '../lib/topicMastery';
+import { calculateTopicProgress, clampProgress } from '../lib/progressMetrics';
 
 const areas: Array<ModuleArea | 'All'> = ['All', 'Accounting', 'Law', 'Economics', 'Quantitative', 'Digital'];
 const trackerModuleOptions = [{ label: 'All modules', value: 'all' }, ...modules.map((module) => ({ label: `${module.shortName} (${module.code})`, value: module.id }))];
@@ -85,6 +88,20 @@ const Modules: React.FC = () => {
     [masteryRecords],
   );
   const selectedActions = moduleActionsMap[selected.id] || [];
+  const masteryByModule = useMemo(
+    () => modules.reduce<Record<string, TopicMasteryRecord[]>>((acc, module) => {
+      acc[module.id] = masteryRecords.filter((item) => item.moduleId === module.id);
+      return acc;
+    }, {}),
+    [masteryRecords],
+  );
+  const selectedModuleTopics = masteryByModule[selected.id] || [];
+  const selectedReadProgress = progressFromBoolean(selectedModuleTopics, 'readDone');
+  const selectedNotesProgress = progressFromBoolean(selectedModuleTopics, 'notesDone');
+  const selectedPracticeProgress = progressFromBoolean(selectedModuleTopics, 'practiceDone');
+  const selectedExamReadyProgress = selectedModuleTopics.length
+    ? clampProgress((selectedModuleTopics.filter((topic) => topic.status === 'exam-ready').length / selectedModuleTopics.length) * 100)
+    : 0;
 
   const startNewTopic = (moduleId = trackerModuleId === 'all' ? selected.id : trackerModuleId, topicName = '') => {
     setEditingId(null);
@@ -185,11 +202,19 @@ const Modules: React.FC = () => {
                         Next: {moduleActionsMap[module.id][0].title}
                       </p>
                     )}
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex-1">
-                        <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${module.confidence}%` }} />
+                    <div className="space-y-2">
+                      <ProgressBar
+                        value={calculateTopicProgress(masteryByModule[module.id] || [])}
+                        label="Topic progress"
+                        tone="maroon"
+                        size="sm"
+                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex-1">
+                          <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${module.confidence}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-stellenbosch-maroon">{module.confidence}%</span>
                       </div>
-                      <span className="text-xs font-bold text-stellenbosch-maroon">{module.confidence}%</span>
                     </div>
                   </div>
                 </div>
@@ -303,6 +328,19 @@ const Modules: React.FC = () => {
             <MiniMetric icon={<GraduationCap size={18} />} label="Target" value={`${selected.target}%`} />
             <MiniMetric icon={<FileText size={18} />} label="Current mark" value={selected.currentMarks.overall === null ? 'Missing' : `${selected.currentMarks.overall}%`} />
             <MiniMetric icon={<CheckCircle2 size={18} />} label="Status" value={readinessLabel(selected.confidence)} tone={riskTone(selected.confidence)} />
+          </div>
+
+          <div className="px-7 pb-7">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <ProgressBadge value={calculateTopicProgress(selectedModuleTopics)} label="Overall topic progress" tone="maroon" />
+              <ProgressBadge value={selectedExamReadyProgress} label="Exam-ready topics" tone="emerald" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ProgressBar value={selectedReadProgress} label="Read done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.readDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="slate" />
+              <ProgressBar value={selectedNotesProgress} label="Notes done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.notesDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="amber" />
+              <ProgressBar value={selectedPracticeProgress} label="Practice done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.practiceDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="maroon" />
+              <ProgressBar value={selectedExamReadyProgress} label="Exam-ready topics" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.status === 'exam-ready').length} topics at exam-ready level` : 'No tracked topics yet'} tone="emerald" />
+            </div>
           </div>
         </section>
       </div>
@@ -611,6 +649,11 @@ function priorityTone(priority: ExamPriority) {
 
 function labelise(value: string) {
   return value.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function progressFromBoolean(records: TopicMasteryRecord[], key: 'readDone' | 'notesDone' | 'practiceDone') {
+  if (!records.length) return 0;
+  return clampProgress((records.filter((record) => record[key]).length / records.length) * 100);
 }
 
 export default Modules;

@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, Calculator, CheckCircle2, LineChart, Save, Target, TrendingUp } from 'lucide-react';
 import { modules } from '../data/baccllb';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
 import {
   calcConLaw178,
   calcDLA112,
@@ -13,6 +15,7 @@ import {
   getModuleAssessmentModel,
 } from '../lib/marksEngine';
 import type { MarksOutput } from '../lib/marksEngine';
+import { clampProgress } from '../lib/progressMetrics';
 
 type SupportedModuleId =
   | 'econ114'
@@ -585,6 +588,8 @@ const Marks: React.FC = () => {
     [state.selectedModuleId, selectedModuleState, targetChoices],
   );
   const currentFinal = getCurrentFinal(output);
+  const currentPathProgress = currentFinal === null ? 0 : clampProgress((currentFinal / Math.max(selectedOverallGoal || 1, 1)) * 100);
+  const currentMarkProgress = output.mtd === null ? 0 : clampProgress((output.mtd / Math.max(selectedOverallGoal || 1, 1)) * 100);
   const extraWarnings = Object.entries(selectedModuleState.assessments)
     .filter(([, draft]) => draft.status === 'completed' && parseNumber(draft.mark) === null)
     .map(([assessmentId]) => `${assessmentId} is marked completed but has no numeric mark yet.`);
@@ -682,6 +687,17 @@ const Marks: React.FC = () => {
         <Kpi icon={<Target />} label="FM2 / FM" value={formatMetric(output.fm ?? output.fm2)} note="Alternate/final path" />
         <Kpi icon={<CheckCircle2 />} label="Valid FM" value={output.isValidFM ? 'Yes' : 'No'} note={getA3Status(state.selectedModuleId, output, selectedModuleState)} tone={output.isValidFM ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'} />
         <Kpi icon={<AlertTriangle />} label="Risk" value={risk.label} note={currentFinal !== null ? `Current path ${currentFinal}%` : 'Waiting for enough inputs'} tone={risk.tone} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-wrap gap-2 mb-5">
+          <ProgressBadge value={currentPathProgress} label="Current path vs goal" tone="maroon" />
+          <ProgressBadge value={currentMarkProgress} label="MTD vs goal" tone="amber" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ProgressBar value={currentPathProgress} label="Current final path" helper={currentFinal !== null ? `${currentFinal}% against an overall goal of ${selectedOverallGoal}%` : 'Add completed assessment marks to compare the current path to your overall goal'} tone="maroon" />
+          <ProgressBar value={currentMarkProgress} label="Mark-to-date momentum" helper={output.mtd !== null ? `${output.mtd}% mark-to-date against an overall goal of ${selectedOverallGoal}%` : 'No mark-to-date available yet for this module'} tone="amber" />
+        </div>
       </section>
 
       <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">

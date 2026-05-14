@@ -36,6 +36,17 @@ import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLoc
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
+import ProgressRing from '../components/ui/ProgressRing';
+import {
+  calculateMistakeResolutionProgress,
+  calculateModuleReadiness,
+  calculatePlannerProgress,
+  calculateTaskProgress,
+  calculateTopicProgress,
+  clampProgress,
+} from '../lib/progressMetrics';
 
 type ActionFilter = 'All' | 'Urgent' | 'Today' | 'This week' | 'Marks risk' | 'Mistakes' | 'Source gaps' | 'Final Boss';
 
@@ -101,6 +112,16 @@ const Dashboard: React.FC = () => {
   const unresolvedMistakeCount = unresolvedMistakes(mistakeRecords).length;
   const mistakeRetests = mistakeRetestsDueThisWeek(mistakeRecords).length;
   const topMistakeModule = moduleWithMostUnresolvedMistakes(mistakeRecords);
+  const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
+  const localTasks = useMemo(
+    () => readLocalJson<Array<{ userId?: string; done?: boolean; completedAt?: string | null; moduleId?: string }>>(LOCAL_TASKS_KEY, [])
+      .filter((task) => !user || task.userId === user.uid),
+    [user],
+  );
+  const topicProgress = calculateTopicProgress(topicRecords);
+  const mistakeResolutionProgress = calculateMistakeResolutionProgress(mistakeRecords);
+  const taskProgress = calculateTaskProgress(localTasks);
+  const plannerProgress = calculatePlannerProgress(plannerData);
   const highRisk = highRiskModules().slice(0, 4);
   const missingMarks = modulesMissingCurrentMarks().slice(0, 4);
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
@@ -108,6 +129,15 @@ const Dashboard: React.FC = () => {
   const filteredActions = useMemo(
     () => nextBestActions.filter((action) => matchesFilter(action, actionFilter)).slice(0, 5),
     [nextBestActions, actionFilter],
+  );
+  const focusModule = topMistakeModule
+    ? modules.find((module) => module.id === topMistakeModule.moduleId)
+    : highRisk[0] || modules[0];
+  const focusModuleReadiness = calculateModuleReadiness(focusModule.id, topicRecords, mistakeRecords, localTasks);
+  const overallStudyProgress = clampProgress((topicProgress + mistakeResolutionProgress + taskProgress + plannerProgress) / 4);
+  const nextSmallWin = useMemo(
+    () => nextBestActions.find((action) => action.estimatedMinutes <= 30) || nextBestActions[0] || null,
+    [nextBestActions],
   );
 
   return (
@@ -162,6 +192,94 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
         <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
         <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">visual progress snapshot</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Progress at a glance</h2>
+            <p className="text-slate-500 text-sm">A lightweight, ADHD-friendly view of overall study momentum, topic progress, mistake cleanup, planner flow, and your next small win.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ProgressBadge value={overallStudyProgress} label="Overall" tone="maroon" />
+            <ProgressBadge value={topicProgress} label="Topics" tone="maroon" />
+            <ProgressBadge value={mistakeResolutionProgress} label="Mistakes" tone="emerald" />
+            <ProgressBadge value={taskProgress} label="Tasks" tone="amber" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1.1fr] gap-8 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5">
+              <ProgressRing
+                value={overallStudyProgress}
+                label="Overall study progress"
+                helper={nextSmallWin ? `Next small win: ${nextSmallWin.title}` : 'Add tracked topics, mistakes, tasks, or planner items to grow this score'}
+                tone="maroon"
+              />
+            </div>
+            <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5">
+              <ProgressRing
+                value={topicProgress}
+                label="Topic mastery progress"
+                helper={topicRecords.length ? `${topicRecords.length} tracked topics` : 'No tracked topics yet'}
+                tone="maroon"
+              />
+            </div>
+            <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5 sm:col-span-2">
+              <ProgressRing
+                value={focusModuleReadiness}
+                label={`${focusModule.shortName} readiness`}
+                helper={topMistakeModule ? `Focus hotspot: ${topMistakeModule.moduleName}` : 'Uses current confidence plus tracked study progress'}
+                tone="amber"
+              />
+            </div>
+          </div>
+
+          <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5 space-y-5">
+            <ProgressBar
+              value={mistakeResolutionProgress}
+              label="Mistake resolution"
+              helper={mistakeRecords.length ? `${unresolvedMistakeCount} unresolved mistakes still open` : 'Start logging mistakes to see this move'}
+              tone="emerald"
+            />
+            <ProgressBar
+              value={taskProgress}
+              label="Task completion"
+              helper={localTasks.length ? `${stats.completedTasks} of ${localTasks.length} local tasks completed` : 'Add a few concrete tasks to build momentum'}
+              tone="amber"
+            />
+            <ProgressBar
+              value={plannerProgress}
+              label="Planner progress"
+              helper={plannerProgress > 0 ? 'Derived from saved planner state where available' : 'No saved planner progress yet'}
+              tone="slate"
+            />
+            <ProgressBar
+              value={focusModuleReadiness}
+              label={`${focusModule.shortName} readiness`}
+              helper={focusModule.weakPoints[0] || 'Module-specific readiness uses existing topic, task, and mistake signals'}
+              tone="maroon"
+              size="lg"
+            />
+            <div className="rounded-2xl bg-white border border-slate-100 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Next small win</p>
+              {nextSmallWin ? (
+                <>
+                  <p className="font-bold text-slate-800">{nextSmallWin.title}</p>
+                  <p className="text-sm text-slate-500 mt-1">{nextSmallWin.reason}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <ProgressBadge value={Math.max(20, 100 - nextSmallWin.estimatedMinutes)} label={`${nextSmallWin.estimatedMinutes} min`} tone="amber" />
+                    <ProgressBadge value={nextSmallWin.priority === 'urgent' ? 100 : nextSmallWin.priority === 'high' ? 80 : nextSmallWin.priority === 'medium' ? 60 : 40} label={nextSmallWin.priority} tone="slate" />
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-slate-500">No next action yet. Add more local progress data for sharper suggestions.</p>
+              )}
+            </div>
+          </div>
+        </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-8 mb-10">

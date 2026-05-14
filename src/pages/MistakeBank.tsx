@@ -14,6 +14,9 @@ import {
   type MistakeRecord,
   type MistakeSourceType,
 } from '../lib/mistakeBank';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
+import { clampProgress, calculateMistakeResolutionProgress } from '../lib/progressMetrics';
 
 const sourceTypes: MistakeSourceType[] = ['test', 'tutorial', 'past-paper', 'class-example', 'assignment', 'self-study', 'other'];
 
@@ -67,6 +70,9 @@ const MistakeBank: React.FC = () => {
       records.filter((item) => !item.resolved || (item.retestDate && mistakeRetestsDueSoon([item]).length > 0)),
     [records],
   );
+  const resolvedProgress = calculateMistakeResolutionProgress(records);
+  const dueSoonProgress = records.length ? clampProgress((dueSoon.length / records.length) * 100) : 0;
+  const finalBossCleanupProgress = records.length ? clampProgress(((records.length - finalBossRetestList.length) / records.length) * 100) : 0;
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
@@ -134,6 +140,19 @@ const MistakeBank: React.FC = () => {
         <SummaryCard icon={<AlertTriangle size={20} />} label="Unresolved mistakes" value={unresolved.length} />
         <SummaryCard icon={<RotateCcw size={20} />} label="Retests due soon" value={dueSoon.length} />
         <SummaryCard icon={<ClipboardList size={20} />} label="Final Boss retest list" value={finalBossRetestList.length} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-wrap gap-2 mb-5">
+          <ProgressBadge value={resolvedProgress} label="Resolved" tone="emerald" />
+          <ProgressBadge value={dueSoonProgress} label="Retest due" tone="amber" />
+          <ProgressBadge value={finalBossCleanupProgress} label="Final Boss cleanup" tone="maroon" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProgressBar value={resolvedProgress} label="Unresolved vs resolved" helper={records.length ? `${records.length - unresolved.length} resolved, ${unresolved.length} still open` : 'No mistakes logged yet'} tone="emerald" />
+          <ProgressBar value={dueSoonProgress} label="Retest due progress" helper={records.length ? `${dueSoon.length} mistakes need near-term retest attention` : 'No retest dates yet'} tone="amber" />
+          <ProgressBar value={finalBossCleanupProgress} label="Final Boss cleanup" helper={records.length ? `${finalBossRetestList.length} items still on the retest list` : 'Nothing in the Final Boss cleanup list yet'} tone="maroon" />
+        </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.08fr] gap-8">

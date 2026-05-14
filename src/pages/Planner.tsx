@@ -2,6 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { CalendarDays, CheckCircle2, Clock, Coffee, Flame, ListChecks, Moon, PlusCircle, Sun, Target, TimerReset } from 'lucide-react';
 import { modules, nightlyChecklist, taskTemplates, weeklyRhythm } from '../data/baccllb';
+import { LOCAL_TASKS_KEY, readLocalJson } from '../lib/localData';
+import ProgressBar from '../components/ui/ProgressBar';
+import ProgressBadge from '../components/ui/ProgressBadge';
+import { calculatePlannerProgress, clampProgress } from '../lib/progressMetrics';
 
 const timeBlocks = [
   { label: 'Morning activation', time: '10–20 min', icon: Sun, style: 'bg-yellow-50 text-yellow-700 border-yellow-100', tasks: ['Open dashboard', 'Pick first tiny task', 'No perfection editing'] },
@@ -12,6 +16,11 @@ const timeBlocks = [
 
 const Planner: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(weeklyRhythm[0].day);
+  const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
+  const storedTasks = useMemo(
+    () => readLocalJson<Array<{ text?: string; moduleId?: string; done?: boolean; completedAt?: string | null }>>(LOCAL_TASKS_KEY, []),
+    [],
+  );
   const selectedRhythm = weeklyRhythm.find((day) => day.day === selectedDay) || weeklyRhythm[0];
 
   const dayTasks = useMemo(() => {
@@ -26,6 +35,19 @@ const Planner: React.FC = () => {
     } as Record<string, string[]>;
     return (pools[selectedDay] || []).map((id) => taskTemplates.find((task) => task.id === id)).filter(Boolean);
   }, [selectedDay]);
+  const plannerProgress = calculatePlannerProgress(plannerData);
+  const todayPlanCompleted = dayTasks.filter((task) => task && storedTasks.some((stored) => stored.text === task.title && stored.moduleId === task.moduleId && (stored.done || stored.completedAt))).length;
+  const todayPlanProgress = dayTasks.length ? clampProgress((todayPlanCompleted / dayTasks.length) * 100) : 0;
+  const allWeeklyTaskIds = ['legal-footnotes', 'stats-formula', 'nightly-reset', 'fa-adjustments', 'econ-unit8', 'conlaw-s36', 'foundations-roman', 'fa-inventory', 'dla-final'];
+  const weekTemplateTasks = useMemo(
+    () => Array.from(new Map(allWeeklyTaskIds.map((id) => {
+      const task = taskTemplates.find((item) => item.id === id);
+      return task ? [id, task] : [id, null];
+    })).values()).filter(Boolean),
+    [],
+  );
+  const weekCompleted = weekTemplateTasks.filter((task) => task && storedTasks.some((stored) => stored.text === task.title && stored.moduleId === task.moduleId && (stored.done || stored.completedAt))).length;
+  const weekProgress = weekTemplateTasks.length ? clampProgress((weekCompleted / weekTemplateTasks.length) * 100) : 0;
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -49,6 +71,19 @@ const Planner: React.FC = () => {
             </motion.div>
           );
         })}
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-wrap gap-2 mb-5">
+          <ProgressBadge value={todayPlanProgress} label="Today plan" tone="maroon" />
+          <ProgressBadge value={weekProgress} label="Week progress" tone="amber" />
+          <ProgressBadge value={plannerProgress} label="Planner state" tone="slate" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <ProgressBar value={todayPlanProgress} label="Today's plan progress" helper={dayTasks.length ? `${todayPlanCompleted} of ${dayTasks.length} visible plan tasks matched to completed local tasks` : 'No plan tasks for this day'} tone="maroon" />
+          <ProgressBar value={weekProgress} label="Week progress" helper={weekTemplateTasks.length ? `${weekCompleted} of ${weekTemplateTasks.length} weekly template tasks matched to completed local tasks` : 'No weekly progress data yet'} tone="amber" />
+          <ProgressBar value={plannerProgress} label="Saved planner progress" helper={plannerProgress > 0 ? 'Derived from local planner data where available' : 'No saved planner progress data found yet'} tone="slate" />
+        </div>
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-8">
