@@ -10,6 +10,26 @@ export default defineConfig({
       '@': path.resolve(__dirname, '.'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            if (id.includes('/src/data/baccllb') || id.includes('/src/lib/studyMetrics')) {
+              return 'baccllb';
+            }
+            return undefined;
+          }
+
+          if (id.includes('react-markdown')) return 'markdown';
+          if (id.includes('/firebase/')) return 'firebase';
+          if (id.includes('motion')) return 'motion';
+          if (id.includes('lucide-react')) return 'icons';
+          return undefined;
+        },
+      },
+    },
+  },
   server: {
     // HMR is disabled in AI Studio via DISABLE_HMR env var.
     // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
