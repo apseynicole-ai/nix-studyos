@@ -21,7 +21,9 @@ export interface LegalVerifierInputs {
   draftText: string;
   footnotesText: string;
   bibliographyText: string;
+  sourcePackText: string;
   guideRulesText: string;
+  rubricText: string;
 }
 
 export interface LegalVerifierReport {
@@ -32,10 +34,18 @@ export interface LegalVerifierReport {
   uncitedBibliographyItems: LegalVerifierIssue[];
   guideChecklist: LegalVerifierIssue[];
   finalFixChecklist: string[];
+  parsingConfidence: 'none' | 'low' | 'medium' | 'high';
+  summaryNotes: string[];
 }
 
 const PLACEHOLDER_PATTERN = /\b(insert source|page\?|ibid\?|n\.d\.|tbc|todo|xx|citation needed)\b/i;
 const YEAR_PATTERN = /\b(19|20)\d{2}\b/;
+const RULE_KEYWORD_PATTERN =
+  /\b(must|should|remember|references?|authority|conclusion|recommendation|structure|relevant and sufficient authority|mistakes of law|plain and understandable language|logical manner|numbered paragraphs?|clear and unambiguous|no new points in conclusion|bibliography|complete|consistent)\b/i;
+const FOOTNOTE_SIGNAL_PATTERN =
+  /(^(\[?\d+[\].)]|\d+\s))|\b(ibid|para|paras|reg|regs|art|arts|gn|gg|bclr|constitution|sasa|exemption regulations)\b|<https?:\/\/[^>]+>|\b[A-Z][A-Za-z]+(?:\s+[A-Z][A-Za-z]+){0,6}\s+v\s+[A-Z][A-Za-z]+/i;
+const LEGAL_SOURCE_PATTERN =
+  /^(s|ss|reg|regs|art|arts|gn|gg)\b|constitution\b|sasa\b|exemption regulations\b|\bsa\b|\bsca\b|\bcc\b|\bbclr\b|“[^”]+”|"[^"]+"/i;
 
 function normalizeLine(value: string) {
   return value
@@ -47,7 +57,7 @@ function normalizeLine(value: string) {
 
 function normalizeAuthorYear(value: string) {
   const normalized = normalizeLine(value);
-  const yearMatch = normalized.match(/\b(19|20)\d{2}\b/);
+  const yearMatch = normalized.match(YEAR_PATTERN);
   const year = yearMatch?.[0] ?? '';
   const author = normalized
     .split(' ')
@@ -63,11 +73,26 @@ function splitNonEmptyLines(text: string) {
     .filter(Boolean);
 }
 
+function cleanGuideLine(line: string) {
+  const trimmed = line.trim();
+  if (!trimmed) return null;
+  if (/^back to contents$/i.test(trimmed)) return null;
+  if (/^\d+$/.test(trimmed)) return null;
+  if (/^\[?\d+\]?$/.test(trimmed)) return null;
+  if (/^(chapter|section|part)\s+[a-z0-9]+$/i.test(trimmed)) return null;
+  if (trimmed.length < 12) return null;
+  if (!RULE_KEYWORD_PATTERN.test(trimmed)) return null;
+  return trimmed.replace(/\s+/g, ' ');
+}
+
 export function detectFootnoteLikeLines(text: string) {
   return text
     .split(/\r?\n/)
     .map((raw, index) => ({ raw, index: index + 1, value: raw.trim() }))
-    .filter(({ value }) => /^(\[?\d+[\].)]|\d+\s)/.test(value) || /\bibid\b/i.test(value));
+    .filter(({ value }) => {
+      if (!value || value.length < 8) return false;
+      return FOOTNOTE_SIGNAL_PATTERN.test(value) || LEGAL_SOURCE_PATTERN.test(value);
+    });
 }
 
 export function detectBibliographyLikeLines(text: string) {
@@ -95,18 +120,25 @@ function makeIssue(
   };
 }
 
-function getFootnoteIssues(footnoteLines: ReturnType<typeof detectFootnoteLikeLines>) {
+function getParsingConfidence(footnoteLines: ReturnType<typeof detectFootnoteLikeLines>) {
+  if (footnoteLines.length === 0) return 'none';
+  if (footnoteLines.length < 3) return 'low';
+  if (footnoteLines.length < 6) return 'medium';
+  return 'high';
+}
+
+function getFootnoteIssues(footnoteLines: ReturnType<typeof detectFootnoteLikeLines>, confidence: LegalVerifierReport['parsingConfidence']) {
   const issues: LegalVerifierIssue[] = [];
 
   footnoteLines.forEach(({ value, index }) => {
     const content = value.replace(/^(\[?\d+[\].)]|\d+\s)/, '').trim();
-    if (content.length < 6) {
+    if (content.length < 12) {
       issues.push(
         makeIssue(
           'footnotes',
           'possible issue',
-          'Very short footnote',
-          'This footnote looks incomplete and may need an authority, page pinpoint, or fuller detail.',
+          'Very short citation line',
+          'This citation line looks incomplete and may need an authority, page pinpoint, or fuller detail.',
           `short-${index}`,
           `Footnote line ${index}`,
         ),
@@ -119,33 +151,33 @@ function getFootnoteIssues(footnoteLines: ReturnType<typeof detectFootnoteLikeLi
           'footnotes',
           'needs review',
           'Placeholder detected',
-          'A placeholder such as “insert source”, “page?” or “n.d.” was detected in this footnote.',
+          'A placeholder such as “insert source”, “page?” or “n.d.” was detected in this citation line.',
           `placeholder-${index}`,
           `Footnote line ${index}`,
         ),
       );
     }
 
-    if (!/[.;)]$/.test(value)) {
+    if (!/[.;)]$/.test(value) && value.length > 18) {
       issues.push(
         makeIssue(
           'footnotes',
           'not enough information',
           'Punctuation pattern may be inconsistent',
-          'This footnote does not end with common punctuation. Review whether it matches your chosen footnote style.',
+          'This citation line does not end with common punctuation. Review whether it matches your chosen legal citation style.',
           `punctuation-${index}`,
           `Footnote line ${index}`,
         ),
       );
     }
 
-    if (/^[\[\(]?\d+[\].)]\s+[a-z]/.test(value)) {
+    if (/^[a-z]/.test(content)) {
       issues.push(
         makeIssue(
           'footnotes',
           'not enough information',
-          'Footnote starts with lowercase text',
-          'This may be fine for some sources, but it can also signal inconsistent capitalisation.',
+          'Citation line starts with lowercase text',
+          'This may be acceptable, but it can also signal inconsistent capitalisation in the footnote style.',
           `caps-${index}`,
           `Footnote line ${index}`,
         ),
@@ -158,9 +190,19 @@ function getFootnoteIssues(footnoteLines: ReturnType<typeof detectFootnoteLikeLi
       makeIssue(
         'footnotes',
         'not enough information',
-        'No separate footnotes detected',
-        'Paste footnotes separately or include clear footnote-style lines to allow a stronger check.',
+        'No footnotes were confidently detected',
+        'No footnotes were detected in a confident pattern. If you pasted unnumbered footnotes, check formatting or use the AI-ready source-review prompt.',
         'none',
+      ),
+    );
+  } else if (confidence === 'low') {
+    issues.push(
+      makeIssue(
+        'footnotes',
+        'not enough information',
+        'Footnote parsing confidence is low',
+        'Some likely footnote lines were detected. Review the results manually because legal citation formats vary.',
+        'low-confidence',
       ),
     );
   }
@@ -249,6 +291,7 @@ function getBibliographyIssues(bibliographyLines: ReturnType<typeof detectBiblio
 function getCrossCheckIssues(
   footnoteLines: ReturnType<typeof detectFootnoteLikeLines>,
   bibliographyLines: ReturnType<typeof detectBibliographyLikeLines>,
+  confidence: LegalVerifierReport['parsingConfidence'],
 ) {
   const bibliographyKeys = new Set(
     bibliographyLines.map(({ value }) => normalizeAuthorYear(value)).filter((value) => value !== ':'),
@@ -259,6 +302,14 @@ function getCrossCheckIssues(
 
   const missingBibliographyItems: LegalVerifierIssue[] = [];
   const uncitedBibliographyItems: LegalVerifierIssue[] = [];
+  const notes: string[] = [];
+
+  if (confidence === 'none' || confidence === 'low') {
+    if (bibliographyLines.length > 0) {
+      notes.push('Bibliography-to-footnote matching is uncertain because footnotes could not be confidently parsed.');
+    }
+    return { missingBibliographyItems, uncitedBibliographyItems, notes };
+  }
 
   footnoteLines.forEach(({ value, index }) => {
     const key = normalizeAuthorYear(value);
@@ -294,13 +345,16 @@ function getCrossCheckIssues(
     }
   });
 
-  return { missingBibliographyItems, uncitedBibliographyItems };
+  return { missingBibliographyItems, uncitedBibliographyItems, notes };
 }
 
 function buildGuideChecklist(guideRulesText: string) {
-  const lines = splitNonEmptyLines(guideRulesText).slice(0, 12);
-  if (lines.length === 0) return [];
-  return lines.map((line, index) =>
+  const lines = splitNonEmptyLines(guideRulesText)
+    .map(cleanGuideLine)
+    .filter((value): value is string => Boolean(value));
+
+  const deduped = [...new Set(lines)].slice(0, 16);
+  return deduped.map((line, index) =>
     makeIssue(
       'guide-checklist',
       'needs review',
@@ -311,7 +365,10 @@ function buildGuideChecklist(guideRulesText: string) {
   );
 }
 
-function buildFinalChecklist(report: Omit<LegalVerifierReport, 'finalFixChecklist' | 'overallStatus'>) {
+function buildFinalChecklist(
+  report: Omit<LegalVerifierReport, 'finalFixChecklist' | 'overallStatus' | 'parsingConfidence' | 'summaryNotes'>,
+  inputs: LegalVerifierInputs,
+) {
   const checklist = [
     'Review every item marked “needs review” before final submission.',
     'Replace placeholders like “insert source”, “page?” and “n.d.” with final citation details.',
@@ -319,8 +376,16 @@ function buildFinalChecklist(report: Omit<LegalVerifierReport, 'finalFixChecklis
     'Confirm punctuation and capitalisation patterns are consistent across footnotes and bibliography entries.',
   ];
 
+  if (!inputs.sourcePackText.trim()) {
+    checklist.push('If you want source-support verification later, paste the actual prescribed source extracts into the source pack box.');
+  }
+
+  if (!inputs.rubricText.trim()) {
+    checklist.push('Add the rubric only if you want an external AI tool to estimate a mark band later.');
+  }
+
   if (report.guideChecklist.length > 0) {
-    checklist.push('Work through the pasted Writing Guide rules one by one before exporting your final version.');
+    checklist.push('Work through the pasted Writing Guide rules one by one before exporting or copying your final review pack.');
   }
 
   return checklist;
@@ -332,11 +397,24 @@ export function analyzeLegalCitationDraft(inputs: LegalVerifierInputs): LegalVer
 
   const footnoteLines = detectFootnoteLikeLines(fallbackFootnotes);
   const bibliographyLines = detectBibliographyLikeLines(fallbackBibliography);
+  const parsingConfidence = getParsingConfidence(footnoteLines);
 
-  const footnoteIssues = getFootnoteIssues(footnoteLines);
+  const footnoteIssues = getFootnoteIssues(footnoteLines, parsingConfidence);
   const bibliographyIssues = getBibliographyIssues(bibliographyLines);
-  const { missingBibliographyItems, uncitedBibliographyItems } = getCrossCheckIssues(footnoteLines, bibliographyLines);
+  const { missingBibliographyItems, uncitedBibliographyItems, notes } = getCrossCheckIssues(
+    footnoteLines,
+    bibliographyLines,
+    parsingConfidence,
+  );
   const guideChecklist = buildGuideChecklist(inputs.guideRulesText);
+
+  const summaryNotes = [...notes];
+  if (parsingConfidence === 'low') {
+    summaryNotes.push('Some likely footnote lines were detected. Review the results manually because legal citation formats vary.');
+  }
+  if (!inputs.sourcePackText.trim()) {
+    summaryNotes.push('Source-support review will be limited until actual prescribed source text or extracts are pasted into the source pack.');
+  }
 
   const totalHighAttention =
     footnoteIssues.filter((item) => item.severity !== 'not enough information').length +
@@ -360,11 +438,109 @@ export function analyzeLegalCitationDraft(inputs: LegalVerifierInputs): LegalVer
   return {
     overallStatus,
     ...reportWithoutChecklist,
-    finalFixChecklist: buildFinalChecklist(reportWithoutChecklist),
+    parsingConfidence,
+    summaryNotes,
+    finalFixChecklist: buildFinalChecklist(reportWithoutChecklist, inputs),
   };
 }
 
-export function formatLegalVerifierReport(report: LegalVerifierReport) {
+export function generateAiReviewPrompt(inputs: LegalVerifierInputs, report: LegalVerifierReport) {
+  const rubricNote = inputs.rubricText.trim()
+    ? 'If the rubric is detailed enough, estimate a mark band cautiously and explain why.'
+    : 'Do not estimate a mark band unless the user later provides a rubric.';
+
+  return [
+    'You are acting as a strict South African law tutor, legal writing marker, and source-verification assistant.',
+    '',
+    'Use only the material pasted below.',
+    '- Mark and verify only against the provided sources.',
+    '- Never invent cases, statutes, authors, page numbers, pinpoints, journal details, or bibliography entries.',
+    '- If support is missing, say exactly: "Not verifiable from provided sources".',
+    '- Separate confirmed errors, likely issues, needs manual check, and not verifiable items.',
+    '- Distinguish citation-format issues from source-support issues.',
+    '- Check whether each footnote supports the sentence or paragraph it is attached to.',
+    '- Check bibliography completeness and consistency.',
+    '- Check Writing Guide compliance only against the pasted guide rules.',
+    '- Assess legal opinion structure where applicable.',
+    '- Check whether the conclusion introduces new points.',
+    '- Check whether recommendations flow from the analysis.',
+    '- Provide a final fix checklist.',
+    '',
+    'Output structure:',
+    'A. Overall submission verdict',
+    '- Ready to submit / minor fixes / major fixes / high risk',
+    `- ${rubricNote}`,
+    '- Top 5 urgent fixes',
+    '',
+    'B. Legal opinion structure',
+    '- Introduction',
+    '- Statement of facts and assumptions',
+    '- Questions presented',
+    '- Applicable law',
+    '- Application',
+    '- Conclusion and recommendations',
+    '- Whether the conclusion introduces new points',
+    '- Whether recommendations flow from the analysis',
+    '',
+    'C. Source support audit',
+    'For each major legal claim:',
+    '- Identify the claim',
+    '- Identify the supporting citation or source',
+    '- Say supported / partly supported / unsupported / not verifiable',
+    '- Give exact fix suggestions',
+    '',
+    'D. Footnote audit',
+    'For each footnote:',
+    '- Check whether it supports the relevant sentence or paragraph',
+    '- Check format against pasted guide rules',
+    '- Check completeness',
+    '- Flag missing pinpoints',
+    '- Flag vague authority',
+    '',
+    'E. Bibliography audit',
+    '- Missing sources',
+    '- Uncited sources',
+    '- Duplicate entries',
+    '- Incorrect grouping',
+    '- Incomplete entries',
+    '- Consistency problems',
+    '',
+    'F. Writing Guide compliance',
+    'Use only the pasted guide rules.',
+    'Check legal opinion structure, clarity, authority support, mistakes of law, conclusion/recommendations, and bibliography grouping/completeness.',
+    '',
+    'G. Final fix checklist',
+    'Give exact changes before submission.',
+    '',
+    'Local deterministic checker context:',
+    `- Overall status: ${report.overallStatus}`,
+    `- Parsing confidence: ${report.parsingConfidence}`,
+    ...report.summaryNotes.map((note) => `- Note: ${note}`),
+    '',
+    'User content follows.',
+    '',
+    'FINAL ASSIGNMENT / LEGAL OPINION',
+    inputs.draftText.trim() || '[Not provided]',
+    '',
+    'FOOTNOTES',
+    inputs.footnotesText.trim() || '[Not provided separately]',
+    '',
+    'BIBLIOGRAPHY',
+    inputs.bibliographyText.trim() || '[Not provided]',
+    '',
+    'SOURCE PACK / PRESCRIBED MATERIALS',
+    inputs.sourcePackText.trim() || '[Not provided]',
+    '',
+    'FACULTY / WRITING GUIDE RULES',
+    inputs.guideRulesText.trim() || '[Not provided]',
+    '',
+    'RUBRIC / MARKING CRITERIA',
+    inputs.rubricText.trim() || '[Not provided]',
+    '',
+  ].join('\n');
+}
+
+export function formatLegalVerifierReport(report: LegalVerifierReport, generatedPrompt?: string) {
   const renderIssues = (title: string, issues: LegalVerifierIssue[]) => {
     if (issues.length === 0) return `## ${title}\n- No obvious items flagged by the deterministic checker.\n`;
     return [
@@ -378,10 +554,12 @@ export function formatLegalVerifierReport(report: LegalVerifierReport) {
   };
 
   return [
-    '# Legal Citation Checker Report',
+    '# Legal Source & Citation Review Report',
     '',
     '## Overall status',
     `- ${report.overallStatus}`,
+    `- Parsing confidence: ${report.parsingConfidence}`,
+    ...report.summaryNotes.map((note) => `- ${note}`),
     '',
     renderIssues('Footnote issues', report.footnoteIssues),
     renderIssues('Bibliography issues', report.bibliographyIssues),
@@ -391,5 +569,8 @@ export function formatLegalVerifierReport(report: LegalVerifierReport) {
     '## Final fix checklist',
     ...report.finalFixChecklist.map((item) => `- ${item}`),
     '',
+    ...(generatedPrompt
+      ? ['## AI-ready review prompt', '', '```text', generatedPrompt, '```', '']
+      : []),
   ].join('\n');
 }
