@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCap, ListChecks, Pencil, Plus, Search, Target, Trash2 } from 'lucide-react';
 import { modules, ModuleArea } from '../data/baccllb';
 import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
+import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import {
   averageTopicConfidence,
   deleteTopicMastery,
@@ -76,6 +77,14 @@ const Modules: React.FC = () => {
   }, [trackerModule, masteryRecords]);
   const retestSoon = useMemo(() => topicsNeedingRetestSoon(filteredTopics), [filteredTopics]);
   const trackerAverage = useMemo(() => averageTopicConfidence(filteredTopics), [filteredTopics]);
+  const moduleActionsMap = useMemo(
+    () =>
+      Object.fromEntries(
+        modules.map((module) => [module.id, getNextBestActions({ moduleId: module.id, limit: 3 })]),
+      ) as Record<string, NextBestAction[]>,
+    [masteryRecords],
+  );
+  const selectedActions = moduleActionsMap[selected.id] || [];
 
   const startNewTopic = (moduleId = trackerModuleId === 'all' ? selected.id : trackerModuleId, topicName = '') => {
     setEditingId(null);
@@ -171,6 +180,11 @@ const Modules: React.FC = () => {
                       ))}
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2 mb-4">{module.weakPoints.slice(0, 2).join(' • ')}</p>
+                    {moduleActionsMap[module.id]?.[0] && (
+                      <p className="text-xs text-stellenbosch-maroon font-medium mb-3 line-clamp-2">
+                        Next: {moduleActionsMap[module.id][0].title}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between gap-3">
                       <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex-1">
                         <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${module.confidence}%` }} />
@@ -226,6 +240,28 @@ const Modules: React.FC = () => {
             <InfoPanel icon={<FileText size={19} />} title="Assessment rules" tone="blue">
               {selected.assessmentRules.riskWarnings.slice(0, 4).map((point) => <Bullet key={point} text={point} />)}
             </InfoPanel>
+          </div>
+
+          <div className="px-7 pb-7">
+            <h3 className="font-display text-2xl text-stellenbosch-maroon mb-4">Module next best actions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {selectedActions.map((action) => (
+                <div key={action.id} className="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 ${actionPriorityTone(action.priority)}`}>{action.priority}</span>
+                    <span className="text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 bg-white text-slate-500 border border-slate-100">{action.actionType}</span>
+                  </div>
+                  <p className="font-bold text-slate-800">{action.title}</p>
+                  <p className="text-xs text-slate-500 mt-2">{action.reason}</p>
+                  <p className="text-xs text-stellenbosch-maroon mt-3">{action.suggestedStudyMethod}</p>
+                </div>
+              ))}
+              {selectedActions.length === 0 && (
+                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-500">
+                  No module-specific actions yet. Add marks, topics, or mistakes for sharper prioritisation.
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="px-7 pb-7">
@@ -494,6 +530,19 @@ const MiniMetric: React.FC<{ icon: React.ReactNode; label: string; value: string
     <p className="font-bold text-sm">{value}</p>
   </div>
 );
+
+function actionPriorityTone(priority: NextBestAction['priority']) {
+  switch (priority) {
+    case 'urgent':
+      return 'bg-red-50 text-red-800 border border-red-100';
+    case 'high':
+      return 'bg-amber-50 text-amber-800 border border-amber-100';
+    case 'medium':
+      return 'bg-blue-50 text-blue-800 border border-blue-100';
+    default:
+      return 'bg-slate-100 text-slate-700 border border-slate-200';
+  }
+}
 
 const TextField: React.FC<{ label: string; onChange: (value: string) => void; placeholder: string; value: string }> = ({ label, onChange, placeholder, value }) => (
   <label className="block">
