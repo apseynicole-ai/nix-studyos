@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, LogIn, LogOut, Scale, Upload, Trash2, UserRound } from 'lucide-react';
+import { Download, LogIn, LogOut, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
@@ -20,9 +20,12 @@ const Settings: React.FC = () => {
   const [lastBackupMeta, setLastBackupMeta] = useState(() => getLastBackupMeta());
 
   const handleExport = () => {
-    exportBackup();
+    const { fileName, includedKeys } = exportBackup();
     setLastBackupMeta(getLastBackupMeta());
-    setStatus({ type: 'ok', msg: 'Backup downloaded.' });
+    setStatus({
+      type: 'ok',
+      msg: `Backup downloaded as ${fileName}. Included ${includedKeys.length} local StudyOS key${includedKeys.length === 1 ? '' : 's'}.`,
+    });
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,13 +33,16 @@ const Settings: React.FC = () => {
     if (!file) return;
     e.target.value = '';
     const confirmed = window.confirm(
-      'Import backup?\n\nThis will overwrite any matching local data with the values in the file. Continue?'
+      'Import backup?\n\nThis may overwrite your current local StudyOS data for any matching keys in the backup. Continue?'
     );
     if (!confirmed) return;
     try {
-      const { keys } = await importBackup(file);
+      const { keys, warning } = await importBackup(file);
       setLastBackupMeta(getLastBackupMeta());
-      setStatus({ type: 'ok', msg: `Imported ${keys.length} key${keys.length === 1 ? '' : 's'}: ${keys.join(', ')}` });
+      setStatus({
+        type: 'ok',
+        msg: `${warning ? `${warning} ` : ''}Imported ${keys.length} key${keys.length === 1 ? '' : 's'}. Refresh the page if any views still show old data.`,
+      });
     } catch (err) {
       setStatus({ type: 'err', msg: err instanceof Error ? err.message : 'Import failed.' });
     }
@@ -186,25 +192,45 @@ const Settings: React.FC = () => {
         <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div>
-              <h2 className="font-display text-3xl text-stellenbosch-maroon">Backup & restore</h2>
-              <p className="text-sm text-slate-500">Export a backup before clearing browser data or changing devices.</p>
+              <h2 className="font-display text-3xl text-stellenbosch-maroon">Backup Centre</h2>
+              <p className="text-sm text-slate-500">Export a single local-first backup before clearing browser data, switching devices, or making risky changes.</p>
             </div>
             {lastBackupMeta && (
               <div className="rounded-2xl bg-slate-50 px-4 py-3 text-right">
-                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Last backup</p>
-                <p className="text-sm font-semibold text-slate-700">{new Date(lastBackupMeta.exportedAt).toLocaleString()}</p>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Last {lastBackupMeta.action}</p>
+                <p className="text-sm font-semibold text-slate-700">
+                  {new Date(lastBackupMeta.action === 'import' && lastBackupMeta.importedAt ? lastBackupMeta.importedAt : lastBackupMeta.exportedAt).toLocaleString()}
+                </p>
               </div>
             )}
           </div>
           <p className="text-sm text-slate-600">
-            Backups include your local marks state, tasks, timer sessions, AI summaries, local profile, planner-related local data, and compatible placeholders for future local study tracking data.
+            Backups include the important StudyOS local keys currently used by marks, tasks, planner, timer, dashboard, topic mastery, mistake bank, profile, summaries, and module targets. Importing restores only the included StudyOS keys and does not touch unrelated browser storage.
           </p>
+          <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-4 text-sm text-amber-900 flex gap-3">
+            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Import warning</p>
+              <p className="mt-1">Importing a backup may overwrite your current local StudyOS data for matching keys. Invalid or malformed files are rejected before anything is restored.</p>
+            </div>
+          </div>
+          {lastBackupMeta && (
+            <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-100 p-4">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Included keys in last backup action</p>
+              <p className="text-sm text-slate-600 break-words">
+                {lastBackupMeta.includedKeys.length > 0 ? lastBackupMeta.includedKeys.join(', ') : 'No key list recorded.'}
+              </p>
+              {lastBackupMeta.warning && (
+                <p className="mt-3 text-sm text-amber-800">{lastBackupMeta.warning}</p>
+              )}
+            </div>
+          )}
         </section>
 
         <ActionCard
           icon={<Download size={20} />}
           title="Export backup"
-          description="Downloads a versioned Nix StudyOS JSON backup of your local-first study data."
+          description="Downloads one Nix StudyOS JSON file with app metadata, included key names, and your current local-first StudyOS data."
           buttonLabel="Export JSON"
           buttonClass="maroon-gradient text-white"
           onClick={handleExport}
@@ -213,7 +239,7 @@ const Settings: React.FC = () => {
         <ActionCard
           icon={<Upload size={20} />}
           title="Import backup"
-          description="Restores a validated Nix StudyOS backup file. You will be asked to confirm before any local data is overwritten."
+          description="Validates the selected Nix StudyOS backup file first, then asks for confirmation before overwriting any matching local StudyOS data."
           buttonLabel="Import JSON"
           buttonClass="bg-slate-800 text-white"
           onClick={() => fileRef.current?.click()}

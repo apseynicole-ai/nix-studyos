@@ -1,6 +1,7 @@
 export const BACKUP_KEYS = [
   'baccllb-mark-rows',
   'baccllb-mark-engine-state',
+  'baccllb-module-targets',
   'baccllb-tasks',
   'baccllb-timer-sessions',
   'baccllb-studyai-summaries',
@@ -24,26 +25,35 @@ export const BACKUP_SCHEMA_VERSION = 1;
 export const BACKUP_APP_NAME = 'Nix StudyOS';
 
 interface BackupMeta {
+  action: 'export' | 'import';
   exportedAt: string;
   fileName: string;
+  includedKeys: string[];
+  importedAt?: string;
+  warning?: string;
 }
 
 export interface StudyOSBackupFile {
   appName: string;
   exportedAt: string;
-  schemaVersion: number;
+  backupVersion: number;
+  includedKeys: string[];
   data: Record<string, unknown>;
-  placeholders: {
-    topicMastery: unknown[];
-    mistakeBank: unknown[];
+  placeholders?: {
+    topicMastery?: unknown[];
+    mistakeBank?: unknown[];
   };
+}
+
+function isStudyOSStorageKey(key: string) {
+  return key.startsWith('baccllb-') || key.startsWith('nix-');
 }
 
 function appKeys(): string[] {
   const keys: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && (k.startsWith('baccllb-') || k.startsWith('nix-'))) keys.push(k);
+    if (k && isStudyOSStorageKey(k)) keys.push(k);
   }
   return keys;
 }
@@ -62,21 +72,33 @@ export function collectBackup(): Record<string, unknown> {
   return backup;
 }
 
-export function exportBackup(): void {
+function getIncludedBackupKeys(data: Record<string, unknown>) {
+  return Object.keys(data).sort();
+}
+
+export function exportBackup(): { fileName: string; includedKeys: string[] } {
   const exportedAt = new Date().toISOString();
   const fileName = `nix-studyos-backup-${exportedAt.slice(0, 10)}.json`;
+  const data = collectBackup();
+  const includedKeys = getIncludedBackupKeys(data);
   const backupFile: StudyOSBackupFile = {
     appName: BACKUP_APP_NAME,
     exportedAt,
-    schemaVersion: BACKUP_SCHEMA_VERSION,
-    data: collectBackup(),
+    backupVersion: BACKUP_SCHEMA_VERSION,
+    includedKeys,
+    data,
     placeholders: {
       topicMastery: readLocalJson<unknown[]>('baccllb-topic-mastery', []),
       mistakeBank: readLocalJson<unknown[]>('baccllb-mistake-bank', []),
     },
   };
 
-  writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, { exportedAt, fileName });
+  writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, {
+    action: 'export',
+    exportedAt,
+    fileName,
+    includedKeys,
+  });
 
   const blob = new Blob([JSON.stringify(backupFile, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -85,9 +107,11 @@ export function exportBackup(): void {
   a.download = fileName;
   a.click();
   URL.revokeObjectURL(url);
+
+  return { fileName, includedKeys };
 }
 
-export function importBackup(file: File): Promise<{ keys: string[] }> {
+export function importBackup(file: File): Promise<{ keys: string[]; warning?: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -99,29 +123,48 @@ export function importBackup(file: File): Promise<{ keys: string[] }> {
           return;
         }
 
-        if (data.schemaVersion !== BACKUP_SCHEMA_VERSION) {
-          reject(new Error(`Unsupported backup schema version: ${String(data.schemaVersion)}.`));
+        const version = readBackupVersion(data);
+        if (version === null) {
+          reject(new Error('Invalid backup: backup version metadata is missing.'));
           return;
+        }
+
+        let warning: string | undefined;
+        if (version > BACKUP_SCHEMA_VERSION) {
+          reject(new Error(`This backup uses a newer version (${version}) than this app currently supports.`));
+          return;
+        }
+        if (version < BACKUP_SCHEMA_VERSION) {
+          warning = `Imported an older backup version (${version}). Review your data after reload in case some newer features were not present yet.`;
         }
 
         const keys: string[] = [];
         for (const [key, value] of Object.entries(data.data)) {
+          if (!isStudyOSStorageKey(key)) continue;
           localStorage.setItem(key, JSON.stringify(value));
           keys.push(key);
         }
+        if (keys.length === 0 && !data.placeholders?.topicMastery && !data.placeholders?.mistakeBank) {
+          reject(new Error('Invalid backup: no StudyOS local data keys were found in this file.'));
+          return;
+        }
         if (!('baccllb-topic-mastery' in data.data)) {
-          localStorage.setItem('baccllb-topic-mastery', JSON.stringify(data.placeholders.topicMastery ?? []));
+          localStorage.setItem('baccllb-topic-mastery', JSON.stringify(data.placeholders?.topicMastery ?? []));
           keys.push('baccllb-topic-mastery');
         }
         if (!('baccllb-mistake-bank' in data.data)) {
-          localStorage.setItem('baccllb-mistake-bank', JSON.stringify(data.placeholders.mistakeBank ?? []));
+          localStorage.setItem('baccllb-mistake-bank', JSON.stringify(data.placeholders?.mistakeBank ?? []));
           keys.push('baccllb-mistake-bank');
         }
         writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, {
+          action: 'import',
           exportedAt: data.exportedAt,
           fileName: file.name,
+          includedKeys: keys,
+          importedAt: new Date().toISOString(),
+          warning,
         });
-        resolve({ keys });
+        resolve({ keys, warning });
       } catch {
         reject(new Error('Could not parse file. Make sure it is a valid JSON backup.'));
       }
@@ -161,11 +204,14 @@ function isValidBackupShape(value: unknown): value is StudyOSBackupFile {
   return (
     candidate.appName === BACKUP_APP_NAME &&
     typeof candidate.exportedAt === 'string' &&
-    typeof candidate.schemaVersion === 'number' &&
     typeof candidate.data === 'object' &&
     candidate.data !== null &&
-    !Array.isArray(candidate.data) &&
-    typeof candidate.placeholders === 'object' &&
-    candidate.placeholders !== null
+    !Array.isArray(candidate.data)
   );
+}
+
+function readBackupVersion(candidate: Partial<StudyOSBackupFile> & { schemaVersion?: unknown }) {
+  if (typeof candidate.backupVersion === 'number') return candidate.backupVersion;
+  if (typeof candidate.schemaVersion === 'number') return candidate.schemaVersion;
+  return null;
 }
