@@ -341,9 +341,30 @@ const Dashboard: React.FC = () => {
                   <div>
                     <p className="font-bold text-slate-800">{assessment.module.shortName}: {assessment.title}</p>
                     <p className="text-xs text-slate-500 mt-1">{assessment.date}{assessment.time ? ` • ${assessment.time}` : ''}</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider font-bold">
+                      {assessment.venue && (
+                        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600">
+                          {assessment.venue}
+                        </span>
+                      )}
+                      {assessment.confidence === 'provisional' ? (
+                        <span className="rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-amber-800">
+                          Venue provisional
+                        </span>
+                      ) : assessment.confidence === 'high' ? (
+                        <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-emerald-800">
+                          Verified timetable
+                        </span>
+                      ) : null}
+                    </div>
                   </div>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-full bg-white text-stellenbosch-maroon border border-stellenbosch-maroon/10">{assessment.status}</span>
                 </div>
+                {assessment.durationMinutes && (
+                  <p className="text-xs text-slate-500 mt-2">
+                    Duration: {Math.round(assessment.durationMinutes / 60)}h{assessment.durationMinutes % 60 ? ` ${assessment.durationMinutes % 60}m` : ''}
+                  </p>
+                )}
                 {assessment.notes && <p className="text-xs text-slate-500 mt-2">{assessment.notes}</p>}
               </div>
             ))}

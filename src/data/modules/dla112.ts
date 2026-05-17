@@ -1,6 +1,9 @@
 import { Laptop } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2Calendar = getAssessmentCalendarEntry('dla112', 'A2');
 
 const topics: ModuleTopic[] = [
   {
@@ -147,13 +150,18 @@ const assessmentStructure = [
   },
   {
     id: 'A2',
-    title: 'Assessment 2',
-    date: '2026-06-04',
+    title: a2Calendar?.title || 'Assessment 2',
+    date: a2Calendar?.date || '2026-06-04',
+    time: a2Calendar?.time,
     weight: 50,
     format: 'Test',
     scope: ['Chapters 1–6'],
     status: 'upcoming' as const,
-    notes: 'Official framework-confirmed.',
+    durationMinutes: a2Calendar?.durationMinutes,
+    venue: a2Calendar?.venue,
+    source: a2Calendar?.source,
+    confidence: a2Calendar?.confidence,
+    notes: a2Calendar?.notes || 'Official framework-confirmed.',
   },
   {
     id: 'A3',
