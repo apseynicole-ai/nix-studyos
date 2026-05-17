@@ -270,7 +270,7 @@ function getReadinessLabel(
   unresolvedCount: number,
 ): FinalBossReadinessItem['readinessLabel'] {
   if (trackedCount > 0 && readyCount === trackedCount && unresolvedCount === 0) return 'Final Boss ready';
-  if (trackedCount === 0) return unresolvedCount > 0 ? 'Building' : 'Not ready';
+  if (trackedCount === 0) return 'Not ready';
   if (readyCount === 0 || weakCount >= Math.ceil(trackedCount / 2) || unresolvedCount >= 3) return 'Not ready';
   if (readyCount >= Math.ceil(trackedCount * 0.75) && weakCount <= 1 && unresolvedCount <= 1) return 'Almost ready';
   return 'Building';
