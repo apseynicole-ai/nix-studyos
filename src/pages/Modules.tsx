@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCap, ListChecks, Pencil, Plus, Search, Target, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCap, ListChecks, Pencil, Plus, RefreshCcw, Search, ShieldCheck, Target, Trash2 } from 'lucide-react';
 import { modules, ModuleArea } from '../data/baccllb';
 import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
@@ -8,23 +8,26 @@ import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import {
   averageTopicConfidence,
+  deriveTopicStrengthLabel,
   deleteTopicMastery,
+  deriveTopicStatus,
   emptyTopicDraft,
+  markTopicReviewedToday,
   moduleNameForTopic,
   readTopicMastery,
+  resetTopicMasteryRecord,
   topicSuggestionsForModule,
   topicsNeedingRetestSoon,
+  updateTopicQuickAction,
   upsertTopicMastery,
   type ExamPriority,
   type TopicMasteryRecord,
-  type TopicStatus,
 } from '../lib/topicMastery';
 import { calculateTopicProgress, clampProgress } from '../lib/progressMetrics';
 
 const areas: Array<ModuleArea | 'All'> = ['All', 'Accounting', 'Law', 'Economics', 'Quantitative', 'Digital'];
 const trackerModuleOptions = [{ label: 'All modules', value: 'all' }, ...modules.map((module) => ({ label: `${module.shortName} (${module.code})`, value: module.id }))];
 const priorityOptions: ExamPriority[] = ['low', 'medium', 'high', 'urgent'];
-const statusOptions: TopicStatus[] = ['not-started', 'learning', 'practising', 'exam-ready'];
 
 const Modules: React.FC = () => {
   const [area, setArea] = useState<ModuleArea | 'All'>('All');
@@ -100,8 +103,9 @@ const Modules: React.FC = () => {
   const selectedNotesProgress = progressFromBoolean(selectedModuleTopics, 'notesDone');
   const selectedPracticeProgress = progressFromBoolean(selectedModuleTopics, 'practiceDone');
   const selectedExamReadyProgress = selectedModuleTopics.length
-    ? clampProgress((selectedModuleTopics.filter((topic) => topic.status === 'exam-ready').length / selectedModuleTopics.length) * 100)
+    ? clampProgress((selectedModuleTopics.filter((topic) => topic.finalBossReady || topic.status === 'exam-ready').length / selectedModuleTopics.length) * 100)
     : 0;
+  const selectedFinalBossReadyCount = selectedModuleTopics.filter((topic) => topic.finalBossReady).length;
 
   const startNewTopic = (moduleId = trackerModuleId === 'all' ? selected.id : trackerModuleId, topicName = '') => {
     setEditingId(null);
@@ -119,7 +123,8 @@ const Modules: React.FC = () => {
       id: editingId || draft.id,
       moduleId: draft.moduleId || selected.id,
       topicName: draft.topicName.trim(),
-      status: deriveStatus(draft),
+      status: deriveTopicStatus(draft),
+      statusLabel: deriveTopicStrengthLabel(draft),
     });
     setMasteryRecords(next);
     setTrackerModuleId(draft.moduleId || trackerModuleId);
@@ -137,6 +142,35 @@ const Modules: React.FC = () => {
     if (!confirmed) return;
     setMasteryRecords(deleteTopicMastery(id));
     if (editingId === id) startNewTopic();
+  };
+
+  const handleResetTopic = (topic: TopicMasteryRecord) => {
+    const confirmed = window.confirm(`Reset tracker progress for "${topic.topicName}"? This keeps the topic name but clears confidence, practice, notes, dates, and Final Boss readiness.`);
+    if (!confirmed) return;
+    const next = resetTopicMasteryRecord(topic.id);
+    setMasteryRecords(next);
+    if (editingId === topic.id) {
+      const refreshed = next.find((item) => item.id === topic.id);
+      if (refreshed) {
+        setDraft(refreshed);
+      }
+    }
+  };
+
+  const handleQuickUpdate = (id: string, updater: (record: TopicMasteryRecord) => TopicMasteryRecord) => {
+    const next = updateTopicQuickAction(id, (record) => {
+      const updated = updater(record);
+      return {
+        ...updated,
+        status: deriveTopicStatus(updated),
+        statusLabel: deriveTopicStrengthLabel(updated),
+      };
+    });
+    setMasteryRecords(next);
+    if (editingId === id) {
+      const refreshed = next.find((item) => item.id === id);
+      if (refreshed) setDraft(refreshed);
+    }
   };
 
   return (
@@ -339,7 +373,7 @@ const Modules: React.FC = () => {
               <ProgressBar value={selectedReadProgress} label="Read done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.readDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="slate" />
               <ProgressBar value={selectedNotesProgress} label="Notes done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.notesDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="amber" />
               <ProgressBar value={selectedPracticeProgress} label="Practice done" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.practiceDone).length} of ${selectedModuleTopics.length} tracked topics` : 'No tracked topics yet'} tone="maroon" />
-              <ProgressBar value={selectedExamReadyProgress} label="Exam-ready topics" helper={selectedModuleTopics.length ? `${selectedModuleTopics.filter((topic) => topic.status === 'exam-ready').length} topics at exam-ready level` : 'No tracked topics yet'} tone="emerald" />
+              <ProgressBar value={selectedExamReadyProgress} label="Final Boss ready" helper={selectedModuleTopics.length ? `${selectedFinalBossReadyCount} of ${selectedModuleTopics.length} topics marked Final Boss ready` : 'No tracked topics yet'} tone="emerald" />
             </div>
           </div>
         </section>
@@ -350,8 +384,8 @@ const Modules: React.FC = () => {
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
               <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">local-first mastery tracker</p>
-              <h2 className="font-display text-4xl text-stellenbosch-maroon">Topic Mastery</h2>
-              <p className="text-slate-500 mt-2">Track topic confidence, notes, practice, and retest planning locally on this device.</p>
+              <h2 className="font-display text-4xl text-stellenbosch-maroon">Topic Tracker</h2>
+              <p className="text-slate-500 mt-2">Track confidence, practice count, review dates, retest planning, notes, and Final Boss readiness locally on this device.</p>
             </div>
             <button
               type="button"
@@ -362,10 +396,11 @@ const Modules: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
             <MiniMetric icon={<Target size={18} />} label="Average confidence" value={`${trackerAverage}%`} />
             <MiniMetric icon={<AlertTriangle size={18} />} label="Urgent topics" value={`${filteredTopics.filter((item) => item.examPriority === 'urgent').length}`} />
             <MiniMetric icon={<Clock3 size={18} />} label="Retests soon" value={`${retestSoon.length}`} tone={retestSoon.length > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
+            <MiniMetric icon={<ShieldCheck size={18} />} label="Final Boss ready" value={`${filteredTopics.filter((item) => item.finalBossReady).length}`} tone={filteredTopics.some((item) => item.finalBossReady) ? 'bg-emerald-50 text-emerald-800 border-emerald-100' : undefined} />
           </div>
 
           <form onSubmit={handleSaveTopic} className="bg-white rounded-[2rem] border border-slate-100 p-5 space-y-4">
@@ -387,6 +422,11 @@ const Modules: React.FC = () => {
                 value={draft.confidencePercent}
                 onChange={(value) => setDraft((current) => ({ ...current, confidencePercent: value }))}
               />
+              <NumberField
+                label="Practice count"
+                value={draft.practiceCount}
+                onChange={(value) => setDraft((current) => ({ ...current, practiceCount: value }))}
+              />
               <SelectField
                 label="Exam priority"
                 value={draft.examPriority}
@@ -403,18 +443,18 @@ const Modules: React.FC = () => {
                 value={draft.retestDate}
                 onChange={(value) => setDraft((current) => ({ ...current, retestDate: value }))}
               />
-              <SelectField
-                label="Status"
-                value={draft.status}
-                onChange={(value) => setDraft((current) => ({ ...current, status: value as TopicStatus }))}
-                options={statusOptions.map((item) => ({ label: labelise(item), value: item }))}
-              />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               <ToggleField label="Reading done" checked={draft.readDone} onChange={(checked) => setDraft((current) => ({ ...current, readDone: checked }))} />
               <ToggleField label="Notes done" checked={draft.notesDone} onChange={(checked) => setDraft((current) => ({ ...current, notesDone: checked }))} />
               <ToggleField label="Practice done" checked={draft.practiceDone} onChange={(checked) => setDraft((current) => ({ ...current, practiceDone: checked }))} />
+              <ToggleField label="Final Boss ready" checked={draft.finalBossReady} onChange={(checked) => setDraft((current) => ({ ...current, finalBossReady: checked }))} />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <InlineInfo label="Status" value={labelise(deriveTopicStatus(draft))} />
+              <InlineInfo label="Status label" value={labelise(deriveTopicStrengthLabel(draft))} tone={strengthTone(deriveTopicStrengthLabel(draft))} />
             </div>
 
             <label className="block">
@@ -494,6 +534,12 @@ const Modules: React.FC = () => {
                       <span className="text-[10px] uppercase tracking-wider font-bold bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-1">{moduleNameForTopic(topic.moduleId)}</span>
                       <span className={`text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 ${priorityTone(topic.examPriority)}`}>{labelise(topic.examPriority)}</span>
                       <span className="text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 bg-white text-slate-500 border border-slate-100">{labelise(topic.status)}</span>
+                      <span className={`text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 ${strengthTone(topic.statusLabel)}`}>{labelise(topic.statusLabel)}</span>
+                      {topic.finalBossReady && (
+                        <span className="text-[10px] uppercase tracking-wider font-bold rounded-full px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100">
+                          Final Boss ready
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 mb-3">
                       <div className="h-2 bg-slate-200 rounded-full overflow-hidden flex-1">
@@ -505,10 +551,58 @@ const Modules: React.FC = () => {
                       <CheckPill label="Read" done={topic.readDone} />
                       <CheckPill label="Notes" done={topic.notesDone} />
                       <CheckPill label="Practice" done={topic.practiceDone} />
+                      <span className="px-2 py-1 rounded-full bg-white border border-slate-100">Practice {topic.practiceCount}</span>
                       {topic.lastReviewed && <span className="px-2 py-1 rounded-full bg-white border border-slate-100">Reviewed {topic.lastReviewed}</span>}
                       {topic.retestDate && <span className="px-2 py-1 rounded-full bg-white border border-slate-100">Retest {topic.retestDate}</span>}
                     </div>
                     {topic.notes && <p className="text-sm text-slate-600">{topic.notes}</p>}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <QuickActionButton
+                        label="Reviewed today"
+                        onClick={() => {
+                          const next = markTopicReviewedToday(topic.id);
+                          setMasteryRecords(next);
+                          if (editingId === topic.id) {
+                            const refreshed = next.find((item) => item.id === topic.id);
+                            if (refreshed) setDraft(refreshed);
+                          }
+                        }}
+                      />
+                      <QuickActionButton
+                        label="Practice -"
+                        onClick={() =>
+                          handleQuickUpdate(topic.id, (record) => ({
+                            ...record,
+                            practiceCount: Math.max(0, record.practiceCount - 1),
+                            practiceDone: record.practiceCount - 1 > 0 ? record.practiceDone : false,
+                          }))
+                        }
+                      />
+                      <QuickActionButton
+                        label="Practice +"
+                        onClick={() =>
+                          handleQuickUpdate(topic.id, (record) => ({
+                            ...record,
+                            practiceCount: Math.min(999, record.practiceCount + 1),
+                            practiceDone: true,
+                          }))
+                        }
+                      />
+                      <QuickActionButton
+                        label={topic.finalBossReady ? 'Undo Final Boss' : 'Mark Final Boss'}
+                        onClick={() =>
+                          handleQuickUpdate(topic.id, (record) => ({
+                            ...record,
+                            finalBossReady: !record.finalBossReady,
+                          }))
+                        }
+                      />
+                      <QuickActionButton
+                        label="Reset topic"
+                        tone="danger"
+                        onClick={() => handleResetTopic(topic)}
+                      />
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => handleEditTopic(topic)} className="p-3 rounded-2xl bg-white border border-slate-100 text-slate-500 hover:text-stellenbosch-maroon">
@@ -526,7 +620,7 @@ const Modules: React.FC = () => {
               <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 px-6 py-12 text-center">
                 <p className="font-display text-3xl text-stellenbosch-maroon mb-3">No topics tracked yet</p>
                 <p className="text-slate-500 max-w-2xl mx-auto">
-                  Start with one of the suggested weak points or add a topic manually. If a module does not have a confirmed topic list yet, use your own lecture or MegaNote topic names.
+                  Start with one of the suggested weak points or add a custom topic manually. If this module has no seeded topic map yet, you can still track confidence, practice, review dates, retest dates, notes, and Final Boss readiness with your own topic names.
                 </p>
               </div>
             )}
@@ -615,10 +709,31 @@ const RangeField: React.FC<{ label: string; onChange: (value: number) => void; v
   </label>
 );
 
+const NumberField: React.FC<{ label: string; onChange: (value: number) => void; value: number }> = ({ label, onChange, value }) => (
+  <label className="block">
+    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2 block">{label}</span>
+    <input
+      type="number"
+      min={0}
+      max={999}
+      value={value}
+      onChange={(event) => onChange(Math.max(0, Math.min(999, Number(event.target.value) || 0)))}
+      className="w-full rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+    />
+  </label>
+);
+
 const ToggleField: React.FC<{ checked: boolean; label: string; onChange: (checked: boolean) => void }> = ({ checked, label, onChange }) => (
   <button type="button" onClick={() => onChange(!checked)} className={`rounded-2xl border px-4 py-3 text-sm font-bold text-left ${checked ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-white text-slate-500 border-slate-100'}`}>
     {label}
   </button>
+);
+
+const InlineInfo: React.FC<{ label: string; value: string; tone?: string }> = ({ label, value, tone }) => (
+  <div className={`rounded-2xl border px-4 py-3 ${tone || 'bg-white text-slate-700 border-slate-100'}`}>
+    <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400 mb-1">{label}</p>
+    <p className="text-sm font-bold">{value}</p>
+  </div>
 );
 
 const CheckPill: React.FC<{ done: boolean; label: string }> = ({ done, label }) => (
@@ -627,12 +742,19 @@ const CheckPill: React.FC<{ done: boolean; label: string }> = ({ done, label }) 
   </span>
 );
 
-function deriveStatus(topic: TopicMasteryRecord): TopicStatus {
-  if (topic.practiceDone && topic.confidencePercent >= 75) return 'exam-ready';
-  if (topic.practiceDone || topic.confidencePercent >= 60) return 'practising';
-  if (topic.readDone || topic.notesDone || topic.confidencePercent > 0) return 'learning';
-  return 'not-started';
-}
+const QuickActionButton: React.FC<{ label: string; onClick: () => void; tone?: 'default' | 'danger' }> = ({ label, onClick, tone = 'default' }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+      tone === 'danger'
+        ? 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100'
+        : 'bg-white text-slate-600 border-slate-100 hover:border-stellenbosch-maroon/20 hover:text-stellenbosch-maroon'
+    }`}
+  >
+    {label}
+  </button>
+);
 
 function priorityRank(priority: ExamPriority) {
   return { low: 0, medium: 1, high: 2, urgent: 3 }[priority];
@@ -645,6 +767,15 @@ function priorityTone(priority: ExamPriority) {
     high: 'bg-amber-50 text-amber-700',
     urgent: 'bg-red-50 text-red-700',
   }[priority];
+}
+
+function strengthTone(label: 'weak' | 'building' | 'good' | 'strong') {
+  return {
+    weak: 'bg-red-50 text-red-700 border-red-100',
+    building: 'bg-amber-50 text-amber-700 border-amber-100',
+    good: 'bg-blue-50 text-blue-700 border-blue-100',
+    strong: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  }[label];
 }
 
 function labelise(value: string) {
