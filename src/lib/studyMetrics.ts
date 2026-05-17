@@ -186,7 +186,10 @@ function buildMarksPressureItem(
   const output = calculateModuleOutput(module.id, moduleState);
   if (!output) return null;
 
-  const currentFinal = output.fm ?? output.fm2 ?? output.fm1 ?? output.mtd ?? null;
+  // MTD before FM1: MTD normalises over completed assessments only; FM1 uses a fixed
+  // denominator in some models (ConLaw178, Foundations178) and would treat pending
+  // slots as zero, artificially deflating the pressure score.
+  const currentFinal = output.fm ?? output.fm2 ?? output.mtd ?? output.fm1 ?? null;
   const targetMark = normaliseTarget(targetOverride, module.target);
   const gap = currentFinal === null ? 0 : Math.max(0, targetMark - currentFinal);
   const pressureScore = output.isValidFM ? Math.min(100, Math.round(gap * 5)) : Math.min(100, Math.round(gap * 5) + 25);
