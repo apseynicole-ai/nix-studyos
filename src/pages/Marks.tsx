@@ -360,7 +360,10 @@ function calculateModuleOutput(moduleId: SupportedModuleId, moduleState: ModuleD
 }
 
 function getCurrentFinal(output: MarksOutput): number | null {
-  return output.fm ?? output.fm2 ?? output.fm1 ?? output.mtd ?? output.my ?? null;
+  // Prefer MTD (normalised over completed assessments only) over FM1, which uses a
+  // fixed denominator and treats pending slots as zero in some module models (e.g.
+  // ConLaw178, Foundations178). FM1 is still shown in its own KPI as a projection.
+  return output.fm ?? output.fm2 ?? output.mtd ?? output.fm1 ?? output.my ?? null;
 }
 
 function getRiskLevel(output: MarksOutput): { label: string; tone: string } {
@@ -682,8 +685,8 @@ const Marks: React.FC = () => {
       <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 mb-8">
         <Kpi icon={<LineChart />} label="MY" value={formatMetric(output.my)} note="Year mark" />
         <EditableGoalKpi value={selectedOverallGoal} onChange={updateOverallGoal} />
-        <Kpi icon={<TrendingUp />} label="MTD" value={formatMetric(output.mtd)} note="Mark-to-date" />
-        <Kpi icon={<Calculator />} label="FM1" value={formatMetric(output.fm1)} note="Primary FM path" />
+        <Kpi icon={<TrendingUp />} label="MTD" value={formatMetric(output.mtd)} note="Completed only" />
+        <Kpi icon={<Calculator />} label="FM1" value={formatMetric(output.fm1)} note="Projected / running total" />
         <Kpi icon={<Target />} label="FM2 / FM" value={formatMetric(output.fm ?? output.fm2)} note="Alternate/final path" />
         <Kpi icon={<CheckCircle2 />} label="Valid FM" value={output.isValidFM ? 'Yes' : 'No'} note={getA3Status(state.selectedModuleId, output, selectedModuleState)} tone={output.isValidFM ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'} />
         <Kpi icon={<AlertTriangle />} label="Risk" value={risk.label} note={currentFinal !== null ? `Current path ${currentFinal}%` : 'Waiting for enough inputs'} tone={risk.tone} />
@@ -695,7 +698,7 @@ const Marks: React.FC = () => {
           <ProgressBadge value={currentMarkProgress} label="MTD vs goal" tone="amber" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ProgressBar value={currentPathProgress} label="Current final path" helper={currentFinal !== null ? `${currentFinal}% against an overall goal of ${selectedOverallGoal}%` : 'Add completed assessment marks to compare the current path to your overall goal'} tone="maroon" />
+          <ProgressBar value={currentPathProgress} label="Current mark path" helper={currentFinal !== null ? `${output.isValidFM ? `Valid final mark: ${currentFinal}%` : `Completed assessments: ${currentFinal}%`} against an overall goal of ${selectedOverallGoal}%` : 'Add completed assessment marks to compare the current path to your overall goal'} tone="maroon" />
           <ProgressBar value={currentMarkProgress} label="Mark-to-date momentum" helper={output.mtd !== null ? `${output.mtd}% mark-to-date against an overall goal of ${selectedOverallGoal}%` : 'No mark-to-date available yet for this module'} tone="amber" />
         </div>
       </section>
