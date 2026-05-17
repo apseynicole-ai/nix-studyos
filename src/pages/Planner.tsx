@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { CalendarDays, CheckCircle2, Clock, Coffee, Flame, ListChecks, Moon, PlusCircle, Sun, Target, TimerReset } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CheckCircle2, Clock, Coffee, Flame, ListChecks, Moon, PlusCircle, RotateCcw, ShieldAlert, Sun, Target, TimerReset } from 'lucide-react';
 import { modules, nightlyChecklist, taskTemplates, weeklyRhythm } from '../data/baccllb';
 import { LOCAL_TASKS_KEY, readLocalJson } from '../lib/localData';
+import { mistakeRetestsDueSoon, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import { calculatePlannerProgress, clampProgress } from '../lib/progressMetrics';
+import { readTopicMastery, topicsNeedingRetestSoon, type TopicMasteryRecord } from '../lib/topicMastery';
 
 const timeBlocks = [
   { label: 'Morning activation', time: '10–20 min', icon: Sun, style: 'bg-yellow-50 text-yellow-700 border-yellow-100', tasks: ['Open dashboard', 'Pick first tiny task', 'No perfection editing'] },
@@ -14,6 +16,19 @@ const timeBlocks = [
   { label: 'Light evening block', time: '19:00–20:30', icon: Moon, style: 'bg-indigo-50 text-indigo-700 border-indigo-100', tasks: ['Teach aloud', 'Review weak list', 'Plan tomorrow'] },
 ];
 
+type ReviewRadarItem = {
+  id: string;
+  moduleId: string;
+  moduleName: string;
+  moduleCode: string;
+  title: string;
+  reason: string;
+  badge: string;
+  badgeTone: string;
+  date?: string;
+  priority: number;
+};
+
 const Planner: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState(weeklyRhythm[0].day);
   const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
@@ -21,6 +36,8 @@ const Planner: React.FC = () => {
     () => readLocalJson<Array<{ text?: string; moduleId?: string; done?: boolean; completedAt?: string | null }>>(LOCAL_TASKS_KEY, []),
     [],
   );
+  const topicRecords = useMemo(() => readTopicMastery(), []);
+  const mistakeRecords = useMemo(() => readMistakeBank(), []);
   const selectedRhythm = weeklyRhythm.find((day) => day.day === selectedDay) || weeklyRhythm[0];
 
   const dayTasks = useMemo(() => {
@@ -48,6 +65,7 @@ const Planner: React.FC = () => {
   );
   const weekCompleted = weekTemplateTasks.filter((task) => task && storedTasks.some((stored) => stored.text === task.title && stored.moduleId === task.moduleId && (stored.done || stored.completedAt))).length;
   const weekProgress = weekTemplateTasks.length ? clampProgress((weekCompleted / weekTemplateTasks.length) * 100) : 0;
+  const reviewRadarItems = useMemo(() => buildReviewRadarItems(topicRecords, mistakeRecords).slice(0, 6), [topicRecords, mistakeRecords]);
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -84,6 +102,53 @@ const Planner: React.FC = () => {
           <ProgressBar value={weekProgress} label="Week progress" helper={weekTemplateTasks.length ? `${weekCompleted} of ${weekTemplateTasks.length} weekly template tasks matched to completed local tasks` : 'No weekly progress data yet'} tone="amber" />
           <ProgressBar value={plannerProgress} label="Saved planner progress" helper={plannerProgress > 0 ? 'Derived from local planner data where available' : 'No saved planner progress data found yet'} tone="slate" />
         </div>
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">smart review queue</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Review Radar</h2>
+            <p className="text-slate-500 text-sm">A compact read-only list of topics and mistakes that are due for review soon, pulled from your existing Topic Tracker and MistakeBank.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ProgressBadge value={reviewRadarItems.length ? Math.min(100, reviewRadarItems.length * 16) : 0} label={`${reviewRadarItems.length} live items`} tone={reviewRadarItems.length > 0 ? 'amber' : 'slate'} />
+            <ProgressBadge value={topicsNeedingRetestSoon(topicRecords).length ? 100 : 0} label={`${topicsNeedingRetestSoon(topicRecords).length} topic retests`} tone="maroon" />
+            <ProgressBadge value={mistakeRetestsDueSoon(mistakeRecords).length ? 100 : 0} label={`${mistakeRetestsDueSoon(mistakeRecords).length} mistake retests`} tone="emerald" />
+          </div>
+        </div>
+
+        {reviewRadarItems.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No review radar yet — add topics or mistakes to unlock smart review suggestions.</p>
+            <p className="text-sm text-slate-500 mt-2">This section wakes up automatically once you log retest dates, weak topics, or unresolved mistakes.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {reviewRadarItems.map((item) => (
+              <div key={item.id} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-bold text-slate-800">{item.moduleName}</p>
+                    <p className="text-xs text-slate-400 mt-1">{item.moduleCode}</p>
+                  </div>
+                  <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 border ${item.badgeTone}`}>
+                    {item.badge}
+                  </span>
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">{item.title}</h3>
+                <p className="text-sm text-slate-500">{item.reason}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                  {item.date && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white border border-slate-100">
+                      <Clock size={12} /> {item.date}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-8">
@@ -179,3 +244,89 @@ const PlannerCard: React.FC<{ icon: React.ReactNode; title: string; text: string
 );
 
 export default Planner;
+
+function buildReviewRadarItems(topicRecords: TopicMasteryRecord[], mistakeRecords: ReturnType<typeof readMistakeBank>): ReviewRadarItem[] {
+  const topicRetests = topicsNeedingRetestSoon(topicRecords).map((record) => createTopicReviewItem(record, 'Retest due', 'bg-maroon-50 text-stellenbosch-maroon border-stellenbosch-maroon/10', 100));
+
+  const weakTopics = topicRecords
+    .filter((record) => record.confidencePercent <= 45 || record.statusLabel === 'weak' || record.examPriority === 'urgent')
+    .map((record) => createTopicReviewItem(record, 'Weak confidence', 'bg-amber-50 text-amber-800 border-amber-100', 82));
+
+  const notFinalBossReady = topicRecords
+    .filter((record) => !record.finalBossReady && (record.confidencePercent < 75 || !record.practiceDone))
+    .map((record) => createTopicReviewItem(record, 'Not Final Boss ready', 'bg-slate-100 text-slate-700 border-slate-200', 64));
+
+  const dueMistakes = mistakeRetestsDueSoon(mistakeRecords).map((record) => createMistakeReviewItem(record, 'Mistake retest due', 'bg-emerald-50 text-emerald-800 border-emerald-100', 96));
+
+  const unresolved = unresolvedMistakes(mistakeRecords)
+    .filter((record) => !record.retestDate)
+    .map((record) => createMistakeReviewItem(record, 'Unresolved mistake', 'bg-red-50 text-red-800 border-red-100', 74));
+
+  return dedupeReviewItems([...topicRetests, ...dueMistakes, ...weakTopics, ...unresolved, ...notFinalBossReady])
+    .sort((left, right) => right.priority - left.priority || compareReviewDates(left.date, right.date) || left.title.localeCompare(right.title));
+}
+
+function createTopicReviewItem(record: TopicMasteryRecord, badge: string, badgeTone: string, priority: number): ReviewRadarItem {
+  const module = resolveModule(record.moduleId);
+  const reason = badge === 'Retest due'
+    ? 'Retest date is close enough to surface now.'
+    : badge === 'Weak confidence'
+      ? `Confidence is ${record.confidencePercent}% and this topic still needs reinforcement.`
+      : 'This topic is still not Final Boss ready for higher-pressure revision.';
+
+  return {
+    id: `topic:${record.id}:${badge}`,
+    moduleId: record.moduleId,
+    moduleName: module.shortName,
+    moduleCode: module.code,
+    title: record.topicName,
+    reason,
+    badge,
+    badgeTone,
+    date: record.retestDate || record.lastReviewed || undefined,
+    priority,
+  };
+}
+
+function createMistakeReviewItem(
+  record: ReturnType<typeof readMistakeBank>[number],
+  badge: string,
+  badgeTone: string,
+  priority: number,
+): ReviewRadarItem {
+  const module = resolveModule(record.moduleId);
+
+  return {
+    id: `mistake:${record.id}:${badge}`,
+    moduleId: record.moduleId,
+    moduleName: module.shortName,
+    moduleCode: module.code,
+    title: record.mistakeTitle || record.mistakeCategory || record.topicName || 'Mistake review',
+    reason: badge === 'Mistake retest due'
+      ? 'A logged mistake is due for a correction retest soon.'
+      : 'This unresolved mistake still needs a retest date or correction loop.',
+    badge,
+    badgeTone,
+    date: record.retestDate || undefined,
+    priority,
+  };
+}
+
+function dedupeReviewItems(items: ReviewRadarItem[]) {
+  return Array.from(new Map(items.map((item) => [`${item.moduleId}:${item.title}:${item.badge}`, item])).values());
+}
+
+function compareReviewDates(left?: string, right?: string) {
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+  return left.localeCompare(right);
+}
+
+function resolveModule(moduleId: string) {
+  return modules.find((module) => module.id === moduleId) || {
+    id: moduleId,
+    shortName: 'Unknown module',
+    code: 'UNKNOWN',
+  };
+}
