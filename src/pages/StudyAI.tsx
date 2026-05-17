@@ -7,6 +7,48 @@ import { db, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, isFir
 import ReactMarkdown from 'react-markdown';
 import { modules, promptPacks, USER_ACADEMIC_PROFILE } from '../data/baccllb';
 import { LOCAL_SUMMARIES_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
+import { readTopicMastery, topicsNeedingRetestSoon } from '../lib/topicMastery';
+import { readMistakeBank } from '../lib/mistakeBank';
+import { getAssessmentCalendarEntry } from '../data/assessmentCalendar';
+
+function buildLiveContext(moduleId: string): string {
+  const parts: string[] = [];
+
+  const moduleTopics = readTopicMastery().filter((t) => t.moduleId === moduleId);
+  if (moduleTopics.length > 0) {
+    const topicLines: string[] = [];
+    const urgent = moduleTopics.filter((t) => t.examPriority === 'urgent');
+    const weak = moduleTopics.filter((t) => t.confidencePercent < 50 && t.examPriority !== 'urgent');
+    const retestSoon = topicsNeedingRetestSoon(moduleTopics);
+    const finalBoss = moduleTopics.filter((t) => t.finalBossReady);
+    if (urgent.length) topicLines.push(`Urgent priority: ${urgent.map((t) => t.topicName).join(', ')}`);
+    if (weak.length) topicLines.push(`Low confidence (<50%): ${weak.map((t) => `${t.topicName} (${t.confidencePercent}%)`).join(', ')}`);
+    if (retestSoon.length) topicLines.push(`Retest due within 3 days: ${retestSoon.map((t) => t.topicName).join(', ')}`);
+    if (finalBoss.length) topicLines.push(`Final-boss ready: ${finalBoss.map((t) => t.topicName).join(', ')}`);
+    if (topicLines.length) parts.push(`Topic mastery (${moduleTopics.length} tracked):\n${topicLines.map((l) => `- ${l}`).join('\n')}`);
+  }
+
+  const unresolved = readMistakeBank().filter((m) => m.moduleId === moduleId && !m.resolved);
+  if (unresolved.length > 0) {
+    const preview = unresolved.slice(0, 5).map((m) => `- ${m.mistakeTitle}${m.topicName ? ` [${m.topicName}]` : ''}`).join('\n');
+    parts.push(`Unresolved mistakes (${unresolved.length} total):\n${preview}`);
+  }
+
+  const calEntry = getAssessmentCalendarEntry(moduleId, 'A2') ?? getAssessmentCalendarEntry(moduleId, 'A2S1');
+  if (calEntry) {
+    const dateStr = new Date(calEntry.date).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    parts.push(`Upcoming final assessment:\n- ${dateStr} at ${calEntry.time}, ${calEntry.durationMinutes} min\n- Venue: ${calEntry.venue} (${calEntry.confidence === 'high' ? 'confirmed' : 'provisional'})`);
+  }
+
+  const markState = readLocalJson<{ modules?: Record<string, { assessments?: Record<string, { status?: string; completed?: boolean; mark?: string }> }> } | null>('baccllb-mark-engine-state', null);
+  const completedMarks = Object.entries(markState?.modules?.[moduleId]?.assessments ?? {})
+    .filter(([, a]) => a.status === 'completed' && a.completed && Number.isFinite(Number(a.mark?.trim())) && a.mark?.trim() !== '')
+    .map(([id, a]) => `${id}: ${Number(a.mark?.trim())}%`);
+  if (completedMarks.length) parts.push(`Marks entered:\n${completedMarks.map((l) => `- ${l}`).join('\n')}`);
+
+  if (parts.length === 0) return '';
+  return `\nLive study state for this module:\n${parts.join('\n\n')}`;
+}
 
 const StudyAI: React.FC = () => {
   const { user, localFirstMode } = useAuth();
@@ -82,7 +124,7 @@ Response rules:
 - For planning: make tasks concrete, timed, and ADHD-friendly.
 - Respect module hard rules and separation rules.
 - Be honest when more official material is needed.
-`;
+${buildLiveContext(moduleId)}`;
 
   const handleGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
