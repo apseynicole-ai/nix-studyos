@@ -49,6 +49,8 @@ function isStudyOSStorageKey(key: string) {
 }
 
 function appKeys(): string[] {
+  // Dynamic key discovery keeps active StudyOS-prefixed data backward-compatible
+  // without needing to preserve dead legacy keys in BACKUP_KEYS forever.
   const keys: string[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);

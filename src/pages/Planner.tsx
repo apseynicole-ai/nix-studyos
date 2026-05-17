@@ -229,7 +229,7 @@ const Planner: React.FC = () => {
       <section className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <PlannerCard icon={<PlusCircle />} title="10-task day rule" text="Each day should have up to 10 concrete tasks, not vague goals. Use points and minutes so the day feels finite." />
         <PlannerCard icon={<Flame />} title="Pressure before polish" text="For A2 season, practice and marking beats endless note perfecting. Build notes only when they directly unlock questions." />
-        <PlannerCard icon={<ListChecks />} title="Weekly Uni Reset" text="Every Sunday: update marks, deadlines, mistake log, weak topics, and the first Monday task." />
+        <PlannerCard icon={<ListChecks />} title="Weekly Uni Reset" text="Every Sunday: update marks, deadlines, MistakeBank, weak topics, and the first Monday task." />
       </section>
     </div>
   );
@@ -313,7 +313,17 @@ function createMistakeReviewItem(
 }
 
 function dedupeReviewItems(items: ReviewRadarItem[]) {
-  return Array.from(new Map(items.map((item) => [`${item.moduleId}:${item.title}:${item.badge}`, item])).values());
+  const deduped = new Map<string, ReviewRadarItem>();
+
+  for (const item of items) {
+    const key = `${item.moduleId}:${item.title.toLowerCase()}`;
+    const existing = deduped.get(key);
+    if (!existing || item.priority > existing.priority) {
+      deduped.set(key, item);
+    }
+  }
+
+  return Array.from(deduped.values());
 }
 
 function compareReviewDates(left?: string, right?: string) {
