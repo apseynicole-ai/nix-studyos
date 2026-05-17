@@ -1,6 +1,9 @@
 import { LineChart } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2Calendar = getAssessmentCalendarEntry('econ114', 'A2');
 
 const topics: ModuleTopic[] = [
   {
@@ -275,14 +278,18 @@ const assessmentStructure = [
   },
   {
     id: 'A2',
-    title: 'A2',
-    date: '2026-05-23',
-    time: '14:00',
+    title: a2Calendar?.title || 'A2',
+    date: a2Calendar?.date || '2026-05-23',
+    time: a2Calendar?.time || '14:00',
     weight: 60,
     format: 'Main exam / weighted main assessment model',
     scope: ['Unit 4', 'Unit 5', 'Unit 6', 'Unit 7', 'Unit 8', 'Unit 10'],
     status: 'upcoming' as const,
-    notes: 'Main exam scope should be checked against the latest official framework and announcements.',
+    durationMinutes: a2Calendar?.durationMinutes,
+    venue: a2Calendar?.venue,
+    source: a2Calendar?.source,
+    confidence: a2Calendar?.confidence,
+    notes: a2Calendar?.notes || 'Main exam scope should be checked against the latest official framework and announcements.',
     needsVerification: true,
   },
   {

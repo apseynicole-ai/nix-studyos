@@ -7,6 +7,7 @@ import { mistakeRetestsDueSoon, readMistakeBank, unresolvedMistakes } from '../l
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import { calculatePlannerProgress, clampProgress } from '../lib/progressMetrics';
+import { upcomingAssessments } from '../lib/studyMetrics';
 import { readTopicMastery, topicsNeedingRetestSoon, type TopicMasteryRecord } from '../lib/topicMastery';
 
 const timeBlocks = [
@@ -66,6 +67,7 @@ const Planner: React.FC = () => {
   const weekCompleted = weekTemplateTasks.filter((task) => task && storedTasks.some((stored) => stored.text === task.title && stored.moduleId === task.moduleId && (stored.done || stored.completedAt))).length;
   const weekProgress = weekTemplateTasks.length ? clampProgress((weekCompleted / weekTemplateTasks.length) * 100) : 0;
   const reviewRadarItems = useMemo(() => buildReviewRadarItems(topicRecords, mistakeRecords).slice(0, 6), [topicRecords, mistakeRecords]);
+  const nextAssessments = useMemo(() => upcomingAssessments().slice(0, 3), []);
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -102,6 +104,58 @@ const Planner: React.FC = () => {
           <ProgressBar value={weekProgress} label="Week progress" helper={weekTemplateTasks.length ? `${weekCompleted} of ${weekTemplateTasks.length} weekly template tasks matched to completed local tasks` : 'No weekly progress data yet'} tone="amber" />
           <ProgressBar value={plannerProgress} label="Saved planner progress" helper={plannerProgress > 0 ? 'Derived from local planner data where available' : 'No saved planner progress data found yet'} tone="slate" />
         </div>
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">assessment pulse</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Upcoming assessments</h2>
+            <p className="text-slate-500 text-sm">A compact timetable view pulled from the current verified assessment calendar data.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ProgressBadge value={nextAssessments.length ? 100 : 0} label={`${nextAssessments.length} scheduled`} tone={nextAssessments.length ? 'maroon' : 'slate'} />
+          </div>
+        </div>
+
+        {nextAssessments.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No assessment dates are available yet.</p>
+            <p className="text-sm text-slate-500 mt-2">This panel will surface date, time, and venue details once module assessment dates are locked into the source-of-truth calendar.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {nextAssessments.map((assessment) => (
+              <div key={`${assessment.module.id}-${assessment.id || assessment.title}`} className="rounded-3xl border border-slate-100 bg-slate-50/70 p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div>
+                    <p className="font-bold text-slate-800">{assessment.module.shortName}</p>
+                    <p className="text-xs text-slate-400 mt-1">{assessment.module.code}</p>
+                  </div>
+                  {assessment.confidence === 'provisional' ? (
+                    <span className="text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 border bg-amber-50 text-amber-800 border-amber-100">
+                      Venue provisional
+                    </span>
+                  ) : null}
+                </div>
+                <h3 className="font-bold text-slate-800 mb-2">{assessment.title}</h3>
+                <p className="text-sm text-slate-500">{assessment.date}{assessment.time ? ` • ${assessment.time}` : ''}</p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                  {assessment.venue && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white border border-slate-100">
+                      <Target size={12} /> {assessment.venue}
+                    </span>
+                  )}
+                  {assessment.durationMinutes && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-white border border-slate-100">
+                      <Clock size={12} /> {Math.round(assessment.durationMinutes / 60)}h{assessment.durationMinutes % 60 ? ` ${assessment.durationMinutes % 60}m` : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">

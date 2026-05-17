@@ -4,14 +4,21 @@ export type ModuleArea = 'Accounting' | 'Law' | 'Economics' | 'Quantitative' | '
 export type Semester = 'S1' | 'S2' | 'Year';
 export type AssessmentStatus = 'done' | 'upcoming' | 'draft' | 'unknown';
 export type SourceStatus = 'available' | 'partial' | 'missing' | 'in-progress' | 'needs-verification' | 'not-needed';
+export type AssessmentConfidence = 'high' | 'provisional';
 
 export interface Assessment {
+  id?: string;
   title: string;
   date: string;
   time?: string;
   weight?: number;
   status: AssessmentStatus;
+  durationMinutes?: number;
+  venue?: string;
+  source?: string;
+  confidence?: AssessmentConfidence;
   notes?: string;
+  needsVerification?: boolean;
 }
 
 export interface ModuleAssessmentDetail {
@@ -23,6 +30,10 @@ export interface ModuleAssessmentDetail {
   format?: string;
   scope?: string[];
   status: AssessmentStatus;
+  durationMinutes?: number;
+  venue?: string;
+  source?: string;
+  confidence?: AssessmentConfidence;
   notes?: string;
   needsVerification?: boolean;
 }
@@ -129,11 +140,17 @@ export function flattenModuleSubtopics(topics: ModuleTopic[]) {
 
 export function toLegacyAssessments(assessmentStructure: ModuleAssessmentDetail[]): Assessment[] {
   return assessmentStructure.map((assessment) => ({
+    id: assessment.id,
     title: assessment.title,
     date: assessment.date || 'TBC',
     time: assessment.time,
     weight: assessment.weight === null ? undefined : assessment.weight,
     status: assessment.status,
+    durationMinutes: assessment.durationMinutes,
+    venue: assessment.venue,
+    source: assessment.source,
+    confidence: assessment.confidence,
     notes: assessment.notes,
+    needsVerification: assessment.needsVerification,
   }));
 }

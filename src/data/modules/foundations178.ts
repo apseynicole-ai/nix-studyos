@@ -1,6 +1,9 @@
 import { Landmark } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2SemesterOneCalendar = getAssessmentCalendarEntry('foundations178', 'A2S1');
 
 const topics: ModuleTopic[] = [
   {
@@ -68,7 +71,20 @@ const topics: ModuleTopic[] = [
 const assessmentStructure = [
   { id: 'AFS1', title: 'AF Semester 1', weight: 5, format: 'Tutorials and class work', status: 'unknown' as const, notes: 'March–May 2026' },
   { id: 'A1S1', title: 'A1 Semester 1', date: '2026-03-19', weight: 10, format: 'Main assessment', status: 'done' as const },
-  { id: 'A2S1', title: 'A2 Semester 1', date: '2026-05-27', weight: 20, format: 'Main assessment', status: 'upcoming' as const },
+  {
+    id: 'A2S1',
+    title: a2SemesterOneCalendar?.title || 'A2 Semester 1',
+    date: a2SemesterOneCalendar?.date || '2026-05-27',
+    time: a2SemesterOneCalendar?.time,
+    weight: 20,
+    format: 'Main assessment',
+    status: 'upcoming' as const,
+    durationMinutes: a2SemesterOneCalendar?.durationMinutes,
+    venue: a2SemesterOneCalendar?.venue,
+    source: a2SemesterOneCalendar?.source,
+    confidence: a2SemesterOneCalendar?.confidence,
+    notes: a2SemesterOneCalendar?.notes,
+  },
   { id: 'AFS2', title: 'AF Semester 2', weight: 5, format: 'Tutorials and class work', status: 'draft' as const, notes: 'July–October 2026' },
   { id: 'A1S2', title: 'A1 Semester 2', date: '2026-08-27', weight: 20, format: 'Main assessment', status: 'draft' as const },
   { id: 'A2S2', title: 'A2 Semester 2', date: '2026-10-31', weight: 40, format: 'Main assessment', status: 'draft' as const },
@@ -226,4 +242,3 @@ export const foundations178Module: ModuleInfo = {
     'Do not collapse Semester 1 and Semester 2 topics into one undifferentiated topic list.',
   ],
 };
-

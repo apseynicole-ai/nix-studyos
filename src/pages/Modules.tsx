@@ -333,6 +333,29 @@ const Modules: React.FC = () => {
                     <span className={`text-[10px] border rounded-full px-2 py-1 uppercase tracking-wider font-bold ${assessment.status === 'done' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : assessment.status === 'upcoming' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>{assessment.status}</span>
                   </div>
                   <p className="text-xs text-slate-500">{assessment.date}{assessment.time ? ` • ${assessment.time}` : ''}</p>
+                  {(assessment.venue || assessment.durationMinutes || assessment.confidence) && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-[10px] uppercase tracking-wider font-bold">
+                      {assessment.venue && (
+                        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600">
+                          {assessment.venue}
+                        </span>
+                      )}
+                      {assessment.durationMinutes && (
+                        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-slate-600">
+                          {Math.round(assessment.durationMinutes / 60)}h{assessment.durationMinutes % 60 ? ` ${assessment.durationMinutes % 60}m` : ''}
+                        </span>
+                      )}
+                      {assessment.confidence === 'provisional' ? (
+                        <span className="rounded-full border border-amber-100 bg-amber-50 px-2 py-1 text-amber-800">
+                          Venue provisional
+                        </span>
+                      ) : assessment.confidence === 'high' ? (
+                        <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2 py-1 text-emerald-800">
+                          Verified timetable
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
                   {assessment.notes && <p className="text-xs text-slate-500 mt-2">{assessment.notes}</p>}
                 </div>
               ))}

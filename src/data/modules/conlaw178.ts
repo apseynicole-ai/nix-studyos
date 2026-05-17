@@ -1,6 +1,9 @@
 import { Gavel } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2Calendar = getAssessmentCalendarEntry('conlaw178', 'A2');
 
 const topics: ModuleTopic[] = [
   {
@@ -64,7 +67,21 @@ const topics: ModuleTopic[] = [
 
 const assessmentStructure = [
   { id: 'A1', title: 'A1', date: '2026-04-16', time: '15:00', weight: 15, format: 'Main assessment', status: 'done' as const },
-  { id: 'A2', title: 'A2', date: '2026-06-08', time: '09:00', weight: null, format: 'Main assessment', status: 'upcoming' as const, notes: 'Weight and detailed format should still be checked against the latest official framework.', needsVerification: true },
+  {
+    id: 'A2',
+    title: a2Calendar?.title || 'A2',
+    date: a2Calendar?.date || '2026-06-08',
+    time: a2Calendar?.time || '09:00',
+    weight: null,
+    format: 'Main assessment',
+    status: 'upcoming' as const,
+    durationMinutes: a2Calendar?.durationMinutes,
+    venue: a2Calendar?.venue,
+    source: a2Calendar?.source,
+    confidence: a2Calendar?.confidence,
+    notes: a2Calendar?.notes || 'Weight and detailed format should still be checked against the latest official framework.',
+    needsVerification: false,
+  },
   { id: 'A3', title: 'A3', weight: null, format: 'Further assessment path if applicable', status: 'unknown' as const, needsVerification: true },
 ];
 
@@ -187,4 +204,3 @@ export const conlaw178Module: ModuleInfo = {
     'Do not invent exact A3 rules.',
   ],
 };
-

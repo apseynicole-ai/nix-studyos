@@ -1,6 +1,9 @@
 import { BarChart3 } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2SemesterOneCalendar = getAssessmentCalendarEntry('sds188', 'A2S1');
 
 const topics: ModuleTopic[] = [
   {
@@ -153,12 +156,17 @@ const assessmentStructure = [
   },
   {
     id: 'A2S1',
-    title: 'A2 Semester 1',
-    date: '2026-06-01',
-    time: '09:00',
+    title: a2SemesterOneCalendar?.title || 'A2 Semester 1',
+    date: a2SemesterOneCalendar?.date || '2026-06-01',
+    time: a2SemesterOneCalendar?.time || '09:00',
     weight: 25,
     format: 'Written assessment',
     status: 'upcoming' as const,
+    durationMinutes: a2SemesterOneCalendar?.durationMinutes,
+    venue: a2SemesterOneCalendar?.venue,
+    source: a2SemesterOneCalendar?.source,
+    confidence: a2SemesterOneCalendar?.confidence,
+    notes: a2SemesterOneCalendar?.notes,
   },
   {
     id: 'AFS1',
@@ -356,4 +364,3 @@ export const sta188Module: ModuleInfo = {
     'Treat framework and EMSLearn announcements as the source of truth if they conflict with app data.',
   ],
 };
-

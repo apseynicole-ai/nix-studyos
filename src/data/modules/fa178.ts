@@ -1,6 +1,9 @@
 import { Calculator } from 'lucide-react';
+import { getAssessmentCalendarEntry } from '../assessmentCalendar';
 import type { ModuleInfo, ModuleTopic } from './types';
 import { flattenModuleSubtopics, toLegacyAssessments } from './types';
+
+const a2Calendar = getAssessmentCalendarEntry('finacc178', 'A2');
 
 const topics: ModuleTopic[] = [
   {
@@ -222,11 +225,17 @@ const assessmentStructure = [
   },
   {
     id: 'A2',
-    title: 'A2 / Later Main Assessment',
+    title: a2Calendar?.title || 'A2 / Later Main Assessment',
+    date: a2Calendar?.date,
+    time: a2Calendar?.time,
     weight: null,
     format: 'Written, calculation-heavy application assessment',
-    status: 'unknown' as const,
-    notes: 'Exact A2 date, weight, and marks still need verification.',
+    status: 'upcoming' as const,
+    durationMinutes: a2Calendar?.durationMinutes,
+    venue: a2Calendar?.venue,
+    source: a2Calendar?.source,
+    confidence: a2Calendar?.confidence,
+    notes: a2Calendar?.notes || 'Exact A2 date, weight, and marks still need verification.',
     needsVerification: true,
   },
   {
