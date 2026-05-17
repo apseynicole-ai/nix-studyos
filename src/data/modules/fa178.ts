@@ -236,7 +236,7 @@ const assessmentStructure = [
     source: a2Calendar?.source,
     confidence: a2Calendar?.confidence,
     notes: a2Calendar?.notes || 'Exact A2 date, weight, and marks still need verification.',
-    needsVerification: a2Calendar?.confidence === 'provisional',
+    needsVerification: true,
   },
   {
     id: 'A3',
