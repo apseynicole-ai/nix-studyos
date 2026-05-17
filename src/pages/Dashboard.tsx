@@ -23,6 +23,7 @@ import {
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
 import {
   averageConfidence,
+  getDashboardMarksPressureSummary,
   highRiskModules,
   moduleFlags,
   modulesMissingCurrentMarks,
@@ -125,6 +126,7 @@ const Dashboard: React.FC = () => {
   const highRisk = highRiskModules().slice(0, 4);
   const missingMarks = modulesMissingCurrentMarks().slice(0, 4);
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
+  const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
   const filteredActions = useMemo(
     () => nextBestActions.filter((action) => matchesFilter(action, actionFilter)).slice(0, 5),
@@ -348,6 +350,107 @@ const Dashboard: React.FC = () => {
           </div>
         </section>
       </div>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">marks pressure</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Marks-at-Risk</h2>
+            <p className="text-slate-500 text-sm">A compact snapshot of modules sitting below their current overall goal, using your saved Marks page data only.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <ProgressBadge
+              value={marksPressure.hasAnyMarkData ? Math.min(100, marksPressure.modulesBelowTarget * 20) : 0}
+              label={marksPressure.hasAnyMarkData ? `${marksPressure.modulesBelowTarget} below target` : 'No mark data yet'}
+              tone={marksPressure.modulesBelowTarget > 0 ? 'amber' : 'emerald'}
+            />
+            {marksPressure.mostAtRisk && (
+              <ProgressBadge
+                value={marksPressure.mostAtRisk.pressureScore}
+                label={`${marksPressure.mostAtRisk.moduleCode} pressure`}
+                tone={marksPressure.mostAtRisk.needsHighRecovery ? 'amber' : 'maroon'}
+              />
+            )}
+          </div>
+        </div>
+
+        {!marksPressure.hasAnyMarkData ? (
+          <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No mark data yet — visit Marks to enter results.</p>
+            <p className="text-sm text-slate-500 mt-2">The Dashboard will surface below-target pressure and recovery warnings once a live marks snapshot exists.</p>
+          </div>
+        ) : marksPressure.mostAtRisk ? (
+          <div className="mt-5 grid grid-cols-1 xl:grid-cols-[0.85fr_1.15fr] gap-5">
+            <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5">
+              <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Most at risk</p>
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+                  <ShieldAlert size={22} />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">{marksPressure.mostAtRisk.moduleName}</p>
+                  <p className="text-xs text-slate-500 mt-1">{marksPressure.mostAtRisk.moduleCode}</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 bg-white text-slate-600 border border-slate-100">
+                  Target {marksPressure.mostAtRisk.targetMark}%
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 bg-white text-slate-600 border border-slate-100">
+                  {marksPressure.mostAtRisk.currentFinal === null ? 'No current final yet' : `Current path ${Math.round(marksPressure.mostAtRisk.currentFinal)}%`}
+                </span>
+                {!marksPressure.mostAtRisk.isValidFM && (
+                  <span className="text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 bg-amber-50 text-amber-800 border border-amber-100">
+                    Final path not yet valid
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl bg-slate-50/80 border border-slate-100 p-5 space-y-4">
+              <ProgressBar
+                value={marksPressure.mostAtRisk.pressureScore}
+                label="Recovery pressure"
+                helper={
+                  marksPressure.mostAtRisk.currentFinal === null
+                    ? 'A marks snapshot exists, but there is not enough completed data yet to compare against the saved goal.'
+                    : `${Math.round(marksPressure.mostAtRisk.currentFinal)}% against a ${marksPressure.mostAtRisk.targetMark}% goal on the current marks path.`
+                }
+                tone={marksPressure.mostAtRisk.needsHighRecovery ? 'amber' : 'maroon'}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-white border border-slate-100 p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Pressure summary</p>
+                  <p className="font-bold text-slate-800">
+                    {marksPressure.modulesBelowTarget === 0
+                      ? 'No saved modules are currently below target.'
+                      : `${marksPressure.modulesBelowTarget} module${marksPressure.modulesBelowTarget === 1 ? '' : 's'} currently sit below the saved overall goal.`}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-slate-100 p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Recovery note</p>
+                  <p className="font-bold text-slate-800">
+                    {marksPressure.mostAtRisk.needsHighRecovery
+                      ? 'This module may need a very high next or remaining mark to recover.'
+                      : 'Pressure is present, but the current path still looks recoverable.'}
+                  </p>
+                </div>
+              </div>
+              {marksPressure.mostAtRisk.warnings.length > 0 && (
+                <div className="rounded-2xl bg-white border border-slate-100 p-4">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-2">Warnings from Marks</p>
+                  <p className="text-sm text-slate-500">{marksPressure.mostAtRisk.warnings[0]}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No below-target pressure found in the current snapshot.</p>
+            <p className="text-sm text-slate-500 mt-2">Marks data exists, but nothing is currently surfacing as the highest-risk recovery case.</p>
+          </div>
+        )}
+      </section>
 
       <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-6">
