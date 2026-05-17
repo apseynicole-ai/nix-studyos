@@ -2,11 +2,28 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ClipboardCheck, Copy, FileText, Filter, ShieldCheck, Sparkles } from 'lucide-react';
 import { examTemplates, modules, promptPacks } from '../data/baccllb';
+import { readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
+import { readTopicMastery, type TopicMasteryRecord } from '../lib/topicMastery';
+
+type FinalBossReadinessItem = {
+  moduleId: string;
+  moduleName: string;
+  moduleCode: string;
+  readyCount: number;
+  trackedCount: number;
+  weakCount: number;
+  unresolvedMistakes: number;
+  readinessPercent: number;
+  readinessLabel: 'Not ready' | 'Building' | 'Almost ready' | 'Final Boss ready';
+  readinessTone: string;
+};
 
 const ExamVault: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'Law' | 'Accounting' | 'Quantitative' | 'Universal'>('All');
   const [copied, setCopied] = useState<string | null>(null);
   const templates = useMemo(() => examTemplates.filter((template) => filter === 'All' || template.area === filter), [filter]);
+  const topicRecords = useMemo(() => readTopicMastery(), []);
+  const mistakeRecords = useMemo(() => readMistakeBank(), []);
   const finalBossModules = useMemo(
     () =>
       modules.filter((module) => {
@@ -15,6 +32,11 @@ const ExamVault: React.FC = () => {
       }),
     [filter],
   );
+  const readinessItems = useMemo(
+    () => buildFinalBossReadiness(finalBossModules, topicRecords, mistakeRecords),
+    [finalBossModules, topicRecords, mistakeRecords],
+  );
+  const urgentReadinessModule = readinessItems[0] || null;
 
   const copyText = async (id: string, text: string) => {
     await navigator.clipboard.writeText(text);
@@ -36,6 +58,68 @@ const ExamVault: React.FC = () => {
           ))}
         </div>
       </header>
+
+      <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 mb-6">
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">exam readiness snapshot</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Final Boss Readiness</h2>
+            <p className="text-slate-500 text-sm">A compact, read-only summary of tracked Final Boss readiness per module using your current Topic Tracker and MistakeBank data.</p>
+          </div>
+          {urgentReadinessModule && (
+            <div className="rounded-3xl bg-amber-50 border border-amber-100 px-5 py-4 max-w-sm">
+              <p className="text-[10px] uppercase tracking-wider text-amber-700 font-bold mb-2">Needs the most urgent Final Boss work</p>
+              <p className="font-bold text-amber-950">{urgentReadinessModule.moduleName}</p>
+              <p className="text-sm text-amber-900 mt-1">
+                {urgentReadinessModule.weakCount} weak/building topic{urgentReadinessModule.weakCount === 1 ? '' : 's'} • {urgentReadinessModule.unresolvedMistakes} unresolved mistake{urgentReadinessModule.unresolvedMistakes === 1 ? '' : 's'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {readinessItems.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No Final Boss readiness data yet — update Topic Tracker or MistakeBank to unlock readiness tracking.</p>
+            <p className="text-sm text-slate-500 mt-2">This panel only wakes up when a module has real tracked topics or unresolved mistakes. It does not invent readiness from empty state.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {readinessItems.map((item) => (
+              <div key={item.moduleId} className="rounded-[2rem] border border-slate-100 bg-slate-50/70 p-5">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{item.moduleCode}</span>
+                      <h3 className="font-bold text-slate-800">{item.moduleName}</h3>
+                    </div>
+                    <p className="text-sm text-slate-500">
+                      {item.trackedCount > 0
+                        ? `${item.readyCount} of ${item.trackedCount} tracked topic${item.trackedCount === 1 ? '' : 's'} marked Final Boss ready`
+                        : 'No tracked topics yet — readiness is currently driven by unresolved mistakes only.'}
+                    </p>
+                  </div>
+                  <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 border ${item.readinessTone}`}>
+                    {item.readinessLabel}
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="h-2 bg-white rounded-full overflow-hidden border border-slate-100">
+                    <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${item.readinessPercent}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                    <span className="px-2 py-1 rounded-full bg-white border border-slate-100">
+                      {item.trackedCount > 0 ? `${item.readinessPercent}% ready` : 'No tracked topics yet'}
+                    </span>
+                    <span className="px-2 py-1 rounded-full bg-white border border-slate-100">{item.weakCount} weak/building</span>
+                    <span className="px-2 py-1 rounded-full bg-white border border-slate-100">{item.unresolvedMistakes} unresolved mistakes</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
         {templates.map((template) => (
@@ -134,3 +218,83 @@ const ExamVault: React.FC = () => {
 };
 
 export default ExamVault;
+
+function buildFinalBossReadiness(
+  scopedModules: typeof modules,
+  topicRecords: TopicMasteryRecord[],
+  mistakeRecords: ReturnType<typeof readMistakeBank>,
+): FinalBossReadinessItem[] {
+  const unresolvedByModule = unresolvedMistakes(mistakeRecords).reduce<Record<string, number>>((acc, item) => {
+    acc[item.moduleId] = (acc[item.moduleId] || 0) + 1;
+    return acc;
+  }, {});
+
+  return scopedModules
+    .map((module) => {
+      const trackedTopics = topicRecords.filter((record) => record.moduleId === module.id);
+      const unresolvedCount = unresolvedByModule[module.id] || 0;
+
+      if (trackedTopics.length === 0 && unresolvedCount === 0) return null;
+
+      const readyCount = trackedTopics.filter((record) => record.finalBossReady).length;
+      const weakCount = trackedTopics.filter((record) => record.statusLabel === 'weak' || record.statusLabel === 'building').length;
+      const readinessPercent = trackedTopics.length ? Math.round((readyCount / trackedTopics.length) * 100) : 0;
+      const readinessLabel = getReadinessLabel(trackedTopics.length, readyCount, weakCount, unresolvedCount);
+
+      return {
+        moduleId: module.id,
+        moduleName: module.shortName,
+        moduleCode: module.code,
+        readyCount,
+        trackedCount: trackedTopics.length,
+        weakCount,
+        unresolvedMistakes: unresolvedCount,
+        readinessPercent,
+        readinessLabel,
+        readinessTone: readinessTone(readinessLabel),
+      } satisfies FinalBossReadinessItem;
+    })
+    .filter((item): item is FinalBossReadinessItem => item !== null)
+    .sort((left, right) =>
+      readinessRank(left) - readinessRank(right)
+      || right.weakCount - left.weakCount
+      || right.unresolvedMistakes - left.unresolvedMistakes
+      || left.moduleName.localeCompare(right.moduleName),
+    );
+}
+
+function getReadinessLabel(
+  trackedCount: number,
+  readyCount: number,
+  weakCount: number,
+  unresolvedCount: number,
+): FinalBossReadinessItem['readinessLabel'] {
+  if (trackedCount > 0 && readyCount === trackedCount && unresolvedCount === 0) return 'Final Boss ready';
+  if (trackedCount === 0) return unresolvedCount > 0 ? 'Building' : 'Not ready';
+  if (readyCount === 0 || weakCount >= Math.ceil(trackedCount / 2) || unresolvedCount >= 3) return 'Not ready';
+  if (readyCount >= Math.ceil(trackedCount * 0.75) && weakCount <= 1 && unresolvedCount <= 1) return 'Almost ready';
+  return 'Building';
+}
+
+function readinessTone(label: FinalBossReadinessItem['readinessLabel']) {
+  switch (label) {
+    case 'Final Boss ready':
+      return 'bg-emerald-50 text-emerald-800 border-emerald-100';
+    case 'Almost ready':
+      return 'bg-blue-50 text-blue-800 border-blue-100';
+    case 'Building':
+      return 'bg-amber-50 text-amber-800 border-amber-100';
+    default:
+      return 'bg-red-50 text-red-800 border-red-100';
+  }
+}
+
+function readinessRank(item: FinalBossReadinessItem) {
+  const scoreMap = {
+    'Not ready': 0,
+    Building: 1,
+    'Almost ready': 2,
+    'Final Boss ready': 3,
+  } as const;
+  return scoreMap[item.readinessLabel];
+}
