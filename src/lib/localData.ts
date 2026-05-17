@@ -6,7 +6,6 @@ export const BACKUP_KEYS = [
   'baccllb-timer-sessions',
   'baccllb-studyai-summaries',
   'baccllb-profile',
-  'baccllb-mistake-log',
   'baccllb-checklist',
   'baccllb-planner',
   'baccllb-settings',
