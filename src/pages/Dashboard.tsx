@@ -19,6 +19,7 @@ import {
   Sparkles,
   Target,
   TimerReset,
+  Zap,
 } from 'lucide-react';
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
 import {
@@ -128,6 +129,7 @@ const Dashboard: React.FC = () => {
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
+  const battlePlan = nextBestActions.slice(0, 5);
   const filteredActions = useMemo(
     () => nextBestActions.filter((action) => matchesFilter(action, actionFilter)).slice(0, 5),
     [nextBestActions, actionFilter],
@@ -194,6 +196,29 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
         <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
         <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon text-white flex items-center justify-center shrink-0">
+            <Zap size={20} />
+          </div>
+          <div>
+            <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold">daily focus</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Today's Battle Plan</h2>
+          </div>
+        </div>
+        {battlePlan.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
+            <p className="font-bold text-slate-800">No battle plan yet — add marks, topics, mistakes, or assessments to unlock daily priorities.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {battlePlan.map((action) => (
+              <BattlePlanItem key={action.id} action={action} />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
@@ -693,6 +718,75 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: number
     <span className={`inline-flex rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${tone || 'bg-slate-50 text-slate-500 border-slate-100'}`}>{note}</span>
   </motion.div>
 );
+
+const BattlePlanItem: React.FC<{ action: NextBestAction }> = ({ action }) => (
+  <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5">
+    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${battlePlanIconTone(action.actionType)}`}>
+      {battlePlanActionIcon(action.actionType)}
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex flex-wrap items-center gap-2 mb-1">
+        <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-0.5">{action.moduleCode}</span>
+        <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-0.5 border ${battlePlanReasonTone(action)}`}>{battlePlanReasonLabel(action)}</span>
+        <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-0.5 ${priorityTone(action.priority)}`}>{action.priority}</span>
+      </div>
+      <p className="text-sm font-bold text-slate-800 truncate">{action.title}</p>
+    </div>
+    {(action.dueDate || action.suggestedDate) && (
+      <span className="text-xs text-slate-400 font-medium shrink-0 hidden sm:block">{action.dueDate ?? action.suggestedDate}</span>
+    )}
+  </div>
+);
+
+function battlePlanReasonLabel(action: NextBestAction): string {
+  switch (action.actionType) {
+    case 'assessment-prep': return 'Assessment soon';
+    case 'marks-review':
+    case 'data-entry': return 'Marks pressure';
+    case 'topic-revision':
+    case 'practice': return action.dueDate ? 'Retest due' : 'Weak topic';
+    case 'mistake-retest': return 'Unresolved mistake';
+    case 'source-gap': return 'Source gap';
+    case 'final-boss': return 'Final Boss prep';
+    default: return 'Priority task';
+  }
+}
+
+function battlePlanReasonTone(action: NextBestAction): string {
+  switch (action.actionType) {
+    case 'assessment-prep': return 'bg-red-50 text-red-800 border-red-100';
+    case 'marks-review':
+    case 'data-entry': return 'bg-amber-50 text-amber-800 border-amber-100';
+    case 'mistake-retest': return 'bg-orange-50 text-orange-800 border-orange-100';
+    case 'final-boss': return 'bg-purple-50 text-purple-800 border-purple-100';
+    default: return 'bg-blue-50 text-blue-800 border-blue-100';
+  }
+}
+
+function battlePlanActionIcon(actionType: NextBestAction['actionType']): React.ReactNode {
+  switch (actionType) {
+    case 'assessment-prep': return <CalendarClock size={16} />;
+    case 'marks-review':
+    case 'data-entry': return <LineChart size={16} />;
+    case 'mistake-retest': return <ListChecks size={16} />;
+    case 'source-gap': return <AlertTriangle size={16} />;
+    case 'final-boss': return <ShieldAlert size={16} />;
+    case 'topic-revision':
+    case 'practice': return <BookOpen size={16} />;
+    default: return <Target size={16} />;
+  }
+}
+
+function battlePlanIconTone(actionType: NextBestAction['actionType']): string {
+  switch (actionType) {
+    case 'assessment-prep': return 'bg-red-50 text-red-600';
+    case 'marks-review':
+    case 'data-entry': return 'bg-amber-50 text-amber-600';
+    case 'mistake-retest': return 'bg-orange-50 text-orange-600';
+    case 'final-boss': return 'bg-purple-50 text-purple-600';
+    default: return 'bg-blue-50 text-blue-600';
+  }
+}
 
 function matchesFilter(action: NextBestAction, filter: ActionFilter) {
   switch (filter) {
