@@ -52,6 +52,19 @@ import {
 
 type ActionFilter = 'All' | 'Urgent' | 'Today' | 'This week' | 'Marks risk' | 'Mistakes' | 'Source gaps' | 'Final Boss';
 
+interface TimerSessionRecord {
+  id: string;
+  userId?: string;
+  moduleId: string;
+  moduleName: string;
+  durationMinutes: number;
+  mode: 'micro' | 'pomodoro' | 'deep' | 'break';
+  sessionType: string;
+  reflection: string;
+  autoCompleted: boolean;
+  createdAt: string;
+}
+
 const Dashboard: React.FC = () => {
   const { user, localFirstMode, profile } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, sessions: 0, summaries: 0, completedTasks: 0 });
@@ -120,6 +133,11 @@ const Dashboard: React.FC = () => {
       .filter((task) => !user || task.userId === user.uid),
     [user],
   );
+  const localTimerSessions = useMemo(
+    () => readLocalJson<TimerSessionRecord[]>(LOCAL_TIMER_SESSIONS_KEY, [])
+      .filter((session) => !user || session.userId === user.uid),
+    [user],
+  );
   const topicProgress = calculateTopicProgress(topicRecords);
   const mistakeResolutionProgress = calculateMistakeResolutionProgress(mistakeRecords);
   const taskProgress = calculateTaskProgress(localTasks);
@@ -143,6 +161,29 @@ const Dashboard: React.FC = () => {
     () => nextBestActions.find((action) => action.estimatedMinutes <= 30) || nextBestActions[0] || null,
     [nextBestActions],
   );
+  const todaysFocusSessions = useMemo(() => {
+    const today = new Date();
+    return localTimerSessions.filter((session) => {
+      if (!session.autoCompleted || session.mode === 'break') return false;
+      const createdAt = new Date(session.createdAt);
+      return (
+        createdAt.getFullYear() === today.getFullYear() &&
+        createdAt.getMonth() === today.getMonth() &&
+        createdAt.getDate() === today.getDate()
+      );
+    });
+  }, [localTimerSessions]);
+  const todaysFocusMinutes = todaysFocusSessions.reduce((sum, session) => sum + session.durationMinutes, 0);
+  const todaysModuleMap = todaysFocusSessions.reduce<Record<string, number>>((accumulator, session) => {
+    accumulator[session.moduleName] = (accumulator[session.moduleName] ?? 0) + session.durationMinutes;
+    return accumulator;
+  }, {});
+  const todaysTopModule = Object.entries(todaysModuleMap).reduce<{ moduleName: string; minutes: number } | null>((best, [moduleName, minutes]) => {
+    if (!best || minutes > best.minutes) {
+      return { moduleName, minutes };
+    }
+    return best;
+  }, null);
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -196,6 +237,59 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
         <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
         <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
+      </section>
+
+      <section className="mb-10 rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">today&apos;s focus garden</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Today&apos;s Study Growth</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">A calm snapshot of the focus sessions you&apos;ve already banked today, pulled straight from your existing local timer history.</p>
+          </div>
+          <Link to="/timer" className="inline-flex items-center gap-2 self-start rounded-2xl border border-stellenbosch-maroon/15 bg-stellenbosch-maroon px-4 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow">
+            Open Timer <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {todaysFocusSessions.length === 0 ? (
+          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-6 py-8 text-center">
+            <p className="font-display text-2xl text-slate-700">No plants yet today — start one tiny session.</p>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <GardenMetric label="Focus minutes today" value={`${todaysFocusMinutes}`} detail="Completed sessions only" />
+              <GardenMetric label="Completed sessions" value={`${todaysFocusSessions.length}`} detail="Banked today" />
+              <GardenMetric
+                label="Most studied module"
+                value={todaysTopModule?.moduleName ?? 'General study'}
+                detail={todaysTopModule ? `${todaysTopModule.minutes} focused minutes` : 'No single module lead yet'}
+              />
+            </div>
+
+            <div className="rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-emerald-50/40 p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Plant row</p>
+                  <h3 className="font-display text-2xl text-slate-800">Today&apos;s completed sessions</h3>
+                </div>
+                <div className="rounded-full bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                  {todaysFocusSessions.length} plants
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+                {todaysFocusSessions.slice(0, 8).map((session) => (
+                  <TinyGardenPlant
+                    key={session.id}
+                    moduleName={session.moduleName}
+                    durationMinutes={session.durationMinutes}
+                    tone={modulePlantTone(session.moduleId)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
@@ -841,3 +935,92 @@ function priorityTone(priority: NextBestAction['priority']) {
 }
 
 export default Dashboard;
+
+const GardenMetric: React.FC<{ label: string; value: string; detail: string }> = ({ label, value, detail }) => (
+  <div className="rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 p-5">
+    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">{label}</p>
+    <h3 className="font-display text-3xl text-slate-800">{value}</h3>
+    <p className="mt-1 text-sm text-slate-500">{detail}</p>
+  </div>
+);
+
+const TinyGardenPlant: React.FC<{ moduleName: string; durationMinutes: number; tone: PlantTone }> = ({ moduleName, durationMinutes, tone }) => {
+  const growthLevel = durationMinutes >= 45 ? 'tall' : durationMinutes >= 25 ? 'medium' : 'small';
+  const stemHeight = growthLevel === 'tall' ? 'h-14' : growthLevel === 'medium' ? 'h-11' : 'h-8';
+  const bloomSize = growthLevel === 'tall' ? 'h-8 w-8' : growthLevel === 'medium' ? 'h-7 w-7' : 'h-6 w-6';
+
+  return (
+    <div className={`rounded-[1.6rem] border p-3 shadow-sm ${tone.cardClass}`}>
+      <p className="truncate text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{moduleName}</p>
+      <div className="relative mt-3 h-24 overflow-hidden rounded-[1.2rem] bg-gradient-to-b from-sky-50 via-white to-amber-50">
+        <div className="absolute inset-x-4 bottom-2 h-5 rounded-full bg-amber-950/90" />
+        <div className={`absolute bottom-6 left-1/2 w-1.5 -translate-x-1/2 rounded-full bg-gradient-to-t ${tone.stemClass} ${stemHeight}`} />
+        <div className={`absolute bottom-10 left-1/2 h-5 w-8 -translate-x-[95%] rounded-br-[999px] rounded-tl-[999px] bg-gradient-to-br ${tone.leafClass}`} />
+        <div className={`absolute bottom-12 left-1/2 h-5 w-8 translate-x-[-5%] rounded-bl-[999px] rounded-tr-[999px] bg-gradient-to-br ${tone.leafClass}`} />
+        <div className={`absolute bottom-16 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-br ${tone.bloomClass} ${bloomSize}`} />
+      </div>
+      <p className="mt-3 text-sm font-semibold text-slate-700">{durationMinutes} min</p>
+    </div>
+  );
+};
+
+interface PlantTone {
+  cardClass: string;
+  stemClass: string;
+  leafClass: string;
+  bloomClass: string;
+}
+
+function modulePlantTone(moduleId: string): PlantTone {
+  if (moduleId === 'finacc178') {
+    return {
+      cardClass: 'border-emerald-100 bg-gradient-to-br from-white via-emerald-50 to-lime-50',
+      stemClass: 'from-emerald-700 via-emerald-500 to-lime-400',
+      leafClass: 'from-lime-100 via-emerald-300 to-emerald-500',
+      bloomClass: 'from-lime-100 via-emerald-200 to-amber-200',
+    };
+  }
+
+  if (moduleId === 'conlaw178') {
+    return {
+      cardClass: 'border-violet-100 bg-gradient-to-br from-white via-violet-50 to-fuchsia-50',
+      stemClass: 'from-violet-800 via-violet-500 to-fuchsia-300',
+      leafClass: 'from-fuchsia-100 via-violet-300 to-violet-500',
+      bloomClass: 'from-violet-100 via-fuchsia-200 to-amber-100',
+    };
+  }
+
+  if (moduleId === 'foundations178') {
+    return {
+      cardClass: 'border-lime-100 bg-gradient-to-br from-white via-lime-50 to-stone-100',
+      stemClass: 'from-stone-700 via-lime-700 to-lime-400',
+      leafClass: 'from-lime-100 via-lime-300 to-stone-500',
+      bloomClass: 'from-lime-100 via-stone-200 to-amber-100',
+    };
+  }
+
+  if (moduleId === 'econ114') {
+    return {
+      cardClass: 'border-sky-100 bg-gradient-to-br from-white via-sky-50 to-cyan-50',
+      stemClass: 'from-sky-800 via-sky-500 to-cyan-300',
+      leafClass: 'from-cyan-100 via-sky-300 to-sky-500',
+      bloomClass: 'from-sky-100 via-cyan-200 to-amber-100',
+    };
+  }
+
+  if (moduleId === 'sds188') {
+    return {
+      cardClass: 'border-indigo-100 bg-gradient-to-br from-white via-indigo-50 to-cyan-50',
+      stemClass: 'from-indigo-800 via-indigo-500 to-cyan-300',
+      leafClass: 'from-cyan-100 via-indigo-300 to-indigo-500',
+      bloomClass: 'from-indigo-100 via-cyan-200 to-yellow-100',
+    };
+  }
+
+  return {
+    cardClass: 'border-slate-100 bg-gradient-to-br from-white via-slate-50 to-emerald-50/60',
+    stemClass: 'from-slate-700 via-emerald-500 to-emerald-300',
+    leafClass: 'from-emerald-100 via-emerald-300 to-emerald-500',
+    bloomClass: 'from-amber-100 via-rose-100 to-emerald-100',
+  };
+}
