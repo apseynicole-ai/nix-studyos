@@ -36,6 +36,7 @@ import {
 } from '../lib/studyMetrics';
 import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
 import { getEffectiveModuleConfidence } from '../lib/moduleConfidence';
+import { getStudyMomentumSummary } from '../lib/studyMomentum';
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
@@ -187,6 +188,8 @@ const Dashboard: React.FC = () => {
     }
     return best;
   }, null);
+  const studyMomentum = useMemo(() => getStudyMomentumSummary(localTimerSessions), [localTimerSessions]);
+  const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
 
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
@@ -293,6 +296,73 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+      </section>
+
+      <section className="mb-10 rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">weekly momentum</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Study Streak</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+              A calm view of your recent study consistency, built from completed focus sessions already saved in your timer history.
+            </p>
+          </div>
+          <div className="self-start rounded-full border border-emerald-100 bg-emerald-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+            {studyMomentum.label}
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <GardenMetric
+              label="Current streak"
+              value={`${studyMomentum.currentStreak} day${studyMomentum.currentStreak === 1 ? '' : 's'}`}
+              detail={studyMomentum.needsSessionToday ? 'Need one session today to keep it alive' : studyMomentum.todayMinutes > 0 ? 'Active today' : 'Start gently today'}
+            />
+            <GardenMetric
+              label="Best streak"
+              value={`${studyMomentum.bestStreak} day${studyMomentum.bestStreak === 1 ? '' : 's'}`}
+              detail="Computed from your saved timer history"
+            />
+            <GardenMetric
+              label="Last 7 days"
+              value={`${studyMomentum.totalLast7DaysMinutes} mins`}
+              detail={studyMomentum.todayMinutes > 0 ? `${studyMomentum.todayMinutes} mins today` : 'No focus minutes logged today yet'}
+            />
+          </div>
+
+          <div className="rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-stellenbosch-maroon/5 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">7-day heat strip</p>
+                <h3 className="font-display text-2xl text-slate-800">Recent study rhythm</h3>
+              </div>
+              <div className="rounded-full bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                {studyMomentum.totalLast7DaysMinutes} mins
+              </div>
+            </div>
+            <div className="grid grid-cols-7 gap-3">
+              {studyMomentum.last7Days.map((day) => {
+                const height = day.minutes > 0 ? Math.max(16, Math.round((day.minutes / maxMomentumMinutes) * 72)) : 10;
+                return (
+                  <div key={day.key} className="flex flex-col items-center gap-3">
+                    <div className="flex h-24 w-full items-end justify-center rounded-2xl bg-slate-100/80 px-2 py-3">
+                      <div
+                        className={`w-full rounded-xl transition-all ${day.hasStudy ? 'bg-gradient-to-t from-stellenbosch-maroon via-rose-500 to-amber-300 shadow-sm' : 'bg-slate-200'}`}
+                        style={{ height }}
+                        title={`${day.label}: ${day.minutes} minutes`}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{day.label}</p>
+                      <p className="mt-1 text-xs font-semibold text-slate-600">{day.minutes}m</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
