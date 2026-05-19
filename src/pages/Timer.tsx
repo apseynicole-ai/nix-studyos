@@ -6,6 +6,7 @@ import { useAuth } from '../components/auth/AuthGuard';
 import FocusGrowthVisual from '../components/FocusGrowthVisual';
 import { modules } from '../data/baccllb';
 import { LOCAL_TIMER_SESSIONS_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
+import { upsertMistake, type MistakeSourceType } from '../lib/mistakeBank';
 
 type TimerMode = 'micro' | 'pomodoro' | 'deep' | 'break';
 
@@ -53,6 +54,15 @@ interface GardenTheme {
   stemClass: string;
   leafClass: string;
   bloomClass: string;
+}
+
+interface QuickCaptureState {
+  promptId: string;
+  moduleId: string;
+  moduleName: string;
+  note: string;
+  sessionType: typeof sessionTypes[number];
+  status: 'idle' | 'logged';
 }
 
 const loadSessions = () => readLocalJson<StudySessionLog[]>(LOCAL_TIMER_SESSIONS_KEY, []);
@@ -105,6 +115,42 @@ const startOfLocalWeek = (date: Date) => {
 
 const formatCompletionTime = (value: string) =>
   new Intl.DateTimeFormat('en-ZA', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
+
+const toDateInputValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const addDays = (date: Date, days: number) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+};
+
+const deriveMistakeTitle = (note: string) => {
+  const firstLine = note
+    .split('\n')
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (!firstLine) return 'Timer reflection follow-up';
+  return firstLine.length <= 80 ? firstLine : `${firstLine.slice(0, 77).trimEnd()}...`;
+};
+
+const mapSessionTypeToSourceType = (sessionType: typeof sessionTypes[number]): MistakeSourceType => {
+  switch (sessionType) {
+    case 'Timed practice':
+      return 'past-paper';
+    case 'Memo marking':
+      return 'test';
+    case 'Admin / submission':
+      return 'other';
+    default:
+      return 'self-study';
+  }
+};
 
 const getGardenTheme = (moduleId: string): GardenTheme => {
   if (moduleId === 'finacc178') {
@@ -190,6 +236,8 @@ const Timer: React.FC = () => {
   const [activeTimer, setActiveTimer] = useState<PersistedActiveTimer | null>(restoredTimer);
   const [clockNow, setClockNow] = useState(Date.now());
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [quickCapture, setQuickCapture] = useState<QuickCaptureState | null>(null);
+  const [isLoggingMistake, setIsLoggingMistake] = useState(false);
 
   const activeTimerRef = useRef<PersistedActiveTimer | null>(restoredTimer);
   const completedTimerIdRef = useRef<string | null>(null);
@@ -310,6 +358,20 @@ const Timer: React.FC = () => {
     setSessionLogs(nextSessions);
   };
 
+  const maybePromptMistakeCapture = (session: StudySessionLog) => {
+    const note = session.reflection.trim();
+    if (!note || session.mode === 'break') return;
+
+    setQuickCapture({
+      promptId: session.id,
+      moduleId: session.moduleId,
+      moduleName: session.moduleName,
+      note,
+      sessionType: session.sessionType,
+      status: 'idle',
+    });
+  };
+
   const finishSaveFeedback = () => {
     setSaved(true);
     setReflection('');
@@ -362,6 +424,7 @@ const Timer: React.FC = () => {
     setCustomMinutesOverride(null);
 
     const sessionRecord = buildSessionRecord({ ...timerSnapshot, remainingSeconds: 0, isRunning: false, targetEndAt: null }, true);
+    maybePromptMistakeCapture(sessionRecord);
     await saveSessionRecord(sessionRecord);
 
     if (reason === 'restore') {
@@ -389,7 +452,44 @@ const Timer: React.FC = () => {
       customMinutesOverride,
     };
 
-    await saveSessionRecord(buildSessionRecord({ ...snapshot, remainingSeconds: timeLeft }, autoCompleted));
+    const sessionRecord = buildSessionRecord({ ...snapshot, remainingSeconds: timeLeft }, autoCompleted);
+    maybePromptMistakeCapture(sessionRecord);
+    await saveSessionRecord(sessionRecord);
+  };
+
+  const logQuickCaptureMistake = () => {
+    if (!quickCapture || quickCapture.status === 'logged' || isLoggingMistake) return;
+
+    setIsLoggingMistake(true);
+
+    try {
+      const moduleInfo = modules.find((module) => module.id === quickCapture.moduleId);
+      const today = new Date();
+
+      upsertMistake({
+        id: '',
+        moduleId: quickCapture.moduleId,
+        mistakeCategory: moduleInfo?.mistakeBankCategories?.[0] || '',
+        topicId: '',
+        topicName: '',
+        mistakeTitle: deriveMistakeTitle(quickCapture.note),
+        mistakeDescription: quickCapture.note,
+        whyItHappened: 'Captured from a timer reflection for quick follow-up.',
+        correctionRule: 'Turn this note into a clear correction rule, then retest it with a fresh question.',
+        sourceType: mapSessionTypeToSourceType(quickCapture.sessionType),
+        sourceReference: `Timer session: ${quickCapture.sessionType}`,
+        markLost: undefined,
+        retestDate: toDateInputValue(addDays(today, 3)),
+        resolved: false,
+        createdAt: today.toISOString(),
+        updatedAt: today.toISOString(),
+      });
+
+      setQuickCapture((current) => (current ? { ...current, status: 'logged' } : current));
+      setStatusMessage('Mistake logged to MistakeBank.');
+    } finally {
+      setIsLoggingMistake(false);
+    }
   };
 
   const startTimer = (durationSecondsOverride = defaultDurationSeconds, modeOverride = mode, customOverride = customMinutesOverride) => {
@@ -640,6 +740,41 @@ const Timer: React.FC = () => {
           <button onClick={() => { void saveSession(false); }} className="w-full maroon-gradient text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:scale-[1.01] transition-transform">
             <CheckCircle2 size={20} /> {saved ? 'Session saved' : 'Save session log'}
           </button>
+
+          {quickCapture && (
+            <div className="mt-5 rounded-[2rem] border border-amber-100 bg-gradient-to-r from-white via-amber-50/70 to-emerald-50/60 p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.24em] font-bold text-slate-400 mb-2">Quick capture</p>
+                  <h3 className="font-display text-2xl text-slate-800">Log this as a mistake?</h3>
+                  <p className="text-sm text-slate-500 mt-2">
+                    {quickCapture.moduleName} • {quickCapture.sessionType}
+                  </p>
+                  <p className="text-sm text-slate-600 mt-3 line-clamp-3">{quickCapture.note}</p>
+                  {quickCapture.status === 'logged' && (
+                    <p className="mt-3 text-sm font-semibold text-emerald-700">Logged to MistakeBank. You can refine the details later.</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={logQuickCaptureMistake}
+                    disabled={quickCapture.status === 'logged' || isLoggingMistake}
+                    className="rounded-2xl bg-stellenbosch-maroon px-4 py-3 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {quickCapture.status === 'logged' ? 'Logged' : isLoggingMistake ? 'Logging...' : 'Log mistake'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickCapture(null)}
+                    className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:-translate-y-0.5 hover:border-stellenbosch-maroon/20"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 rounded-[2rem] bg-slate-950 text-white p-6">
             <h3 className="font-display text-2xl mb-3 flex items-center gap-2"><Coffee className="text-stellenbosch-gold" /> After-session rule</h3>
