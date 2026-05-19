@@ -1,5 +1,6 @@
 import { modules, type ModuleInfo } from '../data/baccllb';
 import { readLocalJson } from './localData';
+import { getEffectiveModuleConfidence } from './moduleConfidence';
 import {
   calcConLaw178,
   calcDLA112,
@@ -63,7 +64,7 @@ export function hasSourceWarning(module: ModuleInfo) {
 }
 
 export function isHighRiskModule(module: ModuleInfo) {
-  return module.confidence < 50 || Boolean(module.assessmentRules.impossibleTargetNote);
+  return getEffectiveModuleConfidence(module) < 50 || Boolean(module.assessmentRules.impossibleTargetNote);
 }
 
 export function moduleFlags(module: ModuleInfo) {
@@ -92,7 +93,7 @@ export function moduleFlags(module: ModuleInfo) {
 }
 
 export function averageConfidence() {
-  return Math.round(modules.reduce((sum, module) => sum + module.confidence, 0) / modules.length);
+  return Math.round(modules.reduce((sum, module) => sum + getEffectiveModuleConfidence(module), 0) / modules.length);
 }
 
 export function modulesMissingCurrentMarks() {

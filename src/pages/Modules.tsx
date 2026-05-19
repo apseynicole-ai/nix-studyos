@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { AlertTriangle, BookMarked, CheckCircle2, Clock3, FileText, GraduationCap, ListChecks, Pencil, Plus, RefreshCcw, Search, ShieldCheck, Target, Trash2 } from 'lucide-react';
 import { modules, ModuleArea } from '../data/baccllb';
+import { getEffectiveModuleConfidence, readModuleConfidenceOverrides, setModuleConfidenceOverride, type ModuleConfidenceOverrideMap } from '../lib/moduleConfidence';
 import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -37,6 +38,13 @@ const Modules: React.FC = () => {
   const [masteryRecords, setMasteryRecords] = useState<TopicMasteryRecord[]>(() => readTopicMastery());
   const [draft, setDraft] = useState<TopicMasteryRecord>(() => emptyTopicDraft(modules[0].id));
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confidenceOverrides, setConfidenceOverrides] = useState<ModuleConfidenceOverrideMap>(() => readModuleConfidenceOverrides());
+
+  const effectiveConfidence = (moduleId: string) => {
+    const override = confidenceOverrides[moduleId];
+    if (override) return override.confidence;
+    return getEffectiveModuleConfidence(moduleId);
+  };
 
   const filteredModules = useMemo(() => {
     return modules.filter((module) => {
@@ -102,6 +110,8 @@ const Modules: React.FC = () => {
   const selectedReadProgress = progressFromBoolean(selectedModuleTopics, 'readDone');
   const selectedNotesProgress = progressFromBoolean(selectedModuleTopics, 'notesDone');
   const selectedPracticeProgress = progressFromBoolean(selectedModuleTopics, 'practiceDone');
+  const selectedConfidence = effectiveConfidence(selected.id);
+  const selectedConfidenceMeta = confidenceOverrides[selected.id] ?? null;
   const selectedExamReadyProgress = selectedModuleTopics.length
     ? clampProgress((selectedModuleTopics.filter((topic) => topic.finalBossReady || topic.status === 'exam-ready').length / selectedModuleTopics.length) * 100)
     : 0;
@@ -173,6 +183,11 @@ const Modules: React.FC = () => {
     }
   };
 
+  const adjustConfidence = (moduleId: string, delta: number) => {
+    const nextValue = Math.max(0, Math.min(100, effectiveConfidence(moduleId) + delta));
+    setConfidenceOverrides(setModuleConfidenceOverride(moduleId, nextValue));
+  };
+
   return (
     <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
       <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
@@ -209,6 +224,7 @@ const Modules: React.FC = () => {
           {filteredModules.map((module) => {
             const Icon = module.icon;
             const active = selected.id === module.id;
+            const moduleConfidence = effectiveConfidence(module.id);
             return (
               <motion.button
                 layout
@@ -245,9 +261,9 @@ const Modules: React.FC = () => {
                       />
                       <div className="flex items-center justify-between gap-3">
                         <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex-1">
-                          <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${module.confidence}%` }} />
+                          <div className="h-full bg-stellenbosch-maroon rounded-full" style={{ width: `${moduleConfidence}%` }} />
                         </div>
-                        <span className="text-xs font-bold text-stellenbosch-maroon">{module.confidence}%</span>
+                        <span className="text-xs font-bold text-stellenbosch-maroon">{moduleConfidence}%</span>
                       </div>
                     </div>
                   </div>
@@ -263,14 +279,47 @@ const Modules: React.FC = () => {
             <div className="relative z-10">
               <p className="uppercase tracking-[0.35em] text-xs font-bold text-white/70 mb-3">{selected.area} • {selected.semester}</p>
               <h2 className="font-display text-4xl mb-2">{selected.name}</h2>
-              <p className="text-white/80">Target: {selected.target}% • Confidence: {selected.confidence}% • Priority score: {priorityScore(selected.confidence, selected.target)}</p>
-              <span className="mt-4 inline-flex bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs uppercase tracking-wider font-bold">{readinessLabel(selected.confidence)}</span>
+              <p className="text-white/80">Target: {selected.target}% • Confidence: {selectedConfidence}% • Priority score: {priorityScore(selectedConfidence, selected.target)}</p>
+              <span className="mt-4 inline-flex bg-white/15 border border-white/20 rounded-full px-3 py-1 text-xs uppercase tracking-wider font-bold">{readinessLabel(selectedConfidence)}</span>
               <div className="mt-4 flex flex-wrap gap-2">
                 {moduleFlags(selected).map((flag) => (
                   <span key={flag.label} className="inline-flex rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] uppercase tracking-wider font-bold text-white">
                     {flag.label}
                   </span>
                 ))}
+              </div>
+              <div className="mt-5 max-w-xl rounded-[1.75rem] border border-white/15 bg-white/10 p-4 backdrop-blur-sm">
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/70">Confidence override</p>
+                    <p className="mt-2 text-2xl font-display text-white">{selectedConfidence}% effective confidence</p>
+                    <p className="mt-1 text-sm text-white/75">
+                      Base confidence is {selected.confidence}%. Update this when your real current confidence shifts.
+                    </p>
+                    {selectedConfidenceMeta?.updatedAt && (
+                      <p className="mt-2 text-xs text-white/65">
+                        Last updated {new Date(selectedConfidenceMeta.updatedAt).toLocaleString('en-ZA', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[-10, -5, 5, 10].map((delta) => (
+                      <button
+                        key={delta}
+                        type="button"
+                        onClick={() => adjustConfidence(selected.id, delta)}
+                        className="rounded-full border border-white/20 bg-white/10 px-3 py-2 text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/20"
+                      >
+                        {delta > 0 ? `+${delta}` : delta}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -384,7 +433,7 @@ const Modules: React.FC = () => {
           <div className="px-7 pb-7 grid grid-cols-1 md:grid-cols-3 gap-3">
             <MiniMetric icon={<GraduationCap size={18} />} label="Target" value={`${selected.target}%`} />
             <MiniMetric icon={<FileText size={18} />} label="Current mark" value={selected.currentMarks.overall === null ? 'Missing' : `${selected.currentMarks.overall}%`} />
-            <MiniMetric icon={<CheckCircle2 size={18} />} label="Status" value={readinessLabel(selected.confidence)} tone={riskTone(selected.confidence)} />
+            <MiniMetric icon={<CheckCircle2 size={18} />} label="Status" value={readinessLabel(selectedConfidence)} tone={riskTone(selectedConfidence)} />
           </div>
 
           <div className="px-7 pb-7">
