@@ -35,6 +35,7 @@ import {
   upcomingAssessments,
 } from '../lib/studyMetrics';
 import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
+import { getEffectiveModuleConfidence } from '../lib/moduleConfidence';
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
@@ -116,7 +117,9 @@ const Dashboard: React.FC = () => {
 
   const avgConfidence = averageConfidence();
   const nextAssessments = upcomingAssessments().slice(0, 5);
-  const weakestModules = [...modules].sort((a, b) => a.confidence - b.confidence).slice(0, 4);
+  const weakestModules = [...modules]
+    .sort((a, b) => getEffectiveModuleConfidence(a) - getEffectiveModuleConfidence(b))
+    .slice(0, 4);
   const nextBestTasks = taskTemplates.slice(0, 5);
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
   const topicRecords = readTopicMastery();
@@ -417,7 +420,8 @@ const Dashboard: React.FC = () => {
           <div className="space-y-4">
             {weakestModules.map((module) => {
               const Icon = module.icon;
-              const score = priorityScore(module.confidence, module.target);
+              const effectiveConfidence = getEffectiveModuleConfidence(module);
+              const score = priorityScore(effectiveConfidence, module.target);
               return (
                 <div key={module.id} className="bg-white/80 rounded-3xl p-5 border border-slate-100 hover:border-stellenbosch-maroon/20 transition-all">
                   <div className="flex flex-col md:flex-row md:items-center gap-4">
@@ -428,7 +432,7 @@ const Dashboard: React.FC = () => {
                       <div className="flex flex-wrap items-center gap-2 mb-1">
                         <h3 className="font-bold text-slate-800">{module.shortName}</h3>
                         <span className="text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{module.code}</span>
-                        <span className={`text-[10px] font-bold uppercase tracking-wider border rounded-full px-2 py-1 ${riskTone(module.confidence)}`}>{readinessLabel(module.confidence)}</span>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider border rounded-full px-2 py-1 ${riskTone(effectiveConfidence)}`}>{readinessLabel(effectiveConfidence)}</span>
                       </div>
                       <p className="text-sm text-slate-500 line-clamp-2">{module.weakPoints.slice(0, 3).join(' • ')}</p>
                     </div>

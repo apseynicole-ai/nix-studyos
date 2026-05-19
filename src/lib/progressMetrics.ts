@@ -1,4 +1,5 @@
 import { modules } from '../data/baccllb';
+import { getEffectiveModuleConfidence } from './moduleConfidence';
 import type { MistakeRecord } from './mistakeBank';
 import type { TopicMasteryRecord } from './topicMastery';
 
@@ -63,7 +64,7 @@ export function calculateModuleReadiness(
   tasks: ProgressTaskLike[],
 ): number {
   const module = modules.find((item) => item.id === moduleId);
-  const baseConfidence = clampProgress(module?.confidence ?? 50);
+  const baseConfidence = module ? getEffectiveModuleConfidence(module) : 50;
 
   const moduleTopics = topicRecords.filter((record) => record.moduleId === moduleId);
   const moduleMistakes = mistakeRecords.filter((record) => record.moduleId === moduleId);

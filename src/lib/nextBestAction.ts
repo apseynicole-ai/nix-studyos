@@ -1,6 +1,7 @@
 import { getModuleAssessmentModel, calcConLaw178, calcDLA112, calcDLA122, calcEcon114, calcFinAcc178, calcLegalSkills114, calcSDS188, type MarksOutput } from './marksEngine';
 import { modules, type ModuleInfo } from '../data/baccllb';
 import { readLocalJson } from './localData';
+import { getEffectiveModuleConfidence } from './moduleConfidence';
 import { hasMissingCurrentMark, hasSourceWarning, isHighRiskModule } from './studyMetrics';
 import { readMistakeBank, type MistakeRecord } from './mistakeBank';
 import { readTopicMastery, type TopicMasteryRecord, type TopicStatus } from './topicMastery';
@@ -97,7 +98,7 @@ export function getNextBestActions(options: NextBestActionOptions = {}): NextBes
 }
 
 export function scoreModuleRisk(module: ModuleInfo) {
-  let score = Math.max(0, 100 - module.confidence);
+  let score = Math.max(0, 100 - getEffectiveModuleConfidence(module));
   if (hasMissingCurrentMark(module)) score += 12;
   if (hasSourceWarning(module)) score += 10;
   if (module.assessmentRules.impossibleTargetNote) score += 12;
@@ -689,4 +690,3 @@ function diffDays(startIso: string, endIso: string) {
 function slug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
-
