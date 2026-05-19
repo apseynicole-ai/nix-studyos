@@ -122,6 +122,22 @@ const Settings: React.FC = () => {
       </section>
 
       <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-gold/10 text-stellenbosch-maroon flex items-center justify-center">
+            <Download size={20} />
+          </div>
+          <div>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">PWA readiness</h2>
+            <p className="text-sm text-slate-500">Install-friendly and prepared for basic offline app shell access.</p>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-stellenbosch-gold/30 bg-stellenbosch-gold/10 px-4 py-4 text-sm text-slate-700">
+          <p className="font-semibold text-stellenbosch-maroon">PWA ready: install Nix StudyOS to your Home Screen for faster offline access.</p>
+          <p className="mt-2">The app shell and core static assets can load offline after installation. Live cloud features and server-backed responses still need a connection.</p>
+        </div>
+      </section>
+
+      <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between gap-3 mb-5">
           <div>
             <h2 className="font-display text-3xl text-stellenbosch-maroon">Optional account</h2>
