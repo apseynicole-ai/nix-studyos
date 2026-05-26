@@ -590,16 +590,16 @@ const Timer: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+    <div className="page-shell">
       <header className="text-center mb-10">
-        <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">focus + logging</p>
-        <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Pressure-Safe Study Timer</h1>
-        <p className="text-slate-500 font-medium">Log module, session type and reflection so timer sessions become useful evidence, not just minutes.</p>
+        <p className="page-kicker">focus + logging</p>
+        <h1 className="page-title">Pressure-Safe Study Timer</h1>
+        <p className="page-subtitle mx-auto">Log module, session type and reflection so timer sessions become useful evidence, not just minutes.</p>
         {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: session logs are being stored on this device.</p>}
       </header>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8 items-start">
-        <section className="glass rounded-[2.5rem] p-7 border-slate-200/50 shadow-sm">
+        <section className="editorial-muted-panel p-7 shadow-sm">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
             {(Object.keys(modeConfig) as TimerMode[]).map((item) => (
               <button key={item} onClick={() => setTimerMode(item)} className={`rounded-2xl border p-4 text-left transition-all ${selectedMode === item ? 'bg-stellenbosch-maroon text-white border-stellenbosch-maroon shadow-lg shadow-stellenbosch-maroon/20' : 'bg-white text-slate-600 border-slate-100 hover:border-stellenbosch-maroon/20'}`}>

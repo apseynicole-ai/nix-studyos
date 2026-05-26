@@ -239,12 +239,12 @@ const Tasks: React.FC = () => {
   const dueSoonProgress = openTasks.length ? clampProgress(((openTasks.length - dueSoonOpenTasks) / openTasks.length) * 100) : 0;
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+    <div className="page-shell">
       <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">execution layer</p>
-          <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Task Bank + Daily Sprint</h1>
-          <p className="text-slate-500 max-w-3xl">Module-specific tasks with priority, points, time estimates and templates so your daily plan is concrete instead of vague.</p>
+          <p className="page-kicker">execution layer</p>
+          <h1 className="page-title">Task Bank + Daily Sprint</h1>
+          <p className="page-subtitle">Module-specific tasks with priority, points, time estimates and templates so your daily plan is concrete instead of vague.</p>
           {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: tasks are being stored on this device.</p>}
         </div>
         <button onClick={seedBossDay} className="maroon-gradient text-white px-5 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg shadow-stellenbosch-maroon/20 hover:scale-105 transition-transform">
@@ -272,7 +272,7 @@ const Tasks: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-8">
         <section className="space-y-6">
-          <form onSubmit={addTask} className="glass p-6 rounded-[2.5rem] border-slate-200/50 shadow-lg">
+          <form onSubmit={addTask} className="editorial-muted-panel p-6 shadow-lg">
             <h2 className="font-display text-3xl text-stellenbosch-maroon mb-5">Add task</h2>
             <input 
               value={input}
@@ -296,7 +296,7 @@ const Tasks: React.FC = () => {
             </button>
           </form>
 
-          <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+          <section className="editorial-panel p-6">
             <h2 className="font-display text-3xl text-stellenbosch-maroon mb-5">Template task bank</h2>
             <div className="space-y-3 max-h-[520px] overflow-y-auto pr-2 custom-scrollbar">
               {taskTemplates.map((template) => {
@@ -316,7 +316,7 @@ const Tasks: React.FC = () => {
           </section>
         </section>
 
-        <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm">
+        <section className="editorial-panel p-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
             <h2 className="font-display text-3xl text-stellenbosch-maroon">Sprint list</h2>
             <div className="flex items-center gap-2 flex-wrap">

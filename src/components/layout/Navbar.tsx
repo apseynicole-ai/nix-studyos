@@ -31,11 +31,11 @@ const Navbar: React.FC = () => {
   const { user } = useAuth();
 
   return (
-    <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 glass px-4 py-3 rounded-[2rem] shadow-2xl z-50 flex items-center gap-3 md:gap-5 border-slate-200/50 max-w-[96vw] overflow-x-auto no-scrollbar">
+    <nav className="nav-shell fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-3 rounded-[2rem] z-50 flex items-center gap-3 md:gap-5 max-w-[96vw] overflow-x-auto no-scrollbar">
       {navItems.map((item) => (
         <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
       ))}
-      <div className="w-12 h-12 shrink-0 rounded-full maroon-gradient flex items-center justify-center -mt-8 shadow-lg shadow-stellenbosch-maroon/30 border-4 border-white">
+      <div className="w-12 h-12 shrink-0 rounded-full maroon-gradient flex items-center justify-center -mt-8 shadow-lg shadow-stellenbosch-maroon/30 border-4 border-white/90">
          <NavLink to="/ai" className={({isActive}) => isActive ? 'text-stellenbosch-gold' : 'text-white'} aria-label="LexAI">
             <BrainCircuit size={24} />
          </NavLink>

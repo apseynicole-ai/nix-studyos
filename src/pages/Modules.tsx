@@ -189,12 +189,12 @@ const Modules: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+    <div className="page-shell">
       <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">BAccLLB module intelligence</p>
-          <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Module Command Centre</h1>
-          <p className="text-slate-500 max-w-3xl">Your module shells now reflect the actual Stellenbosch BAccLLB subjects, known weak points, A2 dates, exam focus and next actions.</p>
+          <p className="page-kicker">BAccLLB module intelligence</p>
+          <h1 className="page-title">Module Command Centre</h1>
+          <p className="page-subtitle">Your module shells now reflect the actual Stellenbosch BAccLLB subjects, known weak points, A2 dates, exam focus and next actions.</p>
         </div>
         <div className="relative max-w-md w-full">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -273,7 +273,7 @@ const Modules: React.FC = () => {
           })}
         </section>
 
-        <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden sticky top-6 self-start">
+        <section className="editorial-panel overflow-hidden sticky top-6 self-start">
           <div className={`bg-gradient-to-br ${selected.colour} p-7 text-white relative overflow-hidden`}>
             <div className="absolute right-6 top-6 opacity-20"><SelectedIcon size={120} /></div>
             <div className="relative z-10">
@@ -452,7 +452,7 @@ const Modules: React.FC = () => {
       </div>
 
       <section className="mt-10 grid grid-cols-1 xl:grid-cols-[0.92fr_1.08fr] gap-8">
-        <div className="glass rounded-[2.5rem] p-7 border-slate-200/50 shadow-sm">
+        <div className="editorial-muted-panel p-7 shadow-sm">
           <div className="flex items-center justify-between gap-4 mb-6">
             <div>
               <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">local-first mastery tracker</p>

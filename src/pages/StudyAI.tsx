@@ -215,7 +215,7 @@ ${buildLiveContext(moduleId)}`;
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8 grid grid-cols-1 xl:grid-cols-[1fr_0.42fr] gap-8">
+    <div className="page-shell grid grid-cols-1 xl:grid-cols-[1fr_0.42fr] gap-8">
       <div>
         <header className="mb-8">
           <div className="flex items-center gap-3 mb-3">
@@ -223,16 +223,16 @@ ${buildLiveContext(moduleId)}`;
               <BrainCircuit size={24} />
             </div>
             <div>
-              <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold">personal study agent</p>
-              <h1 className="font-display text-5xl text-stellenbosch-maroon">LexAI Command Lab</h1>
+              <p className="page-kicker mb-1">personal study agent</p>
+              <h1 className="page-title mb-0">LexAI Command Lab</h1>
             </div>
           </div>
-          <p className="text-slate-500 max-w-3xl">Now injected with your BAccLLB module map, weak points, A2 goals, exam preferences and study-system logic before it answers.</p>
+          <p className="page-subtitle">Now injected with your BAccLLB module map, weak points, A2 goals, exam preferences and study-system logic before it answers.</p>
           {localFirstMode && <p className="mt-3 text-sm font-medium text-amber-800">Local-first mode active: saved AI summaries stay on this device.</p>}
         </header>
 
         <section className="grid grid-cols-1 lg:grid-cols-[0.72fr_0.28fr] gap-6 mb-8">
-          <form onSubmit={handleGenerate} className="glass p-6 rounded-[2.5rem] border-slate-200/50 shadow-xl">
+          <form onSubmit={handleGenerate} className="editorial-muted-panel p-6 shadow-xl">
             <div className="grid grid-cols-1 md:grid-cols-[1fr_0.45fr] gap-3 mb-4">
               <label className="block">
                 <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Ask LexAI</span>
@@ -294,7 +294,7 @@ ${buildLiveContext(moduleId)}`;
             <motion.div 
               initial={{ opacity: 0, scale: 0.97 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white p-6 md:p-10 rounded-[2.5rem] shadow-2xl border border-slate-100 markdown-body prose prose-slate max-w-none"
+              className="editorial-panel p-6 md:p-10 shadow-2xl markdown-body prose prose-slate max-w-none"
             >
               <div className="flex items-center justify-between gap-3 mb-6 not-prose">
                 <div>
@@ -317,7 +317,7 @@ ${buildLiveContext(moduleId)}`;
       </div>
 
       <aside className="space-y-6">
-        <section className="glass p-6 rounded-[2.5rem] sticky top-6 border-slate-200/50 shadow-sm">
+        <section className="editorial-muted-panel p-6 sticky top-6 shadow-sm">
           <h2 className="font-display text-2xl mb-6 flex items-center gap-2">
             <History size={20} className="text-stellenbosch-maroon" />
             Recent Inquiries

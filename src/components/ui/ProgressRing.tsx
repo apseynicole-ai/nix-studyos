@@ -53,7 +53,7 @@ const ProgressRing: React.FC<ProgressRingProps> = ({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="#e2e8f0"
+            stroke="#ebe4de"
             strokeWidth={strokeWidth}
           />
           <motion.circle

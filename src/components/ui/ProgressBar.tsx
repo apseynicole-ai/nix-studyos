@@ -46,7 +46,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
         {showValue && <span className="text-xs font-bold text-slate-500">{safeValue}%</span>}
       </div>
       <div
-        className={`w-full rounded-full bg-slate-100 overflow-hidden ${trackHeight[size]}`}
+        className={`w-full rounded-full bg-slate-100/90 overflow-hidden ring-1 ring-slate-200/70 ${trackHeight[size]}`}
         role="progressbar"
         aria-label={label}
         aria-valuemin={0}
@@ -60,7 +60,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
           transition={{ duration: 0.45, ease: 'easeOut' }}
         />
       </div>
-      {helper && <p className="text-xs text-slate-500 mt-2">{helper}</p>}
+      {helper && <p className="text-xs leading-5 text-slate-500 mt-2">{helper}</p>}
     </div>
   );
 };
