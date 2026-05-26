@@ -51,7 +51,7 @@ function buildLiveContext(moduleId: string): string {
 }
 
 const StudyAI: React.FC = () => {
-  const { user, localFirstMode } = useAuth();
+  const { user, localFirstMode, profile } = useAuth();
   const [input, setInput] = useState('');
   const [moduleId, setModuleId] = useState(modules[0].id);
   const [loading, setLoading] = useState(false);
@@ -63,12 +63,11 @@ const StudyAI: React.FC = () => {
   const selectedModule = useMemo(() => modules.find((module) => module.id === moduleId) || modules[0], [moduleId]);
 
   useEffect(() => {
-    if (!user) return;
     const loadLocalSummaries = () => {
-      setSummaries(readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.userId === user.uid));
+      setSummaries(readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => !user || summary.userId === user.uid || !summary.userId));
     };
 
-    if (localFirstMode) {
+    if (localFirstMode || !user) {
       loadLocalSummaries();
       return;
     }
@@ -128,7 +127,7 @@ ${buildLiveContext(moduleId)}`;
 
   const handleGenerate = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!input.trim() || !user) return;
+    if (!input.trim()) return;
 
     setLoading(true);
     setCurrentSummary(null);
@@ -150,7 +149,7 @@ ${buildLiveContext(moduleId)}`;
       setCurrentSummary(response);
       const newSummary = {
         id: crypto.randomUUID(),
-        userId: user.uid,
+        userId: user?.uid || profile?.uid || 'local-guest',
         title: input.slice(0, 70) + (input.length > 70 ? '...' : ''),
         content: response,
         originalText: input,
@@ -158,7 +157,7 @@ ${buildLiveContext(moduleId)}`;
         moduleName: selectedModule.shortName,
         createdAt: new Date().toISOString(),
       };
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
         setSummaries((current) => [...current, newSummary]);
       } else {
@@ -184,10 +183,10 @@ ${buildLiveContext(moduleId)}`;
 
   const deleteSummary = async (id: string) => {
     try {
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
         writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
-        setSummaries(nextSummaries.filter((summary) => summary.userId === user?.uid));
+        setSummaries(nextSummaries.filter((summary) => !user || summary.userId === user.uid || !summary.userId));
         return;
       }
       await deleteDoc(doc(db, 'summaries', id));
@@ -195,7 +194,7 @@ ${buildLiveContext(moduleId)}`;
       if (isFirestoreUnavailableError(error)) {
         const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
         writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
-        setSummaries(nextSummaries.filter((summary) => summary.userId === user?.uid));
+        setSummaries(nextSummaries.filter((summary) => !user || summary.userId === user.uid || !summary.userId));
         return;
       }
       console.error('Summary delete failed:', error instanceof Error ? error.message : String(error));

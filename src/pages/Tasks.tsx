@@ -33,7 +33,7 @@ interface StoredStudyTask extends StudyTask {
 }
 
 const Tasks: React.FC = () => {
-  const { user, localFirstMode } = useAuth();
+  const { user, localFirstMode, profile } = useAuth();
   const [tasks, setTasks] = useState<StoredStudyTask[]>([]);
   const [input, setInput] = useState('');
   const [moduleId, setModuleId] = useState(modules[0].id);
@@ -45,12 +45,11 @@ const Tasks: React.FC = () => {
   const [filter, setFilter] = useState<'All' | 'Open' | 'Done'>('Open');
 
   useEffect(() => {
-    if (!user) return;
     const loadLocalTasks = () => {
-      setTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => task.userId === user.uid));
+      setTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => !user || task.userId === user.uid || !task.userId));
     };
 
-    if (localFirstMode) {
+    if (localFirstMode || !user) {
       loadLocalTasks();
       return;
     }
@@ -71,16 +70,16 @@ const Tasks: React.FC = () => {
 
   const saveLocalTasks = (nextTasks: StoredStudyTask[]) => {
     writeLocalJson(LOCAL_TASKS_KEY, nextTasks);
-    setTasks(nextTasks.filter((task) => task.userId === user?.uid));
+    setTasks(nextTasks.filter((task) => !user || task.userId === user.uid || !task.userId));
   };
 
   const addTask = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!input.trim() || !user) return;
+    if (!input.trim()) return;
     const module = modules.find((item) => item.id === moduleId);
     const newTask = {
       id: crypto.randomUUID(),
-      userId: user.uid,
+      userId: user?.uid || profile?.uid || 'local-guest',
       text: input,
       done: false,
       moduleId,
@@ -93,7 +92,7 @@ const Tasks: React.FC = () => {
       createdAt: new Date().toISOString(),
     } satisfies StoredStudyTask;
     try {
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
         setInput('');
         return;
@@ -113,13 +112,12 @@ const Tasks: React.FC = () => {
   };
 
   const addTemplate = async (templateId: string) => {
-    if (!user) return;
     const template = taskTemplates.find((item) => item.id === templateId);
     if (!template) return;
     const module = modules.find((item) => item.id === template.moduleId);
     const newTask = {
       id: crypto.randomUUID(),
-      userId: user.uid,
+      userId: user?.uid || profile?.uid || 'local-guest',
       text: template.title,
       done: false,
       moduleId: template.moduleId,
@@ -133,7 +131,7 @@ const Tasks: React.FC = () => {
       createdAt: new Date().toISOString(),
     };
     try {
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), newTask]);
         return;
       }
@@ -150,12 +148,11 @@ const Tasks: React.FC = () => {
   };
 
   const seedBossDay = async () => {
-    if (!user) return;
     const seededTasks = taskTemplates.slice(0, 6).map((template) => {
       const module = modules.find((item) => item.id === template.moduleId);
       return {
         id: crypto.randomUUID(),
-        userId: user.uid,
+        userId: user?.uid || profile?.uid || 'local-guest',
         text: template.title,
         done: false,
         moduleId: template.moduleId,
@@ -170,7 +167,7 @@ const Tasks: React.FC = () => {
       };
     });
 
-    if (localFirstMode) {
+    if (localFirstMode || !user) {
       saveLocalTasks([...readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []), ...seededTasks]);
       return;
     }

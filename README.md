@@ -4,6 +4,7 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
 
 ## What this version includes
 
+- Local-first / guest-first app shell with optional Firebase Auth
 - Personalised BAccLLB dashboard
 - Module command centre
 - Topic Mastery Tracker inside `src/pages/Modules.tsx`, saved locally on-device
@@ -14,6 +15,10 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
 - Final Boss exam template vault
 - AI prompt packs and LexAI context injection
 - Module-aware focus timer and study session logging
+- PWA install support with a basic offline app shell
+- Timer to Mistake Bank quick capture
+- Module confidence overrides
+- Dashboard study streak / weekly momentum tracker
 
 ## Architecture status
 
@@ -30,7 +35,6 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
   - Optional future Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a database exists
 - Planned:
   - Firestore marks sync
-  - PWA support
 
 Nix StudyOS currently runs local-first without billing or Blaze. Firebase Auth and Firestore sync are optional future layers, not requirements for opening the app. Marks, tasks, timer sessions, and AI summaries can all work locally in this phase.
 

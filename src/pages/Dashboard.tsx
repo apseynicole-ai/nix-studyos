@@ -73,11 +73,10 @@ const Dashboard: React.FC = () => {
   const [actionFilter, setActionFilter] = useState<ActionFilter>('All');
 
   useEffect(() => {
-    if (!user) return;
     const loadLocalStats = () => {
-      const tasks = readLocalJson<any[]>(LOCAL_TASKS_KEY, []).filter((task) => task.userId === user.uid);
-      const sessions = readLocalJson<any[]>(LOCAL_TIMER_SESSIONS_KEY, []).filter((session) => session.userId === user.uid);
-      const summaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.userId === user.uid);
+      const tasks = readLocalJson<any[]>(LOCAL_TASKS_KEY, []).filter((task) => !user || task.userId === user.uid || !task.userId);
+      const sessions = readLocalJson<any[]>(LOCAL_TIMER_SESSIONS_KEY, []).filter((session) => !user || session.userId === user.uid || !session.userId);
+      const summaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => !user || summary.userId === user.uid || !summary.userId);
       setStats({
         tasks: tasks.length,
         completedTasks: tasks.filter((task) => task.done).length,
@@ -86,7 +85,7 @@ const Dashboard: React.FC = () => {
       });
     };
 
-    if (localFirstMode) {
+    if (localFirstMode || !user) {
       loadLocalStats();
       return;
     }
@@ -206,7 +205,7 @@ const Dashboard: React.FC = () => {
             <p className="text-white/80 text-lg max-w-2xl">
               Your personalised {USER_ACADEMIC_PROFILE.programme} command centre: modules, marks, tasks, A2 pressure prep, mistake loops and AI study systems in one place.
             </p>
-            {localFirstMode && <p className="mt-4 text-sm font-medium text-white/85">Local-first mode active while Firestore cloud sync is unavailable.</p>}
+            {localFirstMode && <p className="mt-4 text-sm font-medium text-white/85">Local-first mode active on this device. Optional cloud sync can be added later.</p>}
             <div className="flex flex-wrap gap-3 mt-8">
               <HeroPill icon={<Target size={16} />} text={USER_ACADEMIC_PROFILE.academicGoal} />
               <HeroPill icon={<Mic2 size={16} />} text="Teach-aloud revision" />
