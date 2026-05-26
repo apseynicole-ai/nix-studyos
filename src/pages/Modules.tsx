@@ -5,6 +5,7 @@ import { modules, ModuleArea } from '../data/baccllb';
 import { getEffectiveModuleConfidence, readModuleConfidenceOverrides, setModuleConfidenceOverride, type ModuleConfidenceOverrideMap } from '../lib/moduleConfidence';
 import { moduleFlags, priorityScore, readinessLabel, riskTone } from '../lib/studyMetrics';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
+import { findSnapshotModuleForAppModule, getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import {
@@ -39,6 +40,8 @@ const Modules: React.FC = () => {
   const [draft, setDraft] = useState<TopicMasteryRecord>(() => emptyTopicDraft(modules[0].id));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confidenceOverrides, setConfidenceOverrides] = useState<ModuleConfidenceOverrideMap>(() => readModuleConfidenceOverrides());
+  const latestAcademicSnapshot = useMemo(() => getLatestAcademicSnapshot(), []);
+  const latestAcademicSummary = useMemo(() => summarizeAcademicSnapshot(latestAcademicSnapshot), [latestAcademicSnapshot]);
 
   const effectiveConfidence = (moduleId: string) => {
     const override = confidenceOverrides[moduleId];
@@ -116,6 +119,10 @@ const Modules: React.FC = () => {
     ? clampProgress((selectedModuleTopics.filter((topic) => topic.finalBossReady || topic.status === 'exam-ready').length / selectedModuleTopics.length) * 100)
     : 0;
   const selectedFinalBossReadyCount = selectedModuleTopics.filter((topic) => topic.finalBossReady).length;
+  const selectedSnapshotOverlay = useMemo(
+    () => findSnapshotModuleForAppModule(latestAcademicSnapshot, selected),
+    [latestAcademicSnapshot, selected],
+  );
 
   const startNewTopic = (moduleId = trackerModuleId === 'all' ? selected.id : trackerModuleId, topicName = '') => {
     setEditingId(null);
@@ -325,6 +332,89 @@ const Modules: React.FC = () => {
           </div>
 
           <div className="p-7 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {selectedSnapshotOverlay && (
+              <div className="lg:col-span-2 rounded-[1.75rem] border border-stellenbosch-maroon/10 bg-stellenbosch-maroon/5 p-5">
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-stellenbosch-maroon/70">Academic snapshot overlay</p>
+                    <h3 className="mt-2 font-display text-2xl text-stellenbosch-maroon">{selectedSnapshotOverlay.moduleName}</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Latest imported overlay from {latestAcademicSnapshot?.sourceLabel}. This is view-only context and does not overwrite marks-engine data.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${snapshotModuleStatusTone(selectedSnapshotOverlay.status)}`}>
+                      {selectedSnapshotOverlay.status}
+                    </span>
+                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {selectedSnapshotOverlay.moduleCode}
+                    </span>
+                    {latestAcademicSummary && (
+                      <span className="rounded-full border border-red-100 bg-red-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                        {latestAcademicSummary.urgentActionCount} urgent actions in latest snapshot
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-white/60 bg-white/80 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Known marks in snapshot</p>
+                      {selectedSnapshotOverlay.currentKnownMarks.length > 0 ? (
+                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                          {selectedSnapshotOverlay.currentKnownMarks.slice(0, 4).map((mark) => (
+                            <li key={`${selectedSnapshotOverlay.moduleCode}-${mark.name}`}>
+                              • {mark.name}{typeof mark.percentage === 'number' ? ` — ${mark.percentage}%` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 text-sm text-slate-500">No confirmed marks captured in the latest snapshot.</p>
+                      )}
+                    </div>
+                    <div className="rounded-2xl border border-white/60 bg-white/80 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Missing assessments</p>
+                      {selectedSnapshotOverlay.missingAssessments.length > 0 ? (
+                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                          {selectedSnapshotOverlay.missingAssessments.slice(0, 4).map((assessment) => (
+                            <li key={`${selectedSnapshotOverlay.moduleCode}-${assessment.name}`}>
+                              • {assessment.name} ({assessment.status}){assessment.note ? ` — ${assessment.note}` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 text-sm text-slate-500">No missing assessments captured in this snapshot.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-white/60 bg-white/80 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Urgent actions from snapshot</p>
+                      {selectedSnapshotOverlay.urgentActions.length > 0 ? (
+                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                          {selectedSnapshotOverlay.urgentActions.slice(0, 5).map((action) => <li key={action}>• {action}</li>)}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 text-sm text-slate-500">No urgent actions saved for this module in the latest snapshot.</p>
+                      )}
+                    </div>
+                    <div className="rounded-2xl border border-white/60 bg-white/80 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Snapshot notes</p>
+                      {selectedSnapshotOverlay.notes.length > 0 ? (
+                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                          {selectedSnapshotOverlay.notes.slice(0, 4).map((note) => <li key={note}>• {note}</li>)}
+                        </ul>
+                      ) : (
+                        <p className="mt-3 text-sm text-slate-500">No extra notes saved for this module in the latest snapshot.</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <InfoPanel icon={<AlertTriangle size={19} />} title="Known weak points" tone="red">
               {selected.weakPoints.map((point) => <Bullet key={point} text={point} />)}
             </InfoPanel>
@@ -745,6 +835,17 @@ function actionPriorityTone(priority: NextBestAction['priority']) {
       return 'bg-blue-50 text-blue-800 border border-blue-100';
     default:
       return 'bg-slate-100 text-slate-700 border border-slate-200';
+  }
+}
+
+function snapshotModuleStatusTone(status: 'stable' | 'watch' | 'urgent') {
+  switch (status) {
+    case 'urgent':
+      return 'bg-red-50 text-red-700 border border-red-100';
+    case 'watch':
+      return 'bg-amber-50 text-amber-800 border border-amber-100';
+    default:
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
   }
 }
 
