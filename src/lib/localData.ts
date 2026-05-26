@@ -3,6 +3,7 @@ export const BACKUP_KEYS = [
   'baccllb-mark-engine-state',
   'baccllb-module-targets',
   'baccllb-module-confidence',
+  'baccllb-academic-snapshots',
   'baccllb-tasks',
   'baccllb-timer-sessions',
   'baccllb-studyai-summaries',
@@ -21,6 +22,7 @@ export const LOCAL_TIMER_SESSIONS_KEY = 'baccllb-timer-sessions';
 export const LOCAL_SUMMARIES_KEY = 'baccllb-studyai-summaries';
 export const LOCAL_TOPIC_MASTERY_KEY = 'baccllb-topic-mastery';
 export const LOCAL_MODULE_CONFIDENCE_KEY = 'baccllb-module-confidence';
+export const LOCAL_ACADEMIC_SNAPSHOTS_KEY = 'baccllb-academic-snapshots';
 export const LOCAL_BACKUP_META_KEY = 'baccllb-last-backup-meta';
 export const BACKUP_SCHEMA_VERSION = 1;
 export const BACKUP_APP_NAME = 'Nix StudyOS';

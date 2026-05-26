@@ -1,9 +1,19 @@
-import React, { useRef, useState } from 'react';
-import { Download, LogIn, LogOut, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { Download, LogIn, LogOut, NotebookTabs, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
+import {
+  academicSnapshotExampleJson,
+  deleteAcademicSnapshot,
+  getLatestAcademicSnapshot,
+  importAcademicSnapshot,
+  readAcademicSnapshots,
+  saveImportedAcademicSnapshot,
+  summarizeAcademicSnapshot,
+  type AcademicSnapshot,
+} from '../lib/academicSnapshots';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -18,6 +28,10 @@ const Settings: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [lastBackupMeta, setLastBackupMeta] = useState(() => getLastBackupMeta());
+  const [snapshotInput, setSnapshotInput] = useState(() => academicSnapshotExampleJson());
+  const [snapshots, setSnapshots] = useState<AcademicSnapshot[]>(() => readAcademicSnapshots());
+  const latestSnapshot = useMemo(() => snapshots[0] ?? null, [snapshots]);
+  const latestSnapshotSummary = useMemo(() => summarizeAcademicSnapshot(latestSnapshot), [latestSnapshot]);
 
   const handleExport = () => {
     const { fileName, includedKeys } = exportBackup();
@@ -55,6 +69,34 @@ const Settings: React.FC = () => {
     if (!confirmed) return;
     resetAppData();
     setStatus({ type: 'ok', msg: 'Local app data cleared. Reload the page to see defaults.' });
+  };
+
+  const handleImportSnapshot = () => {
+    setStatus(null);
+
+    try {
+      const parsed = JSON.parse(snapshotInput);
+      const snapshot = importAcademicSnapshot(parsed);
+      const next = saveImportedAcademicSnapshot(snapshot);
+      setSnapshots(next);
+      setStatus({
+        type: 'ok',
+        msg: `Academic snapshot imported. Saved ${snapshot.modules.length} module update${snapshot.modules.length === 1 ? '' : 's'} locally without changing marks-engine data.`,
+      });
+    } catch (error) {
+      setStatus({
+        type: 'err',
+        msg: error instanceof Error ? error.message : 'Could not import academic snapshot.',
+      });
+    }
+  };
+
+  const handleDeleteSnapshot = (id: string) => {
+    const confirmed = window.confirm('Delete this saved academic snapshot from local storage?');
+    if (!confirmed) return;
+    const next = deleteAcademicSnapshot(id);
+    setSnapshots(next);
+    setStatus({ type: 'ok', msg: 'Academic snapshot deleted from this device.' });
   };
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
@@ -204,6 +246,185 @@ const Settings: React.FC = () => {
         )}
       </section>
 
+      <section id="academic-snapshot" className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center">
+            <NotebookTabs size={22} />
+          </div>
+          <div>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Academic Snapshot Import</h2>
+            <p className="text-sm text-slate-500">Paste a structured academic status snapshot to save a local-first overlay of your current position without overwriting marks-engine data.</p>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-stellenbosch-maroon/10 bg-stellenbosch-maroon/5 px-4 py-4 text-sm text-slate-700">
+          <p className="font-semibold text-stellenbosch-maroon">Paste-based JSON only for now.</p>
+          <p className="mt-2">This version stores academic status snapshots separately from marks calculations. It is meant to reflect your current academic position quickly, not to replace the existing marks engine.</p>
+        </div>
+
+        {latestSnapshot && latestSnapshotSummary && (
+          <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-4">
+            <SnapshotMetric label="Latest source" value={latestSnapshot.sourceLabel} detail={new Date(latestSnapshot.createdAt).toLocaleString()} />
+            <SnapshotMetric label="Modules updated" value={`${latestSnapshotSummary.modulesUpdated}`} detail="Local overlay only" />
+            <SnapshotMetric label="Urgent actions" value={`${latestSnapshotSummary.urgentActionCount}`} detail="Urgent-priority items only" />
+            <SnapshotMetric label="Most urgent" value={latestSnapshotSummary.mostUrgentModule || 'None'} detail={latestSnapshotSummary.mostUrgentAction || 'No urgent action captured'} />
+          </div>
+        )}
+
+        <div className="mt-5 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Expected JSON shape</p>
+            <button
+              type="button"
+              onClick={() => setSnapshotInput(academicSnapshotExampleJson())}
+              className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-600 transition hover:border-stellenbosch-maroon/30 hover:text-stellenbosch-maroon"
+            >
+              Load example JSON
+            </button>
+          </div>
+          <textarea
+            value={snapshotInput}
+            onChange={(event) => setSnapshotInput(event.target.value)}
+            className="min-h-[22rem] w-full rounded-[1.75rem] border border-slate-100 bg-slate-50 px-4 py-4 font-mono text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+            spellCheck={false}
+          />
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleImportSnapshot}
+              className="maroon-gradient rounded-2xl px-5 py-3 text-sm font-bold text-white transition hover:scale-[1.01]"
+            >
+              Import academic snapshot
+            </button>
+            <button
+              type="button"
+              onClick={() => setSnapshotInput('')}
+              className="rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:border-stellenbosch-maroon/20 hover:text-stellenbosch-maroon"
+            >
+              Clear JSON
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 className="font-display text-2xl text-stellenbosch-maroon">Saved snapshots</h3>
+              <p className="text-sm text-slate-500">Newest first. Delete any saved overlay you no longer want on this device.</p>
+            </div>
+            <span className="rounded-full bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">
+              {snapshots.length} saved
+            </span>
+          </div>
+
+          {snapshots.length === 0 ? (
+            <div className="rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/60 px-5 py-6 text-sm text-slate-500">
+              No academic snapshots saved yet. Paste the JSON example above to import your first current-position overlay.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {snapshots.map((snapshot) => {
+                const summary = summarizeAcademicSnapshot(snapshot);
+                return (
+                  <details key={snapshot.id} className="rounded-[1.75rem] border border-slate-100 bg-slate-50/70 p-5">
+                    <summary className="flex cursor-pointer list-none flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <p className="font-bold text-slate-800">{snapshot.sourceLabel}</p>
+                        <p className="mt-1 text-sm text-slate-500">{new Date(snapshot.createdAt).toLocaleString()}</p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                            {snapshot.modules.length} modules
+                          </span>
+                          <span className="rounded-full border border-red-100 bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                            {summary?.urgentActionCount ?? 0} urgent actions
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleDeleteSnapshot(snapshot.id);
+                        }}
+                        className="inline-flex items-center gap-2 self-start rounded-2xl border border-red-100 bg-white px-4 py-2 text-sm font-bold text-red-600 transition hover:bg-red-50"
+                      >
+                        <Trash2 size={15} /> Delete
+                      </button>
+                    </summary>
+
+                    <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+                      <div className="space-y-4">
+                        <SnapshotInfoPanel title="Global actions">
+                          {snapshot.globalActions.length === 0 ? (
+                            <p className="text-sm text-slate-500">No global actions saved.</p>
+                          ) : (
+                            snapshot.globalActions.map((action) => (
+                              <div key={`${snapshot.id}-${action.title}`} className="rounded-2xl border border-slate-100 bg-white px-4 py-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-slate-800">{action.title}</p>
+                                  <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${snapshotPriorityTone(action.priority)}`}>
+                                    {action.priority}
+                                  </span>
+                                  {action.moduleCode && (
+                                    <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                      {action.moduleCode}
+                                    </span>
+                                  )}
+                                </div>
+                                {action.detail && <p className="mt-2 text-sm text-slate-500">{action.detail}</p>}
+                              </div>
+                            ))
+                          )}
+                        </SnapshotInfoPanel>
+
+                        <SnapshotInfoPanel title="Snapshot notes">
+                          {snapshot.notes.length === 0 ? (
+                            <p className="text-sm text-slate-500">No snapshot-level notes saved.</p>
+                          ) : (
+                            <ul className="space-y-2 text-sm text-slate-600">
+                              {snapshot.notes.map((note) => <li key={note}>• {note}</li>)}
+                            </ul>
+                          )}
+                        </SnapshotInfoPanel>
+                      </div>
+
+                      <SnapshotInfoPanel title="Module details">
+                        <div className="space-y-3">
+                          {snapshot.modules.map((module) => (
+                            <div key={`${snapshot.id}-${module.moduleCode}`} className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-semibold text-slate-800">{module.moduleName}</p>
+                                <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{module.moduleCode}</span>
+                                <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${snapshotStatusTone(module.status)}`}>{module.status}</span>
+                              </div>
+                              {module.currentKnownMarks.length > 0 && (
+                                <p className="mt-2 text-sm text-slate-500">
+                                  Known marks: {module.currentKnownMarks.slice(0, 3).map((mark) => `${mark.name}${typeof mark.percentage === 'number' ? ` ${mark.percentage}%` : ''}`).join(' • ')}
+                                </p>
+                              )}
+                              {module.missingAssessments.length > 0 && (
+                                <p className="mt-2 text-sm text-slate-500">
+                                  Missing / pending: {module.missingAssessments.slice(0, 3).map((assessment) => `${assessment.name} (${assessment.status})`).join(' • ')}
+                                </p>
+                              )}
+                              {module.urgentActions.length > 0 && (
+                                <ul className="mt-3 space-y-1 text-sm text-slate-600">
+                                  {module.urgentActions.slice(0, 3).map((action) => <li key={action}>• {action}</li>)}
+                                </ul>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </SnapshotInfoPanel>
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
       <div className="space-y-4">
         <section className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between gap-4 mb-4">
@@ -321,6 +542,21 @@ const ActionCard: React.FC<{
   </div>
 );
 
+const SnapshotMetric: React.FC<{ detail: string; label: string; value: string }> = ({ detail, label, value }) => (
+  <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50/70 px-4 py-4">
+    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{label}</p>
+    <p className="mt-2 font-display text-2xl text-stellenbosch-maroon break-words">{value}</p>
+    <p className="mt-1 text-sm text-slate-500">{detail}</p>
+  </div>
+);
+
+const SnapshotInfoPanel: React.FC<{ children: React.ReactNode; title: string }> = ({ children, title }) => (
+  <div className="rounded-[1.5rem] border border-slate-100 bg-white p-4">
+    <p className="mb-3 text-[10px] uppercase tracking-wider text-slate-400 font-bold">{title}</p>
+    {children}
+  </div>
+);
+
 const Field: React.FC<{
   autoComplete?: string;
   label: string;
@@ -374,6 +610,30 @@ function getAuthMessage(error: unknown) {
       return 'Network error. Check your connection and try again.';
     default:
       return error instanceof Error ? error.message : 'Authentication failed.';
+  }
+}
+
+function snapshotPriorityTone(priority: 'low' | 'medium' | 'high' | 'urgent') {
+  switch (priority) {
+    case 'urgent':
+      return 'bg-red-50 text-red-700 border border-red-100';
+    case 'high':
+      return 'bg-amber-50 text-amber-800 border border-amber-100';
+    case 'medium':
+      return 'bg-blue-50 text-blue-700 border border-blue-100';
+    default:
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
+  }
+}
+
+function snapshotStatusTone(status: 'stable' | 'watch' | 'urgent') {
+  switch (status) {
+    case 'urgent':
+      return 'bg-red-50 text-red-700 border border-red-100';
+    case 'watch':
+      return 'bg-amber-50 text-amber-800 border border-amber-100';
+    default:
+      return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
   }
 }
 

@@ -40,6 +40,7 @@ import { getStudyMomentumSummary } from '../lib/studyMomentum';
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
 import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
+import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import ProgressRing from '../components/ui/ProgressRing';
@@ -189,6 +190,8 @@ const Dashboard: React.FC = () => {
   }, null);
   const studyMomentum = useMemo(() => getStudyMomentumSummary(localTimerSessions), [localTimerSessions]);
   const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
+  const latestAcademicSnapshot = useMemo(() => getLatestAcademicSnapshot(), []);
+  const latestAcademicSummary = useMemo(() => summarizeAcademicSnapshot(latestAcademicSnapshot), [latestAcademicSnapshot]);
 
   return (
     <div className="page-shell">
@@ -362,6 +365,69 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      </section>
+
+      <section className="editorial-panel mb-10 p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">academic status overlay</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Latest Academic Snapshot</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">A quick local-first overlay of your latest imported SUNLearn-style academic position, kept separate from marks-engine calculations.</p>
+          </div>
+          <Link to="/settings#academic-snapshot" className="inline-flex items-center gap-2 self-start rounded-2xl border border-stellenbosch-maroon/15 bg-white px-4 py-3 text-sm font-bold text-stellenbosch-maroon transition-all hover:-translate-y-0.5 hover:shadow">
+            Open snapshot import <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {!latestAcademicSnapshot || !latestAcademicSummary ? (
+          <div className="mt-6 rounded-[2rem] border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white px-6 py-8 text-center">
+            <p className="font-display text-2xl text-slate-700">No academic snapshot imported yet.</p>
+            <p className="mt-2 text-sm text-slate-500">Paste a structured snapshot in Settings when you want the Dashboard to reflect your current academic status overlay.</p>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <GardenMetric label="Modules updated" value={`${latestAcademicSummary.modulesUpdated}`} detail={latestAcademicSnapshot.sourceLabel} />
+              <GardenMetric label="Urgent actions" value={`${latestAcademicSummary.urgentActionCount}`} detail="Urgent-priority items captured" />
+              <GardenMetric label="Most urgent" value={latestAcademicSummary.mostUrgentModule ?? 'None'} detail={latestAcademicSummary.mostUrgentAction ?? 'No urgent action captured'} />
+            </div>
+
+            <div className="rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-red-50/50 p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Overlay notes</p>
+                  <h3 className="font-display text-2xl text-slate-800">Imported snapshot highlights</h3>
+                </div>
+                <div className="rounded-full bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                  {new Date(latestAcademicSnapshot.createdAt).toLocaleDateString('en-ZA')}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {latestAcademicSnapshot.notes.slice(0, 2).map((note) => (
+                  <div key={note} className="rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-600">
+                    {note}
+                  </div>
+                ))}
+                {latestAcademicSnapshot.globalActions.slice(0, 2).map((action) => (
+                  <div key={`${action.title}-${action.moduleCode || 'global'}`} className="rounded-2xl border border-red-100 bg-red-50/70 px-4 py-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-red-100 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                        {action.priority}
+                      </span>
+                      {action.moduleCode && (
+                        <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                          {action.moduleCode}
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 font-semibold text-slate-800">{action.title}</p>
+                    {action.detail && <p className="mt-1 text-sm text-slate-600">{action.detail}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="editorial-panel mb-10 p-6">
