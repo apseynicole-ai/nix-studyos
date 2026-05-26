@@ -102,7 +102,7 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
     <>
       {localFirstMode && (
         <div className="sticky top-0 z-50 px-4 pt-4">
-          <div className="mx-auto max-w-5xl rounded-2xl border border-stellenbosch-gold/30 bg-stellenbosch-gold/10 px-4 py-3 text-sm font-medium text-stellenbosch-maroon shadow-sm">
+          <div className="local-first-banner">
             Local-first mode: your study data is saved on this device. Cloud sync can be added later.
           </div>
         </div>

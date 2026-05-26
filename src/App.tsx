@@ -20,7 +20,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AuthGuard>
-          <div className="min-h-screen">
+          <div className="app-shell">
             <Suspense fallback={<RouteLoadingFallback />}>
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -46,9 +46,9 @@ export default function App() {
 
 const RouteLoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center px-5 md:px-8">
-    <div className="glass rounded-[2.5rem] px-8 py-10 text-center shadow-xl border border-slate-200/60">
+    <div className="editorial-panel px-8 py-10 text-center">
       <div className="w-12 h-12 border-4 border-stellenbosch-maroon border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-      <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-2">route loader</p>
+      <p className="section-kicker mb-2">route loader</p>
       <h1 className="font-display text-3xl text-stellenbosch-maroon">Loading Nix StudyOS...</h1>
     </div>
   </div>

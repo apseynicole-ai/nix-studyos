@@ -4,10 +4,10 @@ import { clampProgress } from '../../lib/progressMetrics';
 type ProgressTone = 'maroon' | 'emerald' | 'amber' | 'slate';
 
 const badgeTone: Record<ProgressTone, string> = {
-  maroon: 'bg-stellenbosch-maroon/5 text-stellenbosch-maroon border-stellenbosch-maroon/10',
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-  amber: 'bg-amber-50 text-amber-700 border-amber-100',
-  slate: 'bg-slate-100 text-slate-600 border-slate-200',
+  maroon: 'bg-stellenbosch-maroon/6 text-stellenbosch-maroon border-stellenbosch-maroon/12 shadow-sm',
+  emerald: 'bg-emerald-50/90 text-emerald-700 border-emerald-100 shadow-sm',
+  amber: 'bg-amber-50/90 text-amber-700 border-amber-100 shadow-sm',
+  slate: 'bg-white/80 text-slate-600 border-slate-200 shadow-sm',
 };
 
 interface ProgressBadgeProps {
@@ -27,7 +27,7 @@ const ProgressBadge: React.FC<ProgressBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${badgeTone[tone]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${badgeTone[tone]} ${className}`}
       aria-label={`${label}: ${safeValue}%`}
     >
       <span>{label}</span>

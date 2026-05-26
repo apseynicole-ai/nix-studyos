@@ -191,7 +191,7 @@ const Dashboard: React.FC = () => {
   const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+    <div className="page-shell">
       <header className="mb-10 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-stretch">
         <motion.section
           initial={{ opacity: 0, y: 18 }}
@@ -214,7 +214,7 @@ const Dashboard: React.FC = () => {
           </div>
         </motion.section>
 
-        <section className="glass rounded-[2.5rem] p-7 border-slate-200/50 shadow-sm">
+        <section className="editorial-muted-panel p-7">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-xs font-bold tracking-[0.25em] uppercase text-slate-400">Today</p>
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
       </section>
 
-      <section className="mb-10 rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+      <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">today&apos;s focus garden</p>
@@ -297,7 +297,7 @@ const Dashboard: React.FC = () => {
         )}
       </section>
 
-      <section className="mb-10 rounded-[2.5rem] border border-slate-100 bg-white p-7 shadow-sm">
+      <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">weekly momentum</p>
@@ -364,7 +364,7 @@ const Dashboard: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+      <section className="editorial-panel mb-10 p-6">
         <div className="flex items-center gap-3 mb-5">
           <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon text-white flex items-center justify-center shrink-0">
             <Zap size={20} />
@@ -387,7 +387,7 @@ const Dashboard: React.FC = () => {
         )}
       </section>
 
-      <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
+      <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
           <div>
             <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">visual progress snapshot</p>

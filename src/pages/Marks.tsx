@@ -639,12 +639,12 @@ const Marks: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto pt-8 pb-36 px-5 md:px-8">
+    <div className="page-shell">
       <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
         <div>
-          <p className="uppercase tracking-[0.35em] text-xs text-slate-400 font-bold mb-3">marks engine dashboard</p>
-          <h1 className="font-display text-5xl text-stellenbosch-maroon mb-3">Module-Specific Marks Control Room</h1>
-          <p className="text-slate-500 max-w-3xl">
+          <p className="page-kicker">marks engine dashboard</p>
+          <h1 className="page-title">Module-Specific Marks Control Room</h1>
+          <p className="page-subtitle">
             Select a supported BAccLLB module, capture the exact assessment inputs, and let the audited marks engine
             calculate MTD, FM paths, A3 status, warnings, and next-mark targets.
           </p>
