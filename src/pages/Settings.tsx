@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Download, LogIn, LogOut, NotebookTabs, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
+import { CheckCircle2, Download, LogIn, LogOut, NotebookTabs, PlusCircle, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
@@ -14,6 +14,14 @@ import {
   summarizeAcademicSnapshot,
   type AcademicSnapshot,
 } from '../lib/academicSnapshots';
+import {
+  addAllSnapshotActionsToTasks,
+  addSnapshotActionToTasks,
+  getSnapshotTaskActions,
+  isSnapshotActionAlreadyTasked,
+  readSnapshotTasks,
+  type SnapshotTaskAction,
+} from '../lib/snapshotTasks';
 
 type AuthMode = 'signin' | 'signup';
 
@@ -30,8 +38,14 @@ const Settings: React.FC = () => {
   const [lastBackupMeta, setLastBackupMeta] = useState(() => getLastBackupMeta());
   const [snapshotInput, setSnapshotInput] = useState(() => academicSnapshotExampleJson());
   const [snapshots, setSnapshots] = useState<AcademicSnapshot[]>(() => readAcademicSnapshots());
+  const [snapshotTasks, setSnapshotTasks] = useState(() => readSnapshotTasks());
   const latestSnapshot = useMemo(() => snapshots[0] ?? null, [snapshots]);
   const latestSnapshotSummary = useMemo(() => summarizeAcademicSnapshot(latestSnapshot), [latestSnapshot]);
+  const latestSnapshotActions = useMemo(() => getSnapshotTaskActions(latestSnapshot), [latestSnapshot]);
+  const pendingSnapshotActions = useMemo(
+    () => latestSnapshotActions.filter((action) => !isSnapshotActionAlreadyTasked(action, snapshotTasks)),
+    [latestSnapshotActions, snapshotTasks],
+  );
 
   const handleExport = () => {
     const { fileName, includedKeys } = exportBackup();
@@ -97,6 +111,24 @@ const Settings: React.FC = () => {
     const next = deleteAcademicSnapshot(id);
     setSnapshots(next);
     setStatus({ type: 'ok', msg: 'Academic snapshot deleted from this device.' });
+  };
+
+  const handleAddSnapshotAction = (action: SnapshotTaskAction) => {
+    const { tasks, added } = addSnapshotActionToTasks(action, user?.uid || profile?.uid || 'local-guest');
+    setSnapshotTasks(tasks);
+    setStatus({
+      type: 'ok',
+      msg: added ? `Added "${action.title}" to Tasks.` : `"${action.title}" is already in Tasks.`,
+    });
+  };
+
+  const handleAddAllSnapshotActions = () => {
+    const { tasks, added } = addAllSnapshotActionsToTasks(pendingSnapshotActions, user?.uid || profile?.uid || 'local-guest');
+    setSnapshotTasks(tasks);
+    setStatus({
+      type: 'ok',
+      msg: added > 0 ? `Added ${added} snapshot action${added === 1 ? '' : 's'} to Tasks.` : 'All current snapshot actions are already in Tasks.',
+    });
   };
 
   const handleAuthSubmit = async (event: React.FormEvent) => {
@@ -268,6 +300,70 @@ const Settings: React.FC = () => {
             <SnapshotMetric label="Modules updated" value={`${latestSnapshotSummary.modulesUpdated}`} detail="Local overlay only" />
             <SnapshotMetric label="Urgent actions" value={`${latestSnapshotSummary.urgentActionCount}`} detail="Urgent-priority items only" />
             <SnapshotMetric label="Most urgent" value={latestSnapshotSummary.mostUrgentModule || 'None'} detail={latestSnapshotSummary.mostUrgentAction || 'No urgent action captured'} />
+          </div>
+        )}
+
+        {latestSnapshot && (
+          <div className="mt-5 rounded-[1.75rem] border border-slate-100 bg-slate-50/70 p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">Snapshot actions to tasks</p>
+                <h3 className="mt-2 font-display text-2xl text-stellenbosch-maroon">Turn urgent snapshot items into tasks</h3>
+                <p className="mt-1 text-sm text-slate-500">Creates local-first Tasks from the latest snapshot only. Duplicate actions are marked as already added.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleAddAllSnapshotActions}
+                disabled={pendingSnapshotActions.length === 0}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-stellenbosch-maroon px-4 py-3 text-sm font-bold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+              >
+                <PlusCircle size={17} /> Add all urgent actions
+              </button>
+            </div>
+
+            {latestSnapshotActions.length === 0 ? (
+              <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-5 text-sm text-slate-500">
+                No urgent or high-priority snapshot actions are available in the latest snapshot.
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {latestSnapshotActions.map((action) => {
+                  const alreadyAdded = isSnapshotActionAlreadyTasked(action, snapshotTasks);
+                  return (
+                    <div key={action.id} className="rounded-2xl border border-slate-100 bg-white px-4 py-4">
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="min-w-0">
+                          <div className="mb-2 flex flex-wrap items-center gap-2">
+                            <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${taskPriorityTone(action.priority)}`}>
+                              {action.priority}
+                            </span>
+                            {action.moduleCode && (
+                              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                {action.moduleCode}
+                              </span>
+                            )}
+                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              {action.sourceType === 'global-action' ? 'Global action' : 'Module action'}
+                            </span>
+                          </div>
+                          <p className="font-bold text-slate-800">{action.title}</p>
+                          {action.detail && <p className="mt-1 text-sm text-slate-500">{action.detail}</p>}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleAddSnapshotAction(action)}
+                          disabled={alreadyAdded}
+                          className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition ${alreadyAdded ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-default' : 'bg-slate-900 text-white hover:scale-[1.01]'}`}
+                        >
+                          {alreadyAdded ? <CheckCircle2 size={16} /> : <PlusCircle size={16} />}
+                          {alreadyAdded ? 'Already added' : 'Add to Tasks'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -634,6 +730,19 @@ function snapshotStatusTone(status: 'stable' | 'watch' | 'urgent') {
       return 'bg-amber-50 text-amber-800 border border-amber-100';
     default:
       return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+  }
+}
+
+function taskPriorityTone(priority: 'Low' | 'Medium' | 'High' | 'Critical') {
+  switch (priority) {
+    case 'Critical':
+      return 'bg-red-50 text-red-700 border border-red-100';
+    case 'High':
+      return 'bg-amber-50 text-amber-800 border border-amber-100';
+    case 'Medium':
+      return 'bg-blue-50 text-blue-700 border border-blue-100';
+    default:
+      return 'bg-slate-100 text-slate-600 border border-slate-200';
   }
 }
 
