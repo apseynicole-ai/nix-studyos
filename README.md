@@ -1,5 +1,19 @@
 # Nix StudyOS — Stellenbosch Personal Academic Command Centre
 
+## ECO114 A3 — Recommended study files (open in browser, no server needed)
+
+| # | File | Purpose |
+|---|------|---------|
+| 1 | `exports/html/eco114_a3_FINAL_80PLUS_MASTER_HUB.html` | **Recommended daily study file** — all units, War Room, progress tracking |
+| 2 | `exports/html/eco114_a3_index.html` | Start Here / backup control centre |
+| 3 | `exports/html/eco114_a3_exam_warroom.html` | Standalone War Room backup |
+| 4 | `exports/html/eco114_a3_markets_units_6_7_8_10_v2_unit_tabs.html` | Standalone Markets backup |
+| 5 | `exports/html/eco114_a3_foundations_units_1_to_5_v2_unit_tabs.html` | Standalone Foundations backup |
+
+Legacy files (`eco114_a3_markets_units_6_7_8_10.html`, `eco114_a3_foundations_units_1_to_5.html`) are reference only — do not use for daily study.
+
+---
+
 A React + Vite + Firebase study system customised for a Stellenbosch University BAccLLB student.
 
 ## What this version includes
