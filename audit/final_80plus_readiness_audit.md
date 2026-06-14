@@ -37,3 +37,19 @@ All 9 units have at least one Section C answer template or premium model answer.
 
 ## Recommended study route
 See "Study Routes" section in the hub. Priority: Unit 8 → 7 → 10 → 3 → 6 → 4 → 5 → 2 → 1 → War Room → Final Boss.
+
+## Post-audit patch update — 2026-06-14 (v1.4)
+
+### Changes affecting readiness
+- Unit 10 positive externality corrected: previous contradictory Q*<Qm example replaced with clean Q*=50>Qm=40, subsidy=R20.
+- Full Practice Bank added (70 items across 9 units) — practice depth now sufficient for "only file" 80%+ goal.
+- 80% vs 100% guidance added to all 9 premium Section C answers.
+- localStorage safe wrapper: progress survives private browsing and quota errors.
+
+### Updated practice coverage
+70 real practice items added. All memos include formula, substitution, final answer and interpretation. T/F mix: not all True. No template phrases.
+
+### Remaining limitations
+- No SVG graphs (text-only redraw cards).
+- Markets v2 and Foundations v2 JS-rendered practice banks preserved in backup files.
+- Not browser-tested live (remote headless environment).

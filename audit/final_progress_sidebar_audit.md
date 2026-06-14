@@ -44,3 +44,15 @@ All details elements forced open in print. Answers revealed (filter:none).
 ## Known limitations
 - Active nav link requires hash in URL. Intersection Observer not implemented (future improvement).
 - Sidebar overflow uses scrollbar (no mobile hamburger menu).
+
+## Post-audit patch update — 2026-06-14 (v1.4)
+
+### Changes to progress tracking
+- Total checkboxes: 75 → 84 (9 new practice bank checkboxes, 1 per unit).
+- Closed-book language on 8 key checkboxes (graphs redrawn from memory, practice completed closed-book).
+- Sidebar note updated: "Only tick after closed-book recall or completed written practice."
+- Dashboard honesty warning added (hot-pink card).
+- Practice bank section added to SECTIONS map and NAV array.
+- localStorage: now wrapped in safeGet/safeSet with MEM fallback.
+- Nav active highlight: updateProgress() called immediately on click (no delay).
+- Active recall: delegated listener, no handler leakage, clearing revealed states on recall-on.

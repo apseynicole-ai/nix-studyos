@@ -4,13 +4,26 @@
 
 | # | File | Purpose |
 |---|------|---------|
-| 1 | `exports/html/eco114_a3_FINAL_80PLUS_MASTER_HUB.html` | **Recommended daily study file** — all units, War Room, progress tracking |
+| 1 | `exports/html/eco114_a3_FINAL_80PLUS_MASTER_HUB.html` | **Recommended daily study file** — all units, War Room, progress tracking, full practice bank |
 | 2 | `exports/html/eco114_a3_index.html` | Start Here / backup control centre |
 | 3 | `exports/html/eco114_a3_exam_warroom.html` | Standalone War Room backup |
-| 4 | `exports/html/eco114_a3_markets_units_6_7_8_10_v2_unit_tabs.html` | Standalone Markets backup |
-| 5 | `exports/html/eco114_a3_foundations_units_1_to_5_v2_unit_tabs.html` | Standalone Foundations backup |
+| 4 | `exports/html/eco114_a3_markets_units_6_7_8_10_v2_unit_tabs.html` | Standalone Markets backup (SVG graphs + extra practice) |
+| 5 | `exports/html/eco114_a3_foundations_units_1_to_5_v2_unit_tabs.html` | Standalone Foundations backup (SVG graphs + extra practice) |
 
 Legacy files (`eco114_a3_markets_units_6_7_8_10.html`, `eco114_a3_foundations_units_1_to_5.html`) are reference only — do not use for daily study.
+
+### Final Master Hub — current version: v1.4 (post-audit patch)
+- Received post-audit reliability and content patch (2026-06-14).
+- Unit 10 positive externality worked example corrected (Q*=50 > Qm=40, subsidy=R20).
+- Full practice bank added: 70 real questions across all 9 units (U8×12, U7×10, U10×10, U3×8, U6×6, U4×6, U5×6, U2×6, U1×6).
+- 80% vs 100% guidance added to all 9 premium Section C answers.
+- localStorage wrapped in try/catch safe wrappers (works in private browsing).
+- Desktop double-offset layout bug fixed.
+- Active recall delegated listener (no handler leakage).
+- Dark mode premium card contrast fixed.
+- Mistake log aria-labels added.
+- All graphs are **text-only redraw cards** in the master hub. For SVG graph aids open Markets v2 or Foundations v2.
+- **Only tick progress checkboxes after closed-book recall or completed written practice. Ticking is not studying.**
 
 ---
 
