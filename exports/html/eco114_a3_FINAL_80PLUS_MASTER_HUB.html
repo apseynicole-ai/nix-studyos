@@ -423,6 +423,56 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
     <div class="card"><strong>5. CS and PS triangles</strong><br>CS: triangle above price, below D, left of Q*. PS: triangle below price, above S, left of Q*. Shade separately. Trap: never swap positions.</div>
     <div class="card"><strong>6. Price-taking firm P=MC</strong><br>Horizontal P=MR line at market price. MC curve (U-shape or upward). AC curve. Firm produces where P=MC. Trap: no downward demand for individual price-taker.</div>
   </div></details>
+
+  <details><summary>▶ SVG Graph: Tax Wedge, Revenue &amp; DWL (cover &amp; redraw)</summary>
+  <div class="card">
+  <p style="font-size:0.85em;color:var(--muted)">Demand: P=80−5Q. Supply: P=20+5Q. Q*=6, P*=50. Tax=20: Qt=4, Pb=60, Ps=40.</p>
+  <svg viewBox="0 0 340 270" width="100%" style="max-width:500px;display:block;margin:auto;font-family:sans-serif">
+    <defs>
+      <marker id="ah2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+      </marker>
+    </defs>
+    <!-- axes: Q 0-10, P 0-80. x=40+Q*26; y=240-P*2.7 -->
+    <line x1="40" y1="240" x2="310" y2="240" stroke="#333" stroke-width="2" marker-end="url(#ah2)"/>
+    <line x1="40" y1="240" x2="40" y2="10" stroke="#333" stroke-width="2" marker-end="url(#ah2)"/>
+    <text x="315" y="245" font-size="11" fill="#333">Q</text>
+    <text x="28" y="12" font-size="11" fill="#333">P</text>
+    <!-- Demand: P=80-5Q. Q=0→P=80(y=24); Q=10→P=30 but goes to 0 at Q=16, use Q=10 endpoint → (300,159) -->
+    <!-- Demand: at Q=0,P=80 → x=40,y=24. at Q=10,P=30 → x=300,y=159. Extended to x-axis Q=16: outside range. draw to (300,159) -->
+    <line x1="40" y1="24" x2="300" y2="159" stroke="#1565C0" stroke-width="2.5"/>
+    <text x="302" y="163" font-size="11" fill="#1565C0">D</text>
+    <!-- Supply: P=20+5Q. Q=0,P=20 → x=40,y=186. Q=10,P=70 → x=300,y=51 -->
+    <line x1="40" y1="186" x2="300" y2="51" stroke="#2E7D32" stroke-width="2.5"/>
+    <text x="302" y="48" font-size="11" fill="#2E7D32">S</text>
+    <!-- S+tax: P=40+5Q. Q=0,P=40 → x=40,y=132. Q=10,P=90→ y=240-90*2.7=-3, use Q=8,P=80 → (248,24) -->
+    <line x1="40" y1="132" x2="248" y2="24" stroke="#F57F17" stroke-width="2" stroke-dasharray="6"/>
+    <text x="250" y="22" font-size="11" fill="#F57F17">S+tax</text>
+    <!-- Equilibrium Q*=6, P*=50 → x=196, y=105 -->
+    <circle cx="196" cy="105" r="4" fill="#333"/>
+    <!-- Post-tax Qt=4, Pb=60, Ps=40 → x=144, Pb y=240-60*2.7=78; Ps y=132 -->
+    <!-- Revenue rectangle: x=40..144, y=78..132 (Pb to Ps) -->
+    <rect x="40" y="78" width="104" height="54" fill="#FF8F00" opacity="0.3"/>
+    <text x="65" y="110" font-size="9" fill="#E65100" font-weight="bold">Tax Revenue</text>
+    <!-- DWL triangle: Qt=4(x=144), Q*=6(x=196). At Qt: D gives 60(y=78), S gives 40(y=132). At Q*: P=50(y=105) -->
+    <polygon points="144,78 196,105 144,132" fill="#F44336" opacity="0.35"/>
+    <text x="155" y="110" font-size="9" fill="#C62828">DWL</text>
+    <!-- dashed lines -->
+    <line x1="196" y1="240" x2="196" y2="105" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="144" y1="240" x2="144" y2="132" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="40" y1="105" x2="196" y2="105" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="40" y1="78" x2="144" y2="78" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="40" y1="132" x2="144" y2="132" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <!-- labels -->
+    <text x="188" y="252" font-size="10" fill="#333">Q*=6</text>
+    <text x="136" y="252" font-size="10" fill="#333">Q<tspan font-size="8" dy="2">t</tspan><tspan dy="-2">=4</tspan></text>
+    <text x="5" y="82" font-size="10" fill="#1565C0">Pb=60</text>
+    <text x="5" y="109" font-size="10" fill="#333">P*=50</text>
+    <text x="5" y="135" font-size="10" fill="#2E7D32">Ps=40</text>
+  </svg>
+  <p style="font-size:0.85em;margin-top:6px"><strong>Redraw steps:</strong> (1) D and S. (2) Mark Q*, P*. (3) Shift S up by tax → S+tax. (4) New Qt, Pb, Ps. (5) Shade revenue rectangle (Pb to Ps, width Qt). (6) Shade DWL triangle (Qt to Q*).<br><strong>Trap:</strong> Revenue uses Qt not Q*. DWL base = Q*−Qt.</p>
+  </div></details>
+
   <details><summary>Worked examples</summary>
   <div class="card"><strong>A. Equilibrium calculation</strong><br>Given: Qd = 68 – 0.02P, Qs = 28 + 0.005P. Set equal: 68 – 0.02P = 28 + 0.005P → 40 = 0.025P → P* = 1,600; Q* = 68 – 0.02(1600) = 36. <em>Trap: stop at Q only.</em></div>
   <div class="card"><strong>B. Per-unit tax R20</strong><br>Before: Q=100, P=50. After tax: Qt=80, Pbuyer=62, Pseller=42. Tax revenue = 20 × 80 = R1,600. DWL = ½ × 20 × (100–80) = R200. <em>Trap: use Qt=80 not Q=100.</em></div>
@@ -659,6 +709,57 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
     <em>Exam sentence: "Total surplus = CS + PS. At Q<sub>m</sub> &lt; Q<sub>eff</sub>, some surplus that could exist is not created — this is the deadweight loss from market power."</em></div>
   </div></details>
 
+
+  <details><summary>▶ SVG Graph: Monopoly — D, MR, MC, Profit, DWL (cover &amp; redraw)</summary>
+  <div class="card">
+  <p style="font-size:0.85em;color:var(--muted)">Diagram uses P=100−2Q, MC=AC=20, Q<sub>m</sub>=20, P<sub>m</sub>=60, Q<sub>eff</sub>=40. Labels match lecture slides.</p>
+  <svg viewBox="0 0 340 270" width="100%" style="max-width:500px;display:block;margin:auto;font-family:sans-serif" id="svgMonopoly">
+    <defs>
+      <marker id="ah" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+      </marker>
+    </defs>
+    <!-- axes -->
+    <line x1="40" y1="240" x2="320" y2="240" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+    <line x1="40" y1="240" x2="40" y2="10" stroke="#333" stroke-width="2" marker-end="url(#ah)"/>
+    <text x="325" y="245" font-size="11" fill="#333">Q</text>
+    <text x="28" y="12" font-size="11" fill="#333">P</text>
+    <!-- Demand: from (0,100) to (50,0) mapped to SVG: x=40+Q*5.5, y=240-P*2.1 -->
+    <!-- Q range 0-50, P range 0-100 -->
+    <!-- SVG: x = 40 + Q*5.5; y = 240 - P*2.1 -->
+    <!-- Demand: P=100-2Q. At Q=0,P=100 → (40,30). At Q=50,P=0 → (315,240) -->
+    <line x1="40" y1="30" x2="315" y2="240" stroke="#1565C0" stroke-width="2.5"/>
+    <text x="310" y="255" font-size="11" fill="#1565C0">D</text>
+    <!-- MR: same intercept, 2x slope. P=100-4Q. At Q=0,P=100→(40,30). At Q=25,P=0→(178,240) -->
+    <line x1="40" y1="30" x2="178" y2="240" stroke="#7B1FA2" stroke-width="2"/>
+    <text x="180" y="255" font-size="11" fill="#7B1FA2">MR</text>
+    <!-- MC: P=20, horizontal. y=240-20*2.1=198 -->
+    <line x1="40" y1="198" x2="315" y2="198" stroke="#C62828" stroke-width="2"/>
+    <text x="318" y="201" font-size="11" fill="#C62828">MC=AC</text>
+    <!-- Profit rectangle: Q=0..20, P=20..60 -->
+    <!-- Qm=20 → x=40+20*5.5=150; Pm=60 → y=240-60*2.1=114; MC=20 → y=198 -->
+    <rect x="40" y="114" width="110" height="84" fill="#4CAF50" opacity="0.25"/>
+    <text x="80" y="160" font-size="10" fill="#2E7D32" font-weight="bold">Profit</text>
+    <!-- DWL triangle: Qm=20,Pm=60; Qeff=40; at Qeff: P from D=100-2*40=20=MC ✔ -->
+    <!-- Qm x=150; Qeff x=40+40*5.5=260; at Qm: D=60 y=114, MC=20 y=198; at Qeff: P=MC=20 y=198 -->
+    <polygon points="150,114 260,198 150,198" fill="#F44336" opacity="0.3"/>
+    <text x="175" y="188" font-size="10" fill="#C62828">DWL</text>
+    <!-- key points -->
+    <circle cx="150" cy="114" r="4" fill="#333"/>
+    <circle cx="260" cy="198" r="4" fill="#1565C0"/>
+    <!-- dashed lines -->
+    <line x1="150" y1="240" x2="150" y2="114" stroke="#999" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="40" y1="114" x2="150" y2="114" stroke="#999" stroke-width="1" stroke-dasharray="4"/>
+    <line x1="260" y1="240" x2="260" y2="198" stroke="#999" stroke-width="1" stroke-dasharray="4"/>
+    <!-- labels -->
+    <text x="145" y="252" font-size="10" fill="#333">Q<tspan font-size="8" dy="2">m</tspan><tspan dy="-2">=20</tspan></text>
+    <text x="250" y="252" font-size="10" fill="#1565C0">Q<tspan font-size="8" dy="2">eff</tspan><tspan dy="-2">=40</tspan></text>
+    <text x="10" y="118" font-size="10" fill="#333">P<tspan font-size="8" dy="2">m</tspan><tspan dy="-2">=60</tspan></text>
+    <text x="10" y="201" font-size="10" fill="#C62828">MC=20</text>
+  </svg>
+  <p style="font-size:0.85em;margin-top:6px"><strong>Redraw steps:</strong> (1) Draw D downward, MR below with same intercept. (2) Draw horizontal MC. (3) MR=MC → Q<sub>m</sub>. (4) Up to D → P<sub>m</sub>. (5) Shade profit rectangle. (6) D=MC → Q<sub>eff</sub>. (7) Shade DWL triangle.<br><strong>Trap:</strong> Never read P from MR.</p>
+  </div></details>
+
   <details><summary>Key formulas — exam-ready summary</summary>
   <table>
     <thead><tr><th>Formula</th><th>When to use</th><th>Trap</th></tr></thead>
@@ -753,12 +854,132 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
       <tr><td><strong>Non-rival</strong></td><td>Club good (streaming, toll road with capacity)</td><td>Public good (national defence, knowledge)</td></tr>
     </tbody>
   </table></details>
+
+  <details><summary>▶ SVG Graph: Negative Externality — MSC, Q*, DWL (cover &amp; redraw)</summary>
+  <div class="card">
+  <p style="font-size:0.85em;color:var(--muted)">MPB=MSB=80−4Q. MPC=8+4Q. MEC=10. MSC=18+4Q. Qm=9, Q*≈7.75.</p>
+  <svg viewBox="0 0 340 270" width="100%" style="max-width:500px;display:block;margin:auto;font-family:sans-serif">
+    <defs>
+      <marker id="ah3" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+      </marker>
+    </defs>
+    <!-- axes: Q 0-12, P 0-90. x=40+Q*23; y=240-P*2.4 -->
+    <line x1="40" y1="240" x2="320" y2="240" stroke="#333" stroke-width="2" marker-end="url(#ah3)"/>
+    <line x1="40" y1="240" x2="40" y2="10" stroke="#333" stroke-width="2" marker-end="url(#ah3)"/>
+    <text x="325" y="245" font-size="11" fill="#333">Q</text>
+    <text x="28" y="12" font-size="11" fill="#333">P</text>
+    <!-- MPB: P=80-4Q. Q=0,P=80→(40,48). Q=12,P=32→(316,163) -->
+    <line x1="40" y1="48" x2="316" y2="163" stroke="#1565C0" stroke-width="2.5"/>
+    <text x="318" y="165" font-size="11" fill="#1565C0">MPB=D</text>
+    <!-- MPC: P=8+4Q. Q=0,P=8→(40,221). Q=12,P=56→(316,106) -->
+    <line x1="40" y1="221" x2="316" y2="106" stroke="#2E7D32" stroke-width="2.5"/>
+    <text x="318" y="108" font-size="11" fill="#2E7D32">MPC</text>
+    <!-- MSC: P=18+4Q. Q=0,P=18→(40,197). Q=12,P=66→(316,82) -->
+    <line x1="40" y1="197" x2="316" y2="82" stroke="#C62828" stroke-width="2" stroke-dasharray="5"/>
+    <text x="318" y="82" font-size="11" fill="#C62828">MSC</text>
+    <!-- Qm: MPB=MPC → Q=9 → x=247 → P=44 → y=134 -->
+    <circle cx="247" cy="134" r="4" fill="#1565C0"/>
+    <!-- Q*: MPB=MSC → Q=7.75 → x=218 → P=49 → y=122 -->
+    <circle cx="218" cy="122" r="4" fill="#C62828"/>
+    <!-- DWL triangle: Qm,Qstar. At Qm=9: MPB=44(y=134), MSC=18+36=54(y=110). At Q*=7.75: MPB=MSC≈49(y=122) -->
+    <polygon points="218,122 247,134 247,110" fill="#F44336" opacity="0.35"/>
+    <text x="222" y="130" font-size="9" fill="#C62828">DWL</text>
+    <!-- MEC arrow -->
+    <line x1="280" y1="197" x2="280" y2="173" stroke="#9C27B0" stroke-width="1.5" marker-end="url(#ah3)"/>
+    <line x1="280" y1="197" x2="280" y2="221" stroke="#9C27B0" stroke-width="1.5"/>
+    <text x="283" y="210" font-size="9" fill="#9C27B0">MEC</text>
+    <!-- dashed -->
+    <line x1="247" y1="240" x2="247" y2="134" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="218" y1="240" x2="218" y2="122" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <!-- labels -->
+    <text x="238" y="252" font-size="10" fill="#1565C0">Qm</text>
+    <text x="207" y="252" font-size="10" fill="#C62828">Q*</text>
+    <text x="5" y="137" font-size="9" fill="#1565C0">Pm</text>
+  </svg>
+  <p style="font-size:0.85em;margin-top:6px"><strong>Key:</strong> MSC above MPC by MEC. Qm &gt; Q* (overproduction). Tax = MEC at Q*. DWL = triangle.<br><strong>Trap:</strong> Tax = MEC at Q*, NOT total damage at Qm.</p>
+  </div></details>
+
+  <details><summary>▶ SVG Graph: Positive Externality — MSB, Q*&gt;Qm, Subsidy (cover &amp; redraw)</summary>
+  <div class="card">
+  <p style="font-size:0.85em;color:var(--muted)">MC=20+Q. MPB=100−Q. MEB=20. MSB=120−Q. Qm=40, Q*=50 (Q*&gt;Qm ✔).</p>
+  <svg viewBox="0 0 340 270" width="100%" style="max-width:500px;display:block;margin:auto;font-family:sans-serif">
+    <defs>
+      <marker id="ah4" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+      </marker>
+    </defs>
+    <!-- axes: Q 0-70, P 0-130. x=40+Q*3.8; y=240-P*1.7 -->
+    <line x1="40" y1="240" x2="316" y2="240" stroke="#333" stroke-width="2" marker-end="url(#ah4)"/>
+    <line x1="40" y1="240" x2="40" y2="10" stroke="#333" stroke-width="2" marker-end="url(#ah4)"/>
+    <text x="320" y="245" font-size="11" fill="#333">Q</text>
+    <text x="28" y="12" font-size="11" fill="#333">P</text>
+    <!-- MPB: P=100-Q. Q=0,P=100→(40,70). Q=70,P=30→(306,189) -->
+    <line x1="40" y1="70" x2="306" y2="189" stroke="#1565C0" stroke-width="2.5"/>
+    <text x="308" y="190" font-size="11" fill="#1565C0">MPB</text>
+    <!-- MSB: P=120-Q. Q=0,P=120→(40,36). Q=70,P=50→(306,155) -->
+    <line x1="40" y1="36" x2="306" y2="155" stroke="#1565C0" stroke-width="2" stroke-dasharray="5"/>
+    <text x="308" y="155" font-size="11" fill="#1565C0">MSB</text>
+    <!-- MC: P=20+Q. Q=0,P=20→(40,206). Q=70,P=90→(306,87) -->
+    <line x1="40" y1="206" x2="306" y2="87" stroke="#C62828" stroke-width="2.5"/>
+    <text x="308" y="87" font-size="11" fill="#C62828">MC</text>
+    <!-- Qm=40: MPB=MC → x=40+40*3.8=192. P=60 → y=240-60*1.7=138 -->
+    <circle cx="192" cy="138" r="4" fill="#1565C0"/>
+    <!-- Q*=50: MSB=MC → x=40+50*3.8=230. P=70 → y=240-70*1.7=121 -->
+    <circle cx="230" cy="121" r="4" fill="#2E7D32"/>
+    <!-- DWL triangle: Qm=40 to Q*=50. At Qm: MPB=60(y=138), MSB=80(y=104), MC=60(y=138). At Q*: MSB=MC=70 -->
+    <polygon points="192,104 230,121 192,138" fill="#F44336" opacity="0.3"/>
+    <text x="195" y="128" font-size="8" fill="#C62828">DWL</text>
+    <!-- MEB arrow -->
+    <line x1="270" y1="36" x2="270" y2="70" stroke="#2E7D32" stroke-width="1.5" marker-end="url(#ah4)"/>
+    <text x="273" y="57" font-size="9" fill="#2E7D32">MEB=20</text>
+    <!-- dashed -->
+    <line x1="192" y1="240" x2="192" y2="138" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <line x1="230" y1="240" x2="230" y2="121" stroke="#999" stroke-width="1" stroke-dasharray="3"/>
+    <!-- confirmation -->
+    <text x="50" y="30" font-size="10" fill="#2E7D32" font-weight="bold">✔ Q*=50 &gt; Qm=40 (underproduction)</text>
+    <!-- labels -->
+    <text x="183" y="252" font-size="10" fill="#1565C0">Qm=40</text>
+    <text x="220" y="252" font-size="10" fill="#2E7D32">Q*=50</text>
+  </svg>
+  <p style="font-size:0.85em;margin-top:6px"><strong>Key:</strong> MSB above MPB by MEB. Q* &gt; Qm always for positive externalities. Subsidy = MEB at Q*.<br><strong>CRITICAL TRAP:</strong> If your calc gives Q* &lt; Qm, you have an error. Positive externalities → underproduction.</p>
+  </div></details>
+
   <details><summary>Moral hazard vs adverse selection MCQs (v1.3 fix)</summary>
   <div class="grid">
     <div class="card"><strong>MCQ 1:</strong> A high-risk person buys insurance before the insurer can observe risk type.<br><strong>Answer: Adverse selection.</strong><br><em>Memo: hidden type BEFORE the contract.</em></div>
     <div class="card"><strong>MCQ 2:</strong> After buying insurance, a person takes less care driving than before.<br><strong>Answer: Moral hazard.</strong><br><em>Memo: hidden action AFTER the contract.</em></div>
     <div class="card"><strong>MCQ 3:</strong> A regulator wants to fix the problem where lower-risk customers leave the insurance pool because premiums are set for average risk.<br><strong>Answer: Adverse selection. Policy: screening or compulsory pooling.</strong><br><em>Deductibles and monitoring help moral hazard instead.</em></div>
   </div></details>
+
+  <details><summary>Coase bargaining — property rights, payment range, when it fails</summary>
+  <div class="card">
+    <strong>Core logic:</strong> If property rights are clearly assigned (either polluter has right to pollute, or victim has right to clean environment) AND transaction costs are low → private bargaining can reach the efficient outcome without government intervention.<br><br>
+    <strong>Polluter has right to pollute:</strong> Victim must pay polluter to reduce output. Victim's max WTP = external damage avoided. Polluter's min WTA = profit foregone by reducing output. Bargaining range exists if WTP &gt; WTA.<br><br>
+    <strong>Victim has right to clean environment:</strong> Polluter must pay victim to allow pollution. Polluter's max WTP = profit from pollution. Victim's min WTA = damage compensation required. Bargaining range: same if WTP &gt; WTA.<br><br>
+    <em>Coase theorem: the efficient output is reached regardless of who holds the property right. The distribution of surplus changes, but Q* does not.</em>
+  </div>
+  </details>
+
+  <details><summary>8 Coase calculation drills</summary>
+  <div class="card"><strong>Coase-1:</strong> Factory produces 100 units and causes R40/unit damage to a farmer. Efficient output Q*=80. If factory reduces to 80: profit falls by R300 total. Farmer saves 20×R40=R800 in damage. (a) Is there a bargaining range? (b) Min payment farmer must offer? (c) Max payment farmer would make?<br>
+    <span class="answer">(a) Yes: farmer gains R800 in saved damage; factory loses R300. R800 &gt; R300 → bargaining surplus = R500. (b) Factory's min WTA = R300 (profit foregone). (c) Farmer's max WTP = R800 (damage avoided). Payment range: R300–R800. Bargain is struck somewhere in that range.</span></div>
+  <div class="card"><strong>Coase-2:</strong> Same numbers but factory has right to pollute. (a) Who pays whom? (b) Does efficient quantity change?<br>
+    <span class="answer">(a) Farmer pays factory to reduce output. Payment range R300–R800 (same as above). (b) No — efficient quantity is still Q*=80. Only the direction of payment changes, not the outcome. This is the Coase theorem.</span></div>
+  <div class="card"><strong>Coase-3:</strong> Factory profit from last 20 units = R900 total. Farmer damage from last 20 units = R800 total. Rights assigned to farmer. (a) Does the factory want to bargain? (b) What is the outcome?<br>
+    <span class="answer">(a) Factory's max WTP = R900 (profit from the 20 units). Farmer's min WTA = R800 (damage from 20 units). Factory WTP &gt; farmer WTA → bargaining range R800–R900. Yes, factory pays. (b) Factory produces last 20 units and pays farmer R800–R900. Efficient output maintained.</span></div>
+  <div class="card"><strong>Coase-4:</strong> Factory profit from last 20 units = R500. Farmer damage = R800. Rights assigned to farmer. (a) Does bargaining succeed? (b) What is the efficient outcome?<br>
+    <span class="answer">(a) No — factory's max WTP = R500 &lt; farmer's min WTA = R800. No overlap. Factory cannot profitably compensate farmer. Bargaining fails. (b) Efficient: factory does NOT produce last 20 units (damage R800 &gt; profit R500 → negative net surplus). Government intervention (tax = MEC at Q*) can achieve this.</span></div>
+  <div class="card"><strong>Coase-5:</strong> 500 residents are harmed by factory smoke. Each resident suffers R10 damage. Factory profit from pollution = R2 000. (a) Total damage? (b) Does Coase work? Why/why not?<br>
+    <span class="answer">(a) Total damage = 500 × R10 = R5 000. (b) Coase fails: 500 parties must coordinate to bargain collectively. Transaction costs (organising, negotiating, enforcing agreement among 500) are prohibitively high. Many-parties obstacle → Pigouvian tax is better solution.</span></div>
+  <div class="card"><strong>Coase-6:</strong> Property rights are unclear (no legal framework). Factory and farmer dispute who has the right. (a) Does Coase bargaining work? (b) What is needed first?<br>
+    <span class="answer">(a) No — Coase requires clear property rights as a precondition. Without knowing who has the right, neither party knows whether they should pay or receive compensation. Bargaining cannot begin. (b) Legal establishment of property rights is needed before Coase bargaining can work.</span></div>
+  <div class="card"><strong>Coase-7:</strong> "A Pigouvian tax and Coase bargaining always produce the same quantity Q*. But they differ in who bears the cost. Explain."<br>
+    <span class="answer">Both produce Q* (efficient output). Under Pigouvian tax: producer pays government; government revenue can compensate others or fund public goods. Under Coase: parties bargain to Q*, but payment goes directly between affected parties. Distributional consequences differ. Coase also avoids government measurement errors (government must know MEC correctly for Pigouvian tax).</span></div>
+  <div class="card"><strong>Coase-8:</strong> A negative externality in a market with asymmetric information: the farmer cannot observe exactly how much the factory produces. (a) Does Coase bargaining still work? (b) What problem does this create?<br>
+    <span class="answer">(a) Coase bargaining is complicated. (b) The factory has incentive to claim it produces more than Q* and request higher compensation. The farmer cannot verify production. This is a hidden action (moral hazard) problem — the factory can defect from any agreed reduction without detection. Coase fails without verifiable information.</span></div>
+  </details>
+
   <details><summary>T/F traps for Unit 10</summary>
   <ul>
     <li>Negative externalities cause overproduction in unregulated markets. TRUE.</li>
@@ -908,6 +1129,78 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
   Clean/Clean is a <strong>Pareto improvement</strong> over Nash (both move from 2→4).<br>
   <strong>Social dilemma:</strong> private incentives lead to (2,2) though (4,4) is better for both.<br>
   <em>Trap: do not choose the cell with highest total payoff as Nash.</em></div></details>
+
+  <details><summary>Chicken game, coordination game &amp; ultimatum game</summary>
+  <div class="grid">
+    <div class="card"><strong>Chicken game</strong><br>
+    Two drivers head toward each other. Swerve = wimpy but safe. Straight = brave but fatal if both go straight.<br>
+    Payoffs (Swerve,Swerve)=(2,2); (Swerve,Straight)=(1,3); (Straight,Swerve)=(3,1); (Straight,Straight)=(0,0)<br>
+    <strong>Nash equilibria: 2</strong> — (Swerve, Straight) and (Straight, Swerve). No dominant strategy. No single prediction.<br>
+    <em>Trap: don't say "no Nash" — there are two.</em></div>
+    <div class="card"><strong>Coordination game</strong><br>
+    Both players want to choose the SAME action. E.g. drive on left/right; choose same meeting place.<br>
+    Payoffs: (Left,Left)=(3,3); (Right,Right)=(3,3); (Left,Right)=(0,0); (Right,Left)=(0,0)<br>
+    <strong>Nash equilibria: 2</strong> — (Left,Left) and (Right,Right). Both are Pareto efficient. Repeated interaction → conventions emerge.<br>
+    <em>Different from prisoner's dilemma: cooperation IS equilibrium here.</em></div>
+    <div class="card"><strong>Ultimatum game</strong><br>
+    Proposer splits R100. Responder accepts or rejects. If rejected: both get R0.<br>
+    Standard game theory: proposer offers R1; responder accepts (R1 &gt; R0). In reality: offers &lt; R30 are often rejected (fairness matters).<br>
+    <em>Implication: people sacrifice material gain to punish unfair offers → preferences include fairness, not just self-interest.</em></div>
+    <div class="card"><strong>Repeated games and social dilemmas</strong><br>
+    One-shot prisoner's dilemma: defect is dominant. But if the game repeats indefinitely: "tit-for-tat" (cooperate first, then copy opponent) can sustain cooperation.<br>
+    Why: shadow of the future — defecting now risks retaliation in all future rounds.<br>
+    Condition: discount factor not too high (players must care enough about future). Communities, firms, nations sustain cooperation through repeated interaction and reputation.<br>
+    <em>Exam: "Explain how repeated interaction may solve a social dilemma" → mention shadow of future, credible threat of punishment, low discount rate.</em></div>
+  </div>
+  </details>
+
+  <details><summary>Pareto dominated vs Pareto inefficient — don't confuse</summary>
+  <div class="card">
+    <strong>Pareto dominated:</strong> Outcome A is Pareto dominated by outcome B if B makes at least one player strictly better off and no player worse off than A. I.e., B is an unambiguous improvement over A.<br><br>
+    <strong>Pareto inefficient:</strong> An outcome is Pareto inefficient if some Pareto improvement exists — some other outcome would make at least one person better off without making anyone worse off.<br><br>
+    <strong>Pareto efficient:</strong> No further Pareto improvement is possible.<br><br>
+    <em>Key: the Nash equilibrium in a prisoner's dilemma — (Defect, Defect) = (1,1) — is Pareto inefficient because (Cooperate, Cooperate) = (3,3) is a Pareto improvement. (1,1) is Pareto dominated by (3,3).</em>
+  </div>
+  </details>
+
+  <details><summary>Invisible hand game vs prisoner's dilemma vs social dilemma</summary>
+  <table>
+    <thead><tr><th>Game type</th><th>Individual incentives</th><th>Collective outcome</th><th>Nash = Pareto eff?</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Invisible hand game</td><td>Self-interest → private gain</td><td>Socially optimal (efficient)</td><td>Yes</td><td>Competitive market: buyers and sellers pursuing gain reach efficient P=MC outcome</td></tr>
+      <tr><td>Prisoner's dilemma</td><td>Defect dominates</td><td>Both defect → both worse off</td><td>No (Nash is Pareto dominated)</td><td>Arms race; advertising wars; pollution without regulation</td></tr>
+      <tr><td>Social dilemma</td><td>Private interest conflicts with social interest</td><td>Individually rational → collectively worse</td><td>No</td><td>Any prisoner's dilemma; overfishing; antibiotic overuse</td></tr>
+    </tbody>
+  </table>
+  </details>
+
+  <details><summary>12 Unit 4 practice drills</summary>
+  <div class="card"><strong>PD-1:</strong> Players A and B can Cooperate (C) or Defect (D). Payoffs: CC=(3,3), CD=(0,5), DC=(5,0), DD=(1,1). Find Nash. Is there a dominant strategy? Is Nash Pareto efficient?<br>
+    <span class="answer">Nash: (D,D)=(1,1). Dominant strategy: D for both. Not Pareto efficient: (C,C)=(3,3) is a Pareto improvement.</span></div>
+  <div class="card"><strong>PD-2:</strong> Two firms can advertise (Ad) or not (No). Payoffs: Ad/Ad=(2,2), Ad/No=(5,0), No/Ad=(0,5), No/No=(4,4). Same structure as PD-1. Explain why both advertise even though neither benefits compared to no advertising.<br>
+    <span class="answer">Each firm's dominant strategy is to advertise (5&gt;4 if opponent does not; 2&gt;0 if opponent does). Nash: both advertise → (2,2). Pareto inefficient vs (No,No)=(4,4). Classic prisoner's dilemma. Individual rationality leads to collective waste.</span></div>
+  <div class="card"><strong>PD-3:</strong> Two countries can invest in clean energy (C) or pollute (P). Payoffs: CC=(10,10), CP=(3,14), PC=(14,3), PP=(5,5). Find Nash and Pareto efficient outcome. What policy could achieve Pareto efficiency?<br>
+    <span class="answer">Nash: (P,P)=(5,5). Pareto efficient: (C,C)=(10,10). Policy: international treaty with enforceable punishment for defection (solves prisoner's dilemma via binding commitment).</span></div>
+  <div class="card"><strong>CHK-1:</strong> Drivers A and B approach intersection. Payoffs (yield, yield)=(2,2); (yield, speed)=(1,3); (speed, yield)=(3,1); (speed, speed)=(0,0). Find all Nash equilibria.<br>
+    <span class="answer">Nash 1: (yield, speed) — given B speeds, A prefers yield (1&gt;0). Given A yields, B prefers speed (3&gt;2). Nash 2: (speed, yield) — symmetrically. Two Nash equilibria. No dominant strategy.</span></div>
+  <div class="card"><strong>CHK-2:</strong> Using the game above: is (yield, yield) Pareto efficient?<br>
+    <span class="answer">Yes — (yield,yield)=(2,2). No other outcome makes BOTH better off without making one worse off. Neither Nash equilibrium (yield,speed)=(1,3) or (speed,yield)=(3,1) is Pareto dominant over (yield,yield). But (yield,yield) is not a Nash equilibrium — no player would deviate unilaterally TO it from a Nash.</span></div>
+  <div class="card"><strong>COORD-1:</strong> Two new employees each independently decide to come to work at 8am or 9am. They only benefit if they arrive at the same time: (8,8)=(5,5), (9,9)=(5,5), (8,9)=(0,0), (9,8)=(0,0). Find all Nash equilibria. What mechanism helps players coordinate?<br>
+    <span class="answer">Nash: (8am, 8am) and (9am, 9am) — both are Nash. Mechanism: communication, convention, announcement (e.g. "office opens at 8am"), or repeated interaction builds shared expectation.</span></div>
+  <div class="card"><strong>ULT-1:</strong> Proposer can offer R0, R30, or R50 from R100. Responder accepts or rejects. (a) Standard game theory prediction. (b) Actual lab experiment prediction.<br>
+    <span class="answer">(a) Standard theory: offer R0; responder accepts (R0 &gt; reject → R0). Or minimum positive offer. (b) Lab: offers below ~R30 often rejected. Proposers typically offer R40–50. People have fairness preferences — they sacrifice money to punish unfair splits.</span></div>
+  <div class="card"><strong>ULT-2:</strong> If the responder in an ultimatum game rejects an offer of R20 (out of R100), what does this tell us about their preferences?<br>
+    <span class="answer">They value fairness over material gain. They prefer R0 to an "unfair" R20 split. This contradicts pure self-interest models and supports models where utility includes fairness or reciprocity norms.</span></div>
+  <div class="card"><strong>REP-1:</strong> Two firms play a price-setting game repeatedly. The cooperative outcome gives each R100 profit; defecting while the other cooperates gives R150; mutual defection gives R50. Explain how repetition can sustain the cooperative outcome.<br>
+    <span class="answer">If the game continues indefinitely and firms value future profits sufficiently (low discount rate), the threat of reverting to mutual defection (R50 each) forever deters defection. The gain from defecting once (150−100=50) is less than the lifetime loss from punishment (100−50=50 per period indefinitely). Cooperation is sustained by credible punishment.</span></div>
+  <div class="card"><strong>REP-2:</strong> "Repeated games always produce cooperative outcomes." True or false?<br>
+    <span class="answer">FALSE. Repetition can sustain cooperation under conditions: indefinitely repeated game, sufficiently low discount rate (future matters), credible punishment threat. In finitely repeated games, backward induction unravels cooperation in the last period, then the second-to-last, etc. (folk theorem limitation).</span></div>
+  <div class="card"><strong>TYPE-1:</strong> Identify the game type: "Two drivers approach a one-lane bridge from opposite ends. If both advance, collision. If one waits, the other crosses safely and quickly." What game? How many Nash?<br>
+    <span class="answer">Chicken game. Two Nash equilibria: (Advance, Wait) and (Wait, Advance). No dominant strategy. Outcome depends on commitment, threat credibility, or social convention.</span></div>
+  <div class="card"><strong>TYPE-2:</strong> "Firm A and Firm B each choose R&amp;D investment (High or Low). If both invest High: (6,6). High/Low: (10,2). Low/High: (2,10). Low/Low: (4,4). Find Nash. What type of game?" <br>
+    <span class="answer">Best responses: given B High, A prefers High (6&gt;2). Given B Low, A prefers High (10&gt;4). A's dominant: High. Same for B. Nash: (High, High)=(6,6). This is a prisoner's dilemma — individually optimal but Pareto dominated by (Low,Low)=(4,4). Wait — actually (6,6) &lt; (4,4)? Let me re-read. (High,High)=(6,6) &gt; (Low,Low)=(4,4). So Nash (6,6) IS Pareto efficient (no Pareto improvement over it). This is an invisible hand game — self-interest leads to socially good outcome.</span></div>
+  </details>
+
   <details><summary>T/F traps for Unit 4</summary>
   <ul>
     <li>A Nash equilibrium is always a dominant strategy equilibrium. FALSE — Nash needs mutual BR; dominance is stronger.</li>
@@ -957,6 +1250,76 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
       <tr><td>Substantive fairness</td><td>Is the distribution fair?</td><td>Separate from voluntariness or efficiency.</td></tr>
     </tbody>
   </table></details>
+
+  <details><summary>BSC vs reservation IC — the key distinction</summary>
+  <div class="card">
+    <strong>Biological Survival Constraint (BSC):</strong> The minimum consumption Angela needs to survive biologically — barely alive. This is a hard physical floor. Angela cannot survive below this level.<br><br>
+    <strong>Reservation Indifference Curve (RIC):</strong> The IC that gives Angela the same utility as her <em>outside option</em> (autonomy — not working for Bruno). This is an economic floor. Angela will not accept a deal that puts her below this IC.<br><br>
+    <strong>Key distinction:</strong> BSC is physical; RIC is economic (utility-based). RIC is typically above BSC because Angela's outside option gives her more than bare survival. In pre-capitalist coercion, Bruno could push Angela to the BSC. With freedom to refuse, Angela's minimum is the RIC.<br><br>
+    <em>Exam trap: "BSC and RIC are the same thing." FALSE — BSC = biological minimum; RIC = economic minimum based on outside option.</em>
+  </div>
+  </details>
+
+  <details><summary>Technical feasibility vs economic feasibility</summary>
+  <div class="card">
+    <strong>Technically feasible:</strong> A point on or inside the production frontier. Angela can physically produce that output with that many work hours.<br><br>
+    <strong>Economically feasible:</strong> A point Angela would voluntarily accept — i.e., at or above her reservation IC. Must also be technically feasible.<br><br>
+    <strong>Economically feasible set:</strong> All (leisure, grain) combinations that are (a) technically feasible AND (b) at or above Angela's RIC.<br><br>
+    <em>A point can be technically feasible but economically infeasible (Angela would refuse it). E.g., giving Angela zero consumption is technically possible but economically infeasible if she has an outside option &gt; 0.</em>
+  </div>
+  </details>
+
+  <details><summary>Pareto-efficient curve and surplus division</summary>
+  <div class="card">
+    <strong>Pareto-efficient frontier:</strong> The set of all (Angela grain, Bruno grain) allocations where Angela is on her highest IC consistent with economic feasibility. I.e., allocations where Angela's MRS = MRT (she is optimising given the constraint Bruno imposes).<br><br>
+    Equivalently: the Pareto-efficient outcomes are those where the total surplus (grain produced minus Angela's minimum) is distributed such that no rearrangement could make both better off.<br><br>
+    <strong>Total surplus = grain produced − Angela's minimum grain (RIC grain)</strong><br><br>
+    <strong>Equal surplus split:</strong> Angela and Bruno each get half of total surplus above Angela's minimum.<br>
+    <strong>Equal output split:</strong> Angela and Bruno each get half of total grain — but this may not equal the equal surplus split.<br><br>
+    <em>Exam: distinguish "equal split of surplus" from "equal split of output." If Angela's minimum is non-zero, these differ.</em>
+  </div>
+  </details>
+
+  <details><summary>Take-it-or-leave-it offer logic</summary>
+  <div class="card">
+    <strong>Scenario:</strong> Bruno makes a take-it-or-leave-it offer. He proposes Angela works H hours and receives G grain.<br><br>
+    Angela accepts if and only if: G gives her utility ≥ her autonomy point (RIC).<br><br>
+    <strong>Bruno's optimal offer:</strong> He sets G at exactly Angela's RIC grain level (give her the minimum she'll accept), and extracts all remaining surplus (grain produced − G).<br><br>
+    <strong>If Angela gains bargaining power</strong> (e.g., law grants her right to refuse): Bruno must offer at least RIC — no change to Bruno's strategy. But if Angela can make counter-offers, she can push toward equal surplus split.<br><br>
+    <em>Key: who makes the take-it-or-leave-it offer determines who captures the surplus. Maximum coercion = Bruno's offer; Maximum Angela power = Angela extracts all Bruno's surplus above his reservation option.</em>
+  </div>
+  </details>
+
+  <details><summary>Procedural vs substantive fairness — with examples</summary>
+  <div class="card">
+    <strong>Substantive fairness:</strong> Judging the OUTCOME. Is the distribution of resources fair? Is it equal? Does each person get what they deserve?<br>
+    Example: "Angela got 10 grain; Bruno got 20 grain — is that a fair split?" = substantive question.<br><br>
+    <strong>Procedural fairness:</strong> Judging the PROCESS. Was the procedure by which the allocation arose fair, regardless of the outcome?<br>
+    Example: "Did Angela freely agree to the allocation?" or "Was there equal bargaining power?" = procedural question.<br><br>
+    <strong>Key insight:</strong> A procedurally fair process can produce substantively unfair outcomes. E.g., "voluntary exchange" (procedurally fair) between a very rich and very poor person may still result in a deeply unequal outcome (substantively unfair). This is the core tension in Unit 5.<br><br>
+    <em>Why voluntary exchange can still be unfair:</strong> Angela may "voluntarily" accept Bruno's offer if her outside option is terrible — she has no real choice. Formally voluntary ≠ genuinely equal.</em>
+  </div>
+  </details>
+
+  <details><summary>8 Unit 5 application drills</summary>
+  <div class="card"><strong>U5-D1:</strong> Angela can produce 50 grain if she works 10 hours. Her biological survival minimum is 15 grain. Her autonomy option gives 20 grain. Bruno makes a take-it-or-leave-it offer. (a) What is the minimum grain Bruno must offer Angela? (b) How much grain does Bruno extract?<br>
+    <span class="answer">(a) RIC grain = 20 (autonomy option, not BSC). Bruno must offer at least 20. (b) Bruno extracts: 50 − 20 = 30 grain.</span></div>
+  <div class="card"><strong>U5-D2:</strong> Using D1 data, Angela gains legal right to refuse work entirely (autonomy option improves to 25 grain). (a) How does this change Bruno's offer? (b) Does production change?<br>
+    <span class="answer">(a) Bruno must now offer at least 25 (new RIC). His extraction falls to 50 − 25 = 25. (b) Production unchanged if Angela still works 10 hours — the frontier hasn't moved, only the distribution of surplus has changed.</span></div>
+  <div class="card"><strong>U5-D3:</strong> Angela and Bruno agree on an equal surplus split. Total grain = 50, Angela's RIC = 20. What does each get?<br>
+    <span class="answer">Total surplus = 50 − 20 = 30. Equal split: Angela gets RIC + 15 = 35 grain; Bruno gets 15 grain.</span></div>
+  <div class="card"><strong>U5-D4:</strong> Is the equal surplus split in D3 Pareto efficient? Is it fair?<br>
+    <span class="answer">Pareto efficient: yes — no other feasible allocation makes both better off (they are on the Pareto-efficient frontier). Fair: depends on perspective. Substantively: equal surplus split could be argued fair. Procedurally: if Angela agreed voluntarily with equal bargaining power, fair. But Angela's original autonomy option of 20 was itself shaped by prior institutions — the "fairness" of the starting point matters.</span></div>
+  <div class="card"><strong>U5-D5:</strong> An allocation gives Angela 22 grain and Bruno 28 grain. Another gives Angela 25 and Bruno 32. Is the second a Pareto improvement over the first?<br>
+    <span class="answer">Yes — Angela is better off (25 &gt; 22) and Bruno is better off (32 &gt; 28). This is a Pareto improvement. Neither is worse off, at least one is better off.</span></div>
+  <div class="card"><strong>U5-D6:</strong> "A voluntary exchange is always fair because both parties agree." True or false? Explain.<br>
+    <span class="answer">FALSE. Voluntary in the sense that no physical coercion occurred does not mean the parties had equal bargaining power. Angela may "voluntarily" accept a very low offer if her outside option is terrible. Procedural fairness (voluntary) does not guarantee substantive fairness (equitable outcome).</span></div>
+  <div class="card"><strong>U5-D7:</strong> Point A: Angela works 12 hours, gets 18 grain; Bruno gets 32 grain. Point B: Angela works 10 hours, gets 22 grain; Bruno gets 28 grain. Angela prefers B (more leisure, more grain). Bruno prefers A. Is there a Pareto improvement available?<br>
+    <span class="answer">Need to check total grain. A: 18+32=50; B: 22+28=50. Same total. Angela prefers B, Bruno prefers A. No allocation makes BOTH better off simultaneously — moving from A to B helps Angela but hurts Bruno. These are on the Pareto-efficient frontier (trading off one for the other). No Pareto improvement exists from either point.</span></div>
+  <div class="card"><strong>U5-D8:</strong> Angela's BSC is 15 grain. Her autonomy option gives 20 grain. Bruno offers 17 grain in exchange for work. Is this offer (a) technically feasible? (b) economically feasible?<br>
+    <span class="answer">(a) Yes — 17 &gt; 0 and within production possibilities. (b) No — Angela's RIC is 20 (her outside option). 17 &lt; 20 → Angela would prefer her autonomy option. She rejects the offer. Economically infeasible because it falls below the RIC.</span></div>
+  </details>
+
   <details><summary>T/F traps for Unit 5</summary>
   <ul>
     <li>A Pareto efficient allocation is always fair. FALSE.</li>
@@ -1152,6 +1515,296 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
 </section>
 
 <!-- FULL PRACTICE BANK -->
+
+<!-- PATTERN BRIDGE -->
+<section class="section" id="pattern-bridge" data-section="pattern-bridge">
+  <h2>A1 → A2 → A3 Pattern Map: What Repeats and How</h2>
+  <div class="card" style="border-color:var(--hot-pink);margin-bottom:12px">
+    <strong>Why this section exists:</strong> A3 is not a new exam. It recycles A1 foundations + A2 application machinery with new surface stories. If you can spot the underlying model, every "novel" question becomes a familiar drill.
+  </div>
+  <details open><summary>Year-by-year pattern (2022–2026)</summary>
+  <table>
+    <thead><tr><th>Year</th><th>A1/A2 tested</th><th>A3 reused mechanism</th><th>Skill family</th><th>Study here</th></tr></thead>
+    <tbody>
+      <tr><td>2022</td><td>Labour discipline graph, employment rent, best-response curve</td><td>Reservation wage, involuntary unemployment, efficiency wage</td><td>Unit 6</td><td><a href="#unit6">Unit 6</a></td></tr>
+      <tr><td>2022</td><td>Angela-Bruno feasible frontier, BSC</td><td>Pareto efficiency, take-it-or-leave-it, surplus division</td><td>Unit 5</td><td><a href="#unit5">Unit 5</a></td></tr>
+      <tr><td>2023</td><td>Pigouvian tax calculation</td><td>Externality/market failure, MSC, Q* vs Qm</td><td>Unit 10</td><td><a href="#unit10">Unit 10</a></td></tr>
+      <tr><td>2023</td><td>Nash equilibrium, dominant strategy</td><td>Social dilemma, repeated games, Pareto comparison</td><td>Unit 4</td><td><a href="#unit4">Unit 4</a></td></tr>
+      <tr><td>2024</td><td>Tax wedge, price controls, DWL</td><td>Competitive market welfare, CS/PS, incidence</td><td>Unit 8</td><td><a href="#unit8">Unit 8</a></td></tr>
+      <tr><td>2024</td><td>MR=MC, monopoly profit</td><td>Price-setting firm, DWL, markup, elasticity</td><td>Unit 7</td><td><a href="#unit7">Unit 7</a></td></tr>
+      <tr><td>2025</td><td>Technology choice, isocost lines (A1)</td><td>Specialisation, dominated technology, relative prices</td><td>Unit 2</td><td><a href="#unit2">Unit 2</a></td></tr>
+      <tr><td>2025</td><td>Budget constraint, MRS/MRT (A1)</td><td>Income/substitution effects, wage rotation</td><td>Unit 3</td><td><a href="#unit3">Unit 3</a></td></tr>
+      <tr><td>2026</td><td>A2 weakness: Coase/Pigouvian logic tested but poorly drilled</td><td><strong>⚠ Likely A3 danger zone</strong> — property rights, bargaining range, many-parties failure</td><td>Unit 10</td><td><a href="#unit10">Unit 10</a></td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--red);font-size:0.9em"><strong>⚠ Not a prediction.</strong> This table is based on observed 2022–2025 patterns. 2025 A2 Section C data is incomplete. Do not use this as a guaranteed forecast.</p>
+  </details>
+
+  <details><summary>Past-Paper Pattern Bridge (drill router)</summary>
+  <table>
+    <thead><tr><th>Year</th><th>A1/A2 tested</th><th>A3 reused</th><th>Skill family</th><th>Where to drill</th></tr></thead>
+    <tbody>
+      <tr><td>2022</td><td>Labour discipline graph → best-response curve</td><td>Reservation wage, employment rent calc</td><td>Unit 6</td><td><a href="#unit6">Unit 6 worked example</a></td></tr>
+      <tr><td>2023</td><td>Pigouvian tax → MSC calculation</td><td>Negative externality, Q* vs Qm, DWL triangle</td><td>Unit 10</td><td><a href="#unit10">Unit 10 Coase &amp; drills</a></td></tr>
+      <tr><td>2024</td><td>Tax wedge → Pbuyer/Pseller split</td><td>Competitive market welfare, incidence rule</td><td>Unit 8</td><td><a href="#unit8">Unit 8 worked examples</a></td></tr>
+      <tr><td>2025</td><td>Technology/isocost (A1) → cost comparison</td><td>Dominated tech, isocost slope, switching rent</td><td>Unit 2</td><td><a href="#unit2">Unit 2 isocost drills</a></td></tr>
+      <tr><td>2026</td><td>Coase/property rights weakness (A2)</td><td>Payment range, many-parties obstacle</td><td>Unit 10</td><td><a href="#unit10">Unit 10 Coase section</a></td></tr>
+    </tbody>
+  </table>
+  </details>
+</section>
+
+<!-- BRAIN DUMP -->
+<section class="section" id="brain-dump" data-section="brain-dump">
+  <h2>First 10 Minutes of A3: Brain Dump Sheet</h2>
+  <p>Write these out on your scrap paper the moment the exam starts. Do not start Section A until these are on paper.</p>
+  <div class="grid">
+    <div class="card">
+      <strong>GDP &amp; Growth</strong><br>
+      GDP growth = (new−old)/old × 100<br>
+      GDP misses: unpaid work, inequality, environment<br>
+      GDP per capita = GDP / population
+    </div>
+    <div class="card">
+      <strong>MRS / MRT</strong><br>
+      MRS = slope of IC (subjective)<br>
+      MRT = slope of budget constraint (feasible)<br>
+      Optimum: MRS = MRT (tangency)
+    </div>
+    <div class="card">
+      <strong>Wage &amp; Labour</strong><br>
+      Wage rise: SE → free time ↓ (work more)<br>
+      Wage rise: IE → free time ↑ (if normal)<br>
+      Net effect: ambiguous → backward-bending supply
+    </div>
+    <div class="card">
+      <strong>Game Theory</strong><br>
+      Nash = mutual best response (no one deviates)<br>
+      Pareto improvement = one better, none worse<br>
+      Dominant strategy = best regardless of other player
+    </div>
+    <div class="card">
+      <strong>Employment Rent</strong><br>
+      Rent = (w − fallback) / prob(fired)<br>
+      Cost per efficiency unit = w / e<br>
+      Efficiency wage: tangency of e/w ray and best-response
+    </div>
+    <div class="card">
+      <strong>Monopoly (MR=MC)</strong><br>
+      If P = a − bQ: MR = a − 2bQ<br>
+      Set MR = MC → Q<sub>m</sub>. Read P from demand.<br>
+      Profit = (P − AC) × Q. DWL triangle.
+    </div>
+    <div class="card">
+      <strong>Competition (P=MC)</strong><br>
+      Price-taker: P = MR = MC<br>
+      Long run: P = MC = min AC → zero profit<br>
+      Market clears: Qd = Qs
+    </div>
+    <div class="card">
+      <strong>Tax</strong><br>
+      Revenue = tax × Q<sub>t</sub> (post-tax!)<br>
+      DWL = ½ × tax × (Q* − Q<sub>t</sub>)<br>
+      Inelastic side bears more burden
+    </div>
+    <div class="card">
+      <strong>Price Controls</strong><br>
+      Ceiling BELOW P* → binding → <strong>shortage</strong><br>
+      Floor ABOVE P* → binding → <strong>surplus</strong><br>
+      Ceiling above / floor below = non-binding
+    </div>
+    <div class="card">
+      <strong>Externalities</strong><br>
+      MSC = MPC + MEC; MSB = MPB + MEB<br>
+      Neg ext: overproduction (Qm &gt; Q*) → Pigouvian tax = MEC at Q*<br>
+      Pos ext: underproduction (Qm &lt; Q*) → subsidy = MEB at Q*
+    </div>
+    <div class="card">
+      <strong>Coase &amp; Public Goods</strong><br>
+      Coase: needs clear rights + low transaction costs<br>
+      Public good: non-rival + non-excludable<br>
+      Common good: rival + non-excludable (tragedy of commons)
+    </div>
+    <div class="card">
+      <strong>Isocost</strong><br>
+      C = wL + rK → K = C/r − (w/r)L<br>
+      Slope = −w/r<br>
+      Dominated: more of BOTH inputs → never choose
+    </div>
+  </div>
+</section>
+
+<!-- SAME SKILL NEW SKIN -->
+<section class="section" id="same-skill" data-section="same-skill">
+  <h2>Same Skill, New Skin: Recognise the Model Fast</h2>
+  <p>The exam changes the story but repeats the mechanism. The skill is pattern recognition. Learn the model, not the example.</p>
+  <details open><summary>Negative externality — any story, same model</summary>
+  <div class="card">
+    <strong>Surface stories that are ALL negative externalities:</strong><br>
+    Vapes / factory smoke / traffic congestion / loud music / pesticide runoff / antibiotic overuse<br><br>
+    <strong>The model is always:</strong><br>
+    MPC &lt; MSC (private cost &lt; social cost) → market overproduces (Qm &gt; Q*) → DWL → Fix: Pigouvian tax = MEC at Q*<br><br>
+    <em>Trap: "banning" vs "taxing" — the question may ask for a tax rate, not a ban. Calculate MEC at Q*, that's the tax.</em>
+  </div>
+  </details>
+  <details><summary>Positive externality — any story, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Education / vaccination / research &amp; development / bee pollination / reforestation<br><br>
+    <strong>The model:</strong><br>
+    MPB &lt; MSB (private benefit &lt; social benefit) → market underproduces (Qm &lt; Q*) → DWL → Fix: Pigouvian subsidy = MEB at Q*<br><br>
+    <em>Trap: Q* &gt; Qm always. If your calculation gives Q* &lt; Qm you have an error.</em>
+  </div>
+  </details>
+  <details><summary>Supply-demand / tax / controls — any market, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Pizza / bread / salt / fuel / cooldrinks / cooking oil / coffee / taxi fares / housing / used textbooks<br><br>
+    <strong>The model is always:</strong><br>
+    Set Qd = Qs → equilibrium. Tax → shift supply up → new Qt, Pb, Ps, revenue, DWL. Ceiling below P* → shortage. Floor above P* → surplus.<br><br>
+    <em>Trap: check whether ceiling/floor BINDS before calculating anything.</em>
+  </div>
+  </details>
+  <details><summary>Game theory — any players, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Jack &amp; Sparrow / RESEP / countries / firms / neighbours / fishermen / speeding drivers<br><br>
+    <strong>The model:</strong><br>
+    Build payoff matrix → underline best responses for each player → Nash = cell where BOTH responses are underlined → check if dominant strategy exists → compare to Pareto-efficient outcome<br><br>
+    <em>Trap: Nash ≠ socially optimal. A cell can be Nash and Pareto inefficient simultaneously (prisoner's dilemma).</em>
+  </div>
+  </details>
+  <details><summary>MRS/MRT / budget constraint — any goods, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Cokes and pies / free time and consumption / milkshakes and pizzas / leisure and grain (Angela) / food and clothing<br><br>
+    <strong>The model:</strong><br>
+    Budget: PxX + PyY = I → slope = −Px/Py = MRT. IC: slope = MRS. Optimum: MRS = MRT. Wage rise: rotate constraint, decompose into SE (always less free time) + IE (depends on normality).<br><br>
+    <em>Trap: slope of budget constraint is −Px/Py not −Py/Px. Remember which good is on which axis.</em>
+  </div>
+  </details>
+  <details><summary>Employment rent — any worker/firm, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Ruby / Ntsako / Sylvia / Maria / any named worker<br><br>
+    <strong>The model:</strong><br>
+    Rent = net job value − fallback option = (wage − effort costs − disutility) − (unemployment benefit). If rent &gt; 0, worker fears job loss and exerts effort. Firm sets wage above market-clearing → efficiency wage → involuntary unemployment.<br><br>
+    <em>Trap: rent ≠ wage. Rent = what you LOSE by being fired (net of fallback).</em>
+  </div>
+  </details>
+  <details><summary>Angela-Bruno / feasibility — any bargaining story, same model</summary>
+  <div class="card">
+    <strong>Surface stories:</strong><br>
+    Angela &amp; Bruno / landlord &amp; tenant / employer &amp; employee / buyer &amp; seller negotiating split<br><br>
+    <strong>The model:</strong><br>
+    Feasible frontier (production possibility) + reservation IC (minimum Angela accepts) = economically feasible range. Pareto-efficient curve = frontier. Bruno maximises surplus above Angela's reservation IC. With institutions: Angela gets more; without: Bruno extracts more.<br><br>
+    <em>Trap: technically feasible ≠ economically feasible. Angela must be at least on her reservation IC.</em>
+  </div>
+  </details>
+</section>
+
+<!-- DIAGNOSTIC MOCK -->
+<section class="section" id="diagnostic" data-section="diagnostic">
+  <h2>A3 Diagnostic Mock (Heatmap-Weighted)</h2>
+  <div class="card" style="border-color:var(--hot-pink)">
+    <strong>Structure mirrors A3:</strong> 10 T/F (20 marks) + 15 MCQ (30 marks) + 4 Section C skeleton answers (50 marks). Complete each part timed. Then score yourself below.
+  </div>
+
+  <details><summary>Section A: 10 T/F (2 marks each, −1 wrong)</summary>
+  <ol>
+    <li>A monopolist always produces where P = MC. <span class="answer">FALSE — MR=MC, then price from demand. P &gt; MC for monopolist.</span></li>
+    <li>A binding price ceiling is set below equilibrium price. <span class="answer">TRUE — below P* causes shortage (Qd &gt; Qs).</span></li>
+    <li>Tax revenue equals the tax rate multiplied by the original pre-tax quantity. <span class="answer">FALSE — uses post-tax quantity Qt.</span></li>
+    <li>Positive externalities cause overproduction. <span class="answer">FALSE — underproduction (Qm &lt; Q*).</span></li>
+    <li>A Nash equilibrium is always the socially optimal outcome. <span class="answer">FALSE — Nash can be Pareto inefficient (prisoner's dilemma).</span></li>
+    <li>GDP per capita measures average income and does not reflect the distribution of income. <span class="answer">TRUE — a high average can coexist with extreme inequality.</span></li>
+    <li>Employment rent equals the wage minus the fallback wage. <span class="answer">FALSE — rent = (net job value − reservation option), adjusted for probability of being caught shirking. Simplification acceptable but not "wage minus fallback wage" alone.</span></li>
+    <li>The Pigouvian tax on a negative externality equals the MEC evaluated at the efficient output Q*. <span class="answer">TRUE — not total external damage at Qm.</span></li>
+    <li>In long-run competitive equilibrium, economic profit is zero. <span class="answer">TRUE — entry/exit drives P to min AC.</span></li>
+    <li>A dominated technology uses more of at least one input than the alternative. <span class="answer">FALSE — dominated means more of BOTH inputs (or equal of one and more of the other). One input more, other input less = not dominated.</span></li>
+  </ol>
+  <div class="card">Score out of 20: count correct × 2, subtract wrong × 1. Do not guess if unsure — the negative marking applies. Target: 16+ (80%).</div>
+  </details>
+
+  <details><summary>Section B: 15 MCQ (2 marks each)</summary>
+  <ol>
+    <li>If P = 80 − 4Q, MR is: (A) 80−4Q (B) 80−8Q (C) 40−2Q (D) 80+4Q
+      <span class="answer"><strong>B</strong> — MR = a − 2bQ. Same intercept (80), double slope (8).</span></li>
+    <li>A tax of R6 is imposed. Before: Q*=24, P*=8. After: Qt=16, Pb=R12, Ps=R6. Tax revenue is:
+      (A) R144 (B) R96 (C) R48 (D) R192
+      <span class="answer"><strong>B</strong> — Revenue = R6 × 16 = R96. Using Q*=24 gives R144 (wrong).</span></li>
+    <li>At which elasticity is TR maximised on a linear demand curve?
+      (A) ε &gt; 1 (B) ε = 0 (C) ε = 1 (D) ε &lt; 1
+      <span class="answer"><strong>C</strong> — Unit elastic: MR = 0, TR at max.</span></li>
+    <li>For Coase bargaining to produce an efficient outcome, which condition is NOT required?
+      (A) Clear property rights (B) Low transaction costs (C) Many affected parties (D) No externality
+      <span class="answer"><strong>C</strong> — Many parties is an OBSTACLE to Coase, not a requirement.</span></li>
+    <li>MSB = MPB + MEB describes: (A) negative externality (B) public good (C) positive externality (D) club good
+      <span class="answer"><strong>C</strong> — Positive externality generates external benefit (MEB) above private benefit.</span></li>
+    <li>A binding price floor is: (A) below equilibrium (B) above equilibrium (C) equal to equilibrium (D) below minimum AC
+      <span class="answer"><strong>B</strong> — Floor must be above P* to restrict below-market-clearing prices.</span></li>
+    <li>Consumer surplus is the area: (A) above supply below price (B) below supply above price (C) above price below demand (D) below price above demand
+      <span class="answer"><strong>C</strong> — CS = area above what buyers pay, below what they were willing to pay.</span></li>
+    <li>A dominant strategy: (A) is always the Nash equilibrium (B) is the best response regardless of what the other player does (C) maximises joint payoffs (D) always produces Pareto efficiency
+      <span class="answer"><strong>B</strong> — Dominant strategy: best regardless of opponent's choice. Note: if both players have dominant strategies, the outcome IS a Nash equilibrium.</span></li>
+    <li>In perfect competition, the long-run equilibrium condition is:
+      (A) P = MR = MC = min AC (B) P &gt; MC (C) MR = MC &lt; P (D) Zero accounting profit
+      <span class="answer"><strong>A</strong> — Long-run: entry/exit → zero economic profit → P = min AC; P = MC at price-taking firm.</span></li>
+    <li>Employment rent rises when: (A) wage falls (B) fallback option improves (C) probability of being caught shirking falls (D) fallback option worsens
+      <span class="answer"><strong>D</strong> — Higher rent = bigger gap between job value and outside option. Worse fallback = more to lose from firing.</span></li>
+    <li>Isocost slope equals: (A) −r/w (B) −w/r (C) −K/L (D) −C/w
+      <span class="answer"><strong>B</strong> — Slope of isocost K = C/r − (w/r)L is −w/r.</span></li>
+    <li>DWL from a negative externality is the triangle between: (A) Qm and Q* (B) 0 and Q* (C) Q* and Qm=0 (D) 0 and Qm
+      <span class="answer"><strong>A</strong> — Between Qm (overproduction) and Q* (efficient), bounded by D and MSC.</span></li>
+    <li>If demand is inelastic, raising price: (A) reduces TR (B) keeps TR the same (C) raises TR (D) makes MR negative immediately
+      <span class="answer"><strong>C</strong> — Inelastic: %ΔQ &lt; %ΔP → price rises more than Q falls → TR rises.</span></li>
+    <li>Angela's reservation IC is: (A) where she earns the most (B) the IC that gives her the same utility as her outside option (C) the highest IC on the frontier (D) where Bruno earns the most
+      <span class="answer"><strong>B</strong> — She accepts any deal at least as good as her outside option (autonomy point).</span></li>
+    <li>A public good is non-rival, meaning: (A) it can be produced for free (B) one person's consumption does not reduce availability to others (C) no one can be excluded from consuming it (D) it has no opportunity cost
+      <span class="answer"><strong>B</strong> — Non-rival: consumption is not depleted. Non-excludable is the second condition for public goods.</span></li>
+  </ol>
+  <div class="card">Score: count correct × 2. Target: 24+ (80%).</div>
+  </details>
+
+  <details><summary>Section C: 4 Skeleton Answers (12–13 marks each)</summary>
+  <div class="card"><strong>Q1 (Unit 7/8 — 13 marks):</strong> The market for coffee is perfectly competitive. A per-unit tax of R4 is imposed. Before the tax: P*=R10, Q*=200. After the tax: Qt=160, Pb=R13, Ps=R9. (a) Calculate tax revenue and DWL. (b) State the tax incidence rule. (c) Is this allocation efficient after the tax? Explain.<br>
+    <span class="answer">
+      <strong>Skeleton:</strong><br>
+      (a) Revenue = R4 × 160 = R640. DWL = ½ × R4 × (200−160) = ½ × 4 × 40 = R80.<br>
+      (b) Tax incidence: the less elastic side bears more burden, regardless of who legally pays the tax. If demand is more inelastic than supply, buyers bear more (Pb rises more than Ps falls).<br>
+      (c) Not efficient — DWL of R80 represents 40 mutually beneficial trades that no longer occur because cost to sellers (including tax) exceeds buyer WTP. Total surplus is lower than without the tax by R80.
+    </span>
+  </div>
+  <div class="card"><strong>Q2 (Unit 7 — 12 marks):</strong> A price-setting firm faces demand P = 60 − 4Q and MC = AC = 4. (a) Find Q<sub>m</sub> and P<sub>m</sub>. (b) Calculate profit. (c) Find efficient Q and DWL. (d) Explain why this is market failure.<br>
+    <span class="answer">
+      <strong>Skeleton:</strong><br>
+      (a) MR = 60 − 8Q. MR=MC: 60−8Q=4 → Q<sub>m</sub>=7. P<sub>m</sub> = 60−4(7)=32.<br>
+      (b) Profit = (32−4)×7 = R196.<br>
+      (c) D=MC: 60−4Q=4 → Q<sub>eff</sub>=14. DWL = ½×(32−4)×(14−7) = ½×28×7 = R98.<br>
+      (d) Market failure: the monopolist restricts output below Q<sub>eff</sub>=14 to maintain price above MC. DWL of R98 represents untapped gains from trade. The firm's profit-maximising incentive does not align with social welfare.
+    </span>
+  </div>
+  <div class="card"><strong>Q3 (Unit 10 — 12 marks):</strong> A factory produces 100 units/day and emits pollution costing farmers R30 per unit in crop damage. The government considers two policies: (A) a Pigouvian tax; (B) Coase bargaining. (a) Calculate the Pigouvian tax if the efficient output is Q*=80. (b) For Coase bargaining, state two conditions required for it to work. (c) Identify one reason why Coase fails in practice.<br>
+    <span class="answer">
+      <strong>Skeleton:</strong><br>
+      (a) Pigouvian tax = MEC at Q*. If MEC = R30 per unit (constant), tax = R30/unit. This shifts MPC up to equal MSC at Q*=80.<br>
+      (b) Conditions: (i) clear property rights — either factory has right to pollute or farmer has right to clean air; (ii) low/zero transaction costs — bargaining is cheap and enforceable.<br>
+      (c) Fails when: many affected parties (coordination problem), asymmetric information about damage/costs, high legal/negotiation costs, unclear property rights in practice.
+    </span>
+  </div>
+  <div class="card"><strong>Q4 (Unit 4/5 — 13 marks):</strong> Two firms (A and B) independently choose to Advertise (Ad) or Not Advertise (No Ad). Payoffs (A, B): Ad/Ad = (2,2); Ad/No Ad = (5,0); No Ad/Ad = (0,5); No Ad/No Ad = (4,4). (a) Find the Nash equilibrium. (b) Is there a dominant strategy? (c) Is the Nash outcome Pareto efficient? Explain. (d) Name this type of game.<br>
+    <span class="answer">
+      <strong>Skeleton:</strong><br>
+      (a) Best responses: If B plays Ad: A prefers Ad (2&gt;0). If B plays No Ad: A prefers Ad (5&gt;4). A's dominant: Ad. Same for B. Nash: (Ad, Ad) → (2,2).<br>
+      (b) Yes — Advertise dominates No Advertise for both players regardless of opponent's choice.<br>
+      (c) Not Pareto efficient — (No Ad, No Ad) = (4,4) gives both players more. Both can be made better off (Pareto improvement exists), so (Ad, Ad) is Pareto inefficient.<br>
+      (d) Prisoner's dilemma — individually rational strategy leads to collectively worse outcome than if both cooperated.
+    </span>
+  </div>
+  <div class="card">Score: aim for clear formula + substitution + answer + interpretation on each part. 80%: correct mechanics. 100%: precise terminology (e.g. "Pareto inefficient" not just "bad"), named game types, mechanism named (not just described).</div>
+  </details>
+</section>
+
 <section class="section" id="practice-bank" data-section="practice-bank">
   <h2>Full Practice Bank: Heatmap-Weighted Real Questions</h2>
   <div class="card muted" style="margin-bottom:12px"><strong>How to use:</strong> Cover the memo before answering. Write or say your answer closed-book. Then mark against the memo. Only tick the unit checkbox after you complete the whole set without notes.</div>
@@ -1653,7 +2306,7 @@ const SECTIONS={
   'tf':'T/F Bank',
   'mcq':'MCQ Bank',
   'unit8':'Unit 8 Markets',
-  'unit7':'Unit 7 Monopoly',
+  'unit7':'Unit 7 Monopoly & Elasticity',
   'unit10':'Unit 10 Externalities',
   'unit6':'Unit 6 Labour',
   'unit3':'Unit 3 MRS/MRT',
@@ -1662,6 +2315,10 @@ const SECTIONS={
   'unit2':'Unit 2 Technology',
   'unit1':'Unit 1 GDP',
   'section-c':'Section C Premium',
+  'pattern-bridge':'Pattern Map',
+  'brain-dump':'Brain Dump',
+  'same-skill':'Same Skill New Skin',
+  'diagnostic':'A3 Diagnostic Mock',
   'practice-bank':'Full Practice Bank',
   'final-boss':'Final Boss',
   'final-recall':'Panic Lines',
@@ -1692,6 +2349,10 @@ const NAV=[
   {id:'unit2',label:'Unit 2: Technology'},
   {id:'unit1',label:'Unit 1: GDP'},
   {group:'Exam Training'},
+  {id:'pattern-bridge',label:'Pattern Map'},
+  {id:'brain-dump',label:'Brain Dump'},
+  {id:'same-skill',label:'Same Skill'},
+  {id:'diagnostic',label:'Diagnostic Mock'},
   {id:'section-c',label:'Premium Section C'},
   {id:'practice-bank',label:'Full Practice Bank'},
   {id:'final-boss',label:'Final Boss'},
@@ -1745,7 +2406,19 @@ const TF=[
   ['Optimal Pigouvian tax equals MEC at efficient quantity.','T','It aligns private cost with social cost at Q*.','U10'],
   ['Positive externalities cause underproduction.','T','Private buyers ignore external benefits.','U10'],
   ['Public goods are always provided by government.','F','Public goods are non-rival and non-excludable.','U10'],
-  ['Moral hazard is hidden action after agreement; adverse selection is hidden type before.','T','Timing and information type distinguish them.','U10']
+  ['Moral hazard is hidden action after agreement; adverse selection is hidden type before.','T','Timing and information type distinguish them.','U10'],
+  ['Repeated games may solve social dilemmas by enabling cooperation through credible punishment.','T','The shadow of the future: future payoffs from cooperation outweigh the one-off gain from defecting.','U4'],
+  ['A game can have more than one Nash equilibrium.','T','Chicken game and coordination games both have two Nash equilibria.','U4'],
+  ['A Nash equilibrium is always Pareto efficient.','F','Prisoner dilemma Nash (D,D) is Pareto dominated by cooperative outcome (C,C).','U4'],
+  ['Procedural fairness guarantees substantive fairness.','F','Voluntary exchange (procedurally fair) can produce deeply unequal outcomes (substantively unfair).','U5'],
+  ['A binding price ceiling is set below equilibrium price.','T','Below P* forces price down, creating Qd>Qs (shortage).','U8'],
+  ['A binding price floor is set above equilibrium price.','T','Above P* prevents price falling, creating Qs>Qd (surplus).','U8'],
+  ['MC is the slope (derivative) of TC with respect to Q.','T','MC = ΔTC/ΔQ. Not TC/Q (that is AC).','U7'],
+  ['AC is minimised at the quantity where MC = AC.','T','Below MC=AC: MC<AC so AC is still falling. Above: MC>AC so AC rising. Minimum at crossing.','U7'],
+  ['Positive externalities cause underproduction in unregulated markets.','T','MPB < MSB → market stops at Qm < Q* → too few units produced.','U10'],
+  ['The Pigouvian tax equals the total external damage at market quantity Qm.','F','Tax = MEC evaluated at Q* (efficient), not total damage at Qm.','U10'],
+  ['Public goods are goods provided by the government.','F','Public goods are defined by non-rivalry and non-excludability, not by who provides them.','U10'],
+  ['Adverse selection is a hidden-action problem; moral hazard is a hidden-type problem.','F','Reversed: adverse selection = hidden TYPE before contract; moral hazard = hidden ACTION after contract.','U10']
 ];
 
 /* ---- MCQ bank data ---- */
@@ -1765,7 +2438,70 @@ const MCQ=[
   {u:'U6',stem:'Cost per efficiency unit is:',opts:{A:'e/w',B:'w+e',C:'w/e',D:'w–e'},ans:'C',why:'Wage divided by effort. e/w is efficiency per rand.'},
   {u:'U10',stem:'Optimal Pigouvian tax equals:',opts:{A:'Total external damage at Qm.',B:'AC at Q*.',C:'MEC at efficient quantity.',D:'CS before tax.'},ans:'C',why:'Marginal, not total; evaluated at Q* not Qm.'},
   {u:'U10',stem:'A pure public good is:',opts:{A:'Non-rival and non-excludable.',B:'Rival and excludable.',C:'Non-rival and excludable.',D:'Rival and non-excludable.'},ans:'A',why:'Public goods are non-rival and non-excludable by definition.'},
-  {u:'U10',stem:'Moral hazard involves:',opts:{A:'Hidden type before agreement.',B:'Hidden action after agreement.',C:'Compulsory pooling.',D:'Coase bargaining.'},ans:'B',why:'After the agreement, hidden action changes behaviour.'}
+  {u:'U10',stem:'Moral hazard involves:',opts:{A:'Hidden type before agreement.',B:'Hidden action after agreement.',C:'Compulsory pooling.',D:'Coase bargaining.'},ans:'B',why:'After the agreement, hidden action changes behaviour.'},
+  /* ---- Unit 1 additions ---- */
+  {u:'U1',stem:'GDP measures:',opts:{A:'All production including intermediate goods.',B:'Market value of all final goods and services produced domestically.',C:'Only exports.',D:'Unpaid domestic work.'},ans:'B',why:'GDP counts only final goods to avoid double-counting.'},
+  {u:'U1',stem:'The key institutions of capitalism are:',opts:{A:'Central planning.',B:'Private property, markets and firms.',C:'Government ownership of means of production.',D:'Zero-profit guarantee.'},ans:'B',why:'Capitalism rests on private property, competitive markets and profit-seeking firms.'},
+  {u:'U1',stem:'The Malthusian trap suggests that technological gains may be eroded by:',opts:{A:'Falling investment.',B:'Population growth reducing output per person.',C:'Rising government spending.',D:'Declining exports.'},ans:'B',why:'More people spread the productivity gains, holding living standards down.'},
+  {u:'U1',stem:'PPP (purchasing power parity) adjusts for:',opts:{A:'Exchange rate volatility.',B:'Price level differences across countries.',C:'Only import prices.',D:'Nominal vs real GDP gap.'},ans:'B',why:'PPP converts incomes to a common price level so real living standards are comparable.'},
+  {u:'U1',stem:'GDP per capita rises when:',opts:{A:'Population grows faster than output.',B:'Output grows faster than population.',C:'Inequality increases.',D:'Imports rise.'},ans:'B',why:'GDP per capita = GDP / population; rises when numerator grows faster.'},
+  {u:'U1',stem:'Which is excluded from GDP?',opts:{A:'Newly built homes.',B:'Intermediate steel used in car manufacturing.',C:'Government teacher salaries.',D:'Haircuts purchased by consumers.'},ans:'B',why:'Intermediate goods are not counted — their value is embedded in the final product.'},
+  {u:'U1',stem:'Creative destruction refers to:',opts:{A:'Firms preventing new entrants.',B:'New firms replacing old ones through innovation.',C:'Falling GDP during recession.',D:'Government deregulation.'},ans:'B',why:'Schumpeter: innovation disrupts incumbents, driving long-run growth.'},
+  {u:'U1',stem:'A Gini coefficient of 0 indicates:',opts:{A:'Maximum inequality.',B:'Perfect equality.',C:'Zero GDP growth.',D:'Poverty line.',},ans:'B',why:'0 = everyone has the same income; 1 = one person has everything.'},
+  /* ---- Unit 2 additions ---- */
+  {u:'U2',stem:'Opportunity cost is:',opts:{A:'The money price of a good.',B:'The value of the next best alternative forgone.',C:'Sunk cost already paid.',D:'Average total cost.'},ans:'B',why:'The relevant cost is what you give up, not what you pay.'},
+  {u:'U2',stem:'An isocost line shows all input combinations that:',opts:{A:'Produce the same total output.',B:'Cost the same total amount.',C:'Maximise profit.',D:'Lie on the production frontier.'},ans:'B',why:'Isocost: w×L + r×K = C, so same total expenditure for all points.'},
+  {u:'U2',stem:'The slope of an isocost line (K vertical, L horizontal) is:',opts:{A:'w/r.',B:'−r/w.',C:'−w/r.',D:'r/w.'},ans:'C',why:'K = C/r − (w/r)L, so slope = −w/r.'},
+  {u:'U2',stem:'Marginal product of labour equals:',opts:{A:'Q/L.',B:'ΔQ/ΔL.',C:'TC/L.',D:'w/r.'},ans:'B',why:'MP is the extra output from one more unit of labour; AP = Q/L.'},
+  {u:'U2',stem:'A dominated technology:',opts:{A:'Uses fewer inputs than alternatives.',B:'Uses the same or more of every input as another technology for the same output.',C:'Has lower total cost.',D:'Is always cost-minimising.'},ans:'B',why:'Dominated = no efficiency advantage in any input; rational firm never chooses it.'},
+  {u:'U2',stem:'Comparative advantage means:',opts:{A:'Absolute efficiency in production.',B:'Lower opportunity cost of producing a good than the alternative.',C:'Producing more units than rivals.',D:'Paying higher wages.'},ans:'B',why:'Comparative, not absolute: lower opportunity cost is the basis for trade.'},
+  {u:'U2',stem:'At the cost-minimising production point, the isocost line is:',opts:{A:'Above the isoquant.',B:'Tangent to the isoquant.',C:'Crossing the isoquant at two points.',D:'Perpendicular to the isoquant.'},ans:'B',why:'Tangency: MRTS = w/r, so the technological substitution rate equals the input price ratio.'},
+  {u:'U2',stem:'Increasing returns to scale means:',opts:{A:'All inputs double, output less than doubles.',B:'All inputs double, output more than doubles.',C:'One input increases while the other stays fixed.',D:'Diminishing marginal returns.'},ans:'B',why:'IRS: proportional input increase causes more than proportional output increase.'},
+  /* ---- Unit 3 additions ---- */
+  {u:'U3',stem:'The budget constraint rotates outward (more consumption possible for all free time levels) when:',opts:{A:'Wage falls.',B:'Non-labour income rises.',C:'Price of goods rises.',D:'Free time limit decreases.'},ans:'B',why:'Non-labour income shifts the budget line up without changing its slope.'},
+  {u:'U3',stem:'An indifference curve has a negative slope because:',opts:{A:'Goods are identical.',B:'More of both is always preferred.',C:'Gaining more of one good requires sacrificing the other to keep utility constant.',D:'Income is fixed.'},ans:'C',why:'IC slopes down: trade-off between goods/free time keeps utility unchanged.'},
+  {u:'U3',stem:'The substitution effect of a wage rise causes:',opts:{A:'More free time because the worker is richer.',B:'Less free time because its opportunity cost rises.',C:'No change in free time.',D:'More consumption and more free time simultaneously.'},ans:'B',why:'Higher wage raises the cost of free time → substitution away from free time toward consumption.'},
+  {u:'U3',stem:'If MRS > MRT in the labour-leisure model, the consumer should:',opts:{A:'Work more hours.',B:'Take more free time (work less).',C:'Stay at the current allocation.',D:'Raise their wage demand.'},ans:'B',why:'MRS > MRT: consumer values free time more than the market rate → move toward more free time.'},
+  {u:'U3',stem:'The income effect of a wage rise on free time is:',opts:{A:'Always positive (more free time).',B:'Always negative (less free time).',C:'Ambiguous — depends on whether free time is a normal or inferior good.',D:'Zero.'},ans:'C',why:'If free time is normal, higher income → more free time (income effect). Combined with substitution, direction is ambiguous.'},
+  {u:'U3',stem:'Real wage is:',opts:{A:'Wage in money terms.',B:'Nominal wage divided by price level.',C:'Wage before tax.',D:'Wage multiplied by hours worked.'},ans:'B',why:'Real wage = w/P; measures purchasing power, not monetary value.'},
+  /* ---- Unit 4 additions ---- */
+  {u:'U4',stem:"In a prisoner's dilemma, the Nash equilibrium is:",opts:{A:'The cooperative outcome.',B:'Both players choosing their dominant strategy.',C:'Pareto efficient.',D:'Always the punishment cell.'},ans:'B',why:'Both defect — dominant strategies align at a Pareto-inferior Nash.'},
+  {u:'U4',stem:'A credible commitment strategy works by:',opts:{A:'Promising future cooperation without enforcement.',B:'Making a particular future action binding and observable to the other player.',C:'Always leading to Pareto efficiency.',D:'Eliminating all Nash equilibria.'},ans:'B',why:'Credibility requires the commitment to be verifiable; empty threats are ignored.'},
+  {u:'U4',stem:'In a chicken game, the two Nash equilibria are:',opts:{A:'Both swerve, both go straight.',B:'One swerves and one goes straight (one of each).',C:'Both swerve only.',D:'No Nash equilibrium.'},ans:'B',why:'Chicken: (Swerve,Straight) and (Straight,Swerve) are both Nash; (Straight,Straight) is worst.'},
+  {u:'U4',stem:'Repeated games can sustain cooperation when:',opts:{A:'There is no future interaction.',B:'Players can credibly threaten future punishment for defection.',C:'Payoffs increase each round.',D:'There are no dominant strategies.'},ans:'B',why:'Grim trigger or tit-for-tat: threat of future punishment raises cost of defecting today.'},
+  {u:'U4',stem:'An ultimatum game tests:',opts:{A:'Dominant strategy equilibrium.',B:'Whether players reject offers perceived as unfair.',C:'Repeated-game cooperation.',D:'Nash refinement in continuous games.'},ans:'B',why:'Responders often reject low offers even at personal cost, revealing fairness preferences.'},
+  {u:'U4',stem:'A coordination game differs from a prisoner\'s dilemma because:',opts:{A:'It has no Nash equilibrium.',B:'Multiple Nash equilibria exist and players prefer to coordinate on one.',C:'Dominant strategies lead to the socially best outcome.',D:'No dominant strategies exist and there is only one Nash equilibrium.'},ans:'B',why:'Coordination: two Nash equilibria (both choose A, or both choose B); challenge is selecting one.'},
+  /* ---- Unit 5 additions ---- */
+  {u:'U5',stem:'BSC (biological survival constraint) binds when:',opts:{A:'Angela earns far above subsistence.',B:'Angela\'s income barely covers minimum consumption to survive.',C:'Bruno takes zero surplus.',D:'Angela is on her reservation IC.'},ans:'B',why:'BSC: lowest feasible consumption bundle — strictly below reservation IC.'},
+  {u:'U5',stem:'A Pareto improvement requires:',opts:{A:'Every person is made better off.',B:'At least one person is better off and nobody is worse off.',C:'Equal redistribution.',D:'Higher total output.'},ans:'B',why:'Both parts of the Pareto improvement definition matter.'},
+  {u:'U5',stem:'In the Angela-Bruno model, Pareto-efficient allocations:',opts:{A:'Maximise Bruno\'s payoff only.',B:'Lie on the feasibility frontier where no further gain is possible without loss.',C:'Always coincide with Angela\'s maximum utility point.',D:'Are determined solely by Bruno\'s bargaining power.'},ans:'B',why:'Pareto frontier = where one person cannot gain without the other losing.'},
+  {u:'U5',stem:'Substantive fairness concerns:',opts:{A:'The procedure by which an agreement was reached.',B:'The actual distribution of outcomes.',C:'Property rights and legal processes.',D:'Whether exchange was voluntary.'},ans:'B',why:'Substantive: what you end up with. Procedural: how you got there.'},
+  {u:'U5',stem:'If Angela gains better outside options (higher reservation utility):',opts:{A:'Bruno extracts more surplus.',B:'Angela can negotiate a higher share of the output.',C:'Pareto efficiency falls.',D:'The feasibility frontier shifts inward.'},ans:'B',why:'Better outside option raises Angela\'s reservation IC → Bruno must offer more or Angela refuses.'},
+  /* ---- Unit 6 additions ---- */
+  {u:'U6',stem:'In the labour discipline model, the firm\'s role (principal) is:',opts:{A:'The worker.',B:'The employer who offers wages and monitors effort.',C:'The government.',D:'The union.'},ans:'B',why:'Principal-agent: employer is principal, worker is agent with private information about effort.'},
+  {u:'U6',stem:'Efficiency wages are set:',opts:{A:'Below the market-clearing level.',B:'Above the market-clearing level to induce effort.',C:'Equal to the minimum wage.',D:'By government regulation only.'},ans:'B',why:'Wages above the clearing level create employment rent that workers fear losing.'},
+  {u:'U6',stem:'If the probability of catching a shirking worker falls, to maintain incentive compatibility:',opts:{A:'The wage must fall.',B:'The wage (and hence employment rent) must rise.',C:'Effort adjusts automatically.',D:'The outside option must worsen.'},ans:'B',why:'Lower detection probability reduces expected punishment → firm must pay more to keep the no-shirk condition binding.'},
+  {u:'U6',stem:'At the efficiency wage, the firm:',opts:{A:'Pays the lowest wage possible.',B:'Minimises cost per efficiency unit (w/e).',C:'Sets wage equal to outside option.',D:'Employs as many workers as possible.'},ans:'B',why:'Efficiency wage = tangency point where wage-effort relationship yields lowest cost per unit of effort.'},
+  /* ---- Unit 7 additions ---- */
+  {u:'U7',stem:'DWL from monopoly represents:',opts:{A:'The monopolist\'s profit.',B:'Gains from trade that do not occur because output is restricted below Q*.',C:'Consumer surplus captured by the firm.',D:'Tax paid by consumers.'},ans:'B',why:'DWL = triangle between Qm and Q*, bounded by demand and MC: units where WTP > MC but not traded.'},
+  {u:'U7',stem:'A natural monopoly exists because:',opts:{A:'The firm colluded with rivals.',B:'Average cost declines over the entire relevant range of market demand.',C:'Price equals MC throughout.',D:'Demand is perfectly elastic.'},ans:'B',why:'Falling LRAC over demand range means one large firm can serve the market cheaper than many small ones.'},
+  {u:'U7',stem:'In the short run, a firm should shut down if:',opts:{A:'P < AC.',B:'P < AVC.',C:'Economic profit is negative.',D:'MC > P.'},ans:'B',why:'Shut down if price cannot cover variable costs. Negative profit but P ≥ AVC: keep operating (covers variable costs, minimises loss).'},
+  {u:'U7',stem:'A monopolist\'s demand curve is:',opts:{A:'Horizontal at the market price.',B:'The downward-sloping market demand curve.',C:'The same as the MR curve.',D:'Perfectly elastic.'},ans:'B',why:'Monopolist IS the market, so it faces the whole downward-sloping demand.'},
+  {u:'U7',stem:'If P = 60 − 4Q and MC = AC = 4, what is the profit-maximising output?',opts:{A:'Q = 4, P = 44.',B:'Q = 7, P = 32.',C:'Q = 10, P = 20.',D:'Q = 14, P = 4.'},ans:'B',why:'MR = 60−8Q = 4 → Q=7. P = 60−28 = 32. Profit = (32−4)×7 = R196.'},
+  /* ---- Unit 8 additions ---- */
+  {u:'U8',stem:'A minimum wage set above equilibrium wage is:',opts:{A:'Non-binding.',B:'A binding price floor that creates excess labour supply (unemployment).',C:'A price ceiling.',D:'Pareto efficient.'},ans:'B',why:'Floor above P*: Qs > Qd → surplus of labour = unemployment.'},
+  {u:'U8',stem:'Consumer surplus is the area:',opts:{A:'Below supply and above price.',B:'Below demand and above price paid.',C:'Price times quantity sold.',D:'Only relevant for luxury goods.'},ans:'B',why:'CS = area between demand curve and price = willingness to pay minus amount paid.'},
+  {u:'U8',stem:'Producer surplus is the area:',opts:{A:'Below demand and above price.',B:'Above supply and below price received.',C:'Equal to accounting profit only.',D:'Always equal to consumer surplus.'},ans:'B',why:'PS = area between price received and supply curve (minimum sellers accept).'},
+  {u:'U8',stem:'Deadweight loss from a tax equals:',opts:{A:'Total tax revenue collected.',B:'½ × tax per unit × reduction in quantity traded.',C:'The full pre-tax total surplus.',D:'Tax per unit × original pre-tax quantity.'},ans:'B',why:'DWL triangle = ½ × t × (Q* − Qt). This is the lost surplus on trades that no longer happen.'},
+  {u:'U8',stem:'A non-binding price ceiling (set above equilibrium) has what effect?',opts:{A:'Creates a shortage.',B:'No effect on price or quantity.',C:'Creates a surplus.',D:'Raises the equilibrium price.'},ans:'B',why:'If ceiling > P*, market equilibrium is already below the ceiling → ceiling irrelevant.'},
+  {u:'U8',stem:'If supply is perfectly inelastic, a per-unit tax is:',opts:{A:'Fully borne by buyers.',B:'Fully borne by sellers.',C:'Shared equally regardless of elasticity.',D:'Zero in its revenue effect.'},ans:'B',why:'Inelastic supply: sellers cannot reduce quantity → price received falls by the full tax.'},
+  {u:'U8',stem:'Total surplus after a tax is imposed is:',opts:{A:'Equal to pre-tax total surplus.',B:'Less than pre-tax total surplus by the amount of DWL.',C:'Greater if the tax funds public goods.',D:'Unchanged because revenue is transferred to government.'},ans:'B',why:'Tax creates DWL — surplus is transferred (CS to government) but some surplus is lost entirely.'},
+  /* ---- Unit 10 additions ---- */
+  {u:'U10',stem:'A negative externality causes an unregulated market to:',opts:{A:'Underproduce.',B:'Overproduce.',C:'Produce the efficient quantity.',D:'Produce nothing.'},ans:'B',why:'Private producers ignore MEC → MPC < MSC → they produce too much (Qm > Q*).'},
+  {u:'U10',stem:'For Coase bargaining to produce an efficient outcome, what is required?',opts:{A:'Many affected parties and government oversight.',B:'Clearly defined property rights and low transaction costs.',C:'Government setting the tax rate.',D:'No externality present.'},ans:'B',why:'Coase theorem: with clear rights and low bargaining costs, private parties reach Q*.'},
+  {u:'U10',stem:'The free-rider problem arises most acutely with:',opts:{A:'Private goods.',B:'Public goods and common resources.',C:'Club goods only.',D:'Natural monopolies.'},ans:'B',why:'Non-excludable goods: consumers cannot be prevented from enjoying benefits without paying.'},
+  {u:'U10',stem:'The socially efficient output Q* occurs where:',opts:{A:'MPC = 0.',B:'MSC = MPB (or MSB = MPC for positive ext).',C:'MEC = 0.',D:'MSC = MPC.'},ans:'B',why:'Efficient: social cost equals private benefit. Government policy aims to restore this condition.'},
+  {u:'U10',stem:'A Pigouvian subsidy on a positive externality:',opts:{A:'Lowers output below Q*.',B:'Raises output from Qm toward Q*.',C:'Creates additional DWL.',D:'Benefits only producers.'},ans:'B',why:'Subsidy internalises MEB → lowers private cost → production rises from Qm to Q*.'}
 ];
 
 /* ---- Render T/F table ---- */
