@@ -1,0 +1,1805 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECO114 A3 Final 80%+ Master Hub</title>
+<style>
+:root{
+  --dark-purple:#35135f;--purple:#b89bed;--dark-blue:#173b78;--light-blue:#9ed8ff;
+  --dark-green:#17613a;--light-green:#b9efc8;--yellow:#ffe45e;--lighter-orange:#ffc978;
+  --darker-orange:#e16a2d;--red:#cc2f3b;--dark-pink:#9b1b62;--hot-pink:#ff4fb3;
+  --pastel-pink:#ffd0e8;--bg:#f7f8ff;--panel:#fff;--ink:#172033;--muted:#607086;
+  --line:#dce1ee;--shadow:0 16px 42px rgba(23,31,56,.12);
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6}
+body.dark{--bg:#10131d;--panel:#191e2b;--ink:#f5f7ff;--muted:#b8c0d3;--line:#30384e;--shadow:0 18px 44px rgba(0,0,0,.35)}
+a{color:inherit}
+/* Layout */
+.app{display:block;min-height:100vh}
+/* Sidebar */
+.sidebar{position:fixed;inset:0 auto 0 0;width:310px;background:linear-gradient(180deg,#1e0840,#0d2350);color:#fff;overflow-y:auto;padding:16px 14px;border-right:3px solid #4a2080;z-index:20}
+.brand{font-weight:900;font-size:1.1rem;padding:8px 8px 14px;border-bottom:1px solid rgba(255,255,255,.18);margin-bottom:10px}
+.brand small{display:block;font-weight:400;font-size:.78rem;color:#c9b8f0;margin-top:3px}
+/* Sidebar progress */
+.spt{margin:10px 0;padding:10px;border:1px solid rgba(255,255,255,.16);border-radius:8px;background:rgba(255,255,255,.07)}
+.spt-kicker{font:900 10px Arial,sans-serif;text-transform:uppercase;letter-spacing:.08em;color:#c9b8f0;margin-bottom:5px}
+.spt-row{display:flex;justify-content:space-between;align-items:flex-end;gap:6px}
+.spt-pct{font:900 1.5rem Arial,sans-serif;color:#fff}
+.spt-count{font:12px Arial,sans-serif;color:#c9b8f0;text-align:right}
+.bar{height:9px;background:rgba(255,255,255,.16);border-radius:99px;overflow:hidden;margin:7px 0}
+.bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,#f3c75f,#a8e6b1);transition:width .25s}
+.spt-note{font:11px/1.35 Arial,sans-serif;color:#c9b8f0}
+.spt-sections{display:grid;gap:5px;margin-top:8px}
+.spt-sec{border-top:1px dashed rgba(255,255,255,.16);padding-top:5px}
+.spt-sec-head{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.spt-sec-title{font:800 11px Arial,sans-serif;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spt-sec-pct{font:900 10px Arial,sans-serif;color:#f3c75f}
+.mini-bar{height:4px;background:rgba(255,255,255,.16);border-radius:99px;overflow:hidden;margin-top:3px}
+.mini-bar span{display:block;height:100%;width:0;background:#a8e6b1;transition:width .25s}
+.side-stat{font:12px Arial,sans-serif;color:#c9b8f0;margin:6px 0}
+/* Nav */
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#eee;text-decoration:none;padding:8px 9px;border-radius:6px;font:13px/1.2 Arial,sans-serif;margin:2px 0;border:1px solid rgba(255,255,255,.08)}
+.nav a.active,.nav a:hover{background:#efe4ff;color:#1a0840}
+.nav-pct{font:900 10px Arial,sans-serif;color:#f3c75f;background:rgba(255,255,255,.12);border-radius:999px;padding:2px 5px;white-space:nowrap}
+.nav a.active .nav-pct,.nav a:hover .nav-pct{color:#1a0840;background:#fff}
+.nav-group{font:800 10px Arial,sans-serif;text-transform:uppercase;color:#9b8fbe;margin:10px 0 3px 2px;letter-spacing:.05em}
+/* Main */
+.main{margin-left:310px;min-width:0}
+.topbar{position:sticky;top:0;z-index:10;background:rgba(247,248,255,.96);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:9px 16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+body.dark .topbar{background:rgba(16,19,29,.96)}
+.search-input{flex:1;min-width:160px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font:14px Arial,sans-serif;background:var(--panel);color:var(--ink)}
+/* Buttons */
+button,.btn{border:0;border-radius:8px;padding:9px 11px;font:700 12px Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.btn-green{background:var(--dark-green);color:#fff}
+.btn-orange{background:var(--darker-orange);color:#fff}
+.btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn-purple{background:var(--dark-purple);color:#fff}
+/* Content */
+.content{padding:24px 28px;max-width:1260px;margin:0 auto}
+/* Hero */
+.hero{padding:28px;border-radius:18px;background:linear-gradient(135deg,var(--dark-purple),var(--purple) 28%,var(--dark-blue) 60%,var(--light-blue));color:#fff;box-shadow:var(--shadow);margin-bottom:20px}
+.hero h1{font-size:clamp(1.8rem,4vw,3rem);line-height:1.1;margin:.2rem 0 .6rem}
+/* Sections */
+.section{margin:18px 0;padding:20px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 6px 20px rgba(24,32,51,.05);scroll-margin-top:68px}
+.section.pulse{animation:pulseTarget 1.1s ease-out 1}
+@keyframes pulseTarget{0%{box-shadow:0 0 0 0 rgba(255,79,179,.7)}70%{box-shadow:0 0 0 14px rgba(255,79,179,0)}100%{box-shadow:0 6px 20px rgba(24,32,51,.05)}}
+h2{color:var(--dark-purple);margin:.2rem 0 .6rem;font-size:1.45rem}
+body.dark h2{color:var(--light-blue)}
+h3{margin:.2rem 0 .35rem;color:var(--dark-blue)}
+body.dark h3{color:var(--lighter-orange)}
+/* Cards & grids */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;background:linear-gradient(180deg,var(--panel),rgba(158,216,255,.06));margin:8px 0}
+.card.done{outline:2px solid var(--light-green)}
+/* Badges */
+.badge{display:inline-block;border-radius:999px;padding:3px 8px;margin:2px;font-size:.76rem;font-weight:900}
+.badge-red{background:var(--red);color:#fff}
+.badge-orange{background:var(--darker-orange);color:#fff}
+.badge-green{background:var(--dark-green);color:#fff}
+.badge-purple{background:var(--dark-purple);color:#fff}
+.badge-pink{background:var(--pastel-pink);color:#4a1030}
+.badge-yellow{background:var(--yellow);color:#443800}
+.badge-blue{background:var(--dark-blue);color:#fff}
+/* Priority */
+.priority-vh{background:var(--red);color:#fff;border-radius:999px;padding:2px 7px;font-weight:900;font-size:.82rem}
+.priority-h{background:var(--darker-orange);color:#fff;border-radius:999px;padding:2px 7px;font-weight:900;font-size:.82rem}
+/* Tables */
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:.9rem;display:block;max-width:100%;overflow-x:auto;white-space:normal}
+th,td{border:1px solid var(--line);padding:8px;vertical-align:top}
+th{background:rgba(184,155,237,.18);text-align:left}
+/* Details */
+details{border:1px solid var(--line);border-radius:8px;padding:10px;margin:8px 0;background:rgba(185,239,200,.08)}
+summary{cursor:pointer;font-weight:800}
+/* Understood checkbox */
+.understood-wrap{display:inline-flex;align-items:center;gap:7px;font:700 12px Arial,sans-serif;background:#fff;border:1px solid #cab8df;border-radius:8px;padding:7px 10px;cursor:pointer;margin:6px 0}
+body.dark .understood-wrap{background:#1e2840;border-color:#4a5580}
+.understood-wrap input{width:15px;height:15px;accent-color:var(--dark-green)}
+.understood-wrap.done{border-color:#7bbf8a;background:#f1fbf3;color:var(--dark-green)}
+body.dark .understood-wrap.done{background:#0d2a18}
+.understood-wrap.done::after{content:" ✓";font-weight:900;color:var(--dark-green)}
+/* Active recall blur */
+body.recall .answer{filter:blur(5px);cursor:pointer}
+body.recall .answer.revealed{filter:none}
+/* Heat tiles */
+.heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:12px 0}
+.tile{padding:12px;border-radius:10px;color:#fff;font-weight:800}
+.tile-very-high{background:linear-gradient(135deg,#a00020,#d44040)}
+.tile-high{background:linear-gradient(135deg,#b85010,#e07030)}
+/* Graph label toggle */
+.hide-labels .graph-label{opacity:0}
+.graph-label{font-size:11px;fill:#182033}
+body.dark .graph-label{fill:#f5f7ff}
+svg.graph-svg{width:100%;height:170px;border:1px solid var(--line);border-radius:10px;background:#fff;display:block}
+body.dark svg.graph-svg{background:#111827}
+/* Mistake log */
+.mistake-row{display:grid;grid-template-columns:1fr 1fr 1fr 1.5fr 1.5fr .8fr;gap:6px;margin:6px 0}
+input[type=text],input[type=date],select,textarea{border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:8px;font-size:.9rem;width:100%}
+textarea{min-height:80px}
+/* Print */
+@media print{
+  .sidebar,.topbar,.no-print{display:none!important}
+  .app{display:block}.main{margin-left:0}
+  .content{max-width:none;padding:8px}
+  .section,.card{break-inside:avoid;box-shadow:none}
+  details>*:not(summary){display:block!important}
+  .answer{filter:none!important}
+  body{background:#fff;color:#000}
+}
+/* Mobile */
+@media(max-width:900px){
+  .app{display:block}
+  .sidebar{position:relative;inset:auto;width:auto;max-height:none}
+  .main{margin-left:0}
+  .content{padding:14px}
+  .topbar{flex-wrap:wrap}
+  .mistake-row{display:block}
+}
+@media(max-width:900px){.mistake-row>*{margin-bottom:8px}}
+/* Muted */
+.muted{color:var(--muted);font-size:.9rem}
+/* Premium Section C */
+.premium-card{border-left:5px solid var(--hot-pink);background:rgba(255,79,179,.04);border-radius:10px;padding:16px;margin:14px 0}
+.premium-card h3{color:var(--dark-pink)}
+body.dark .premium-card h3{color:var(--hot-pink)!important}
+/* Subsection header */
+.unit-header{background:linear-gradient(90deg,var(--dark-purple),var(--dark-blue));color:#fff;padding:12px 16px;border-radius:10px;margin:16px 0 8px}
+.unit-header h2{color:#fff;margin:0}
+</style>
+</head>
+<body>
+<div class="app">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="brand">ECO114 A3 Master Hub<small>Final 80%+ consolidated study file</small></div>
+  <div class="side-stat"><strong id="overallPct">0%</strong> overall progress</div>
+  <div class="bar"><span id="overallFill"></span></div>
+  <div class="spt" id="sptBox">
+    <div class="spt-kicker">Auto progress</div>
+    <div class="spt-row"><span class="spt-pct" id="sptPct">0%</span><span class="spt-count" id="sptCount">0/0 understood</span></div>
+    <div class="bar"><span id="sptFill"></span></div>
+    <div class="spt-note"><strong>Only tick after closed-book recall or completed written practice.</strong> Ticking is not studying.</div>
+    <div class="spt-sections" id="sptSections"></div>
+  </div>
+  <nav class="nav" id="sideNav"></nav>
+</aside>
+<!-- MAIN -->
+<div class="main">
+<div class="topbar no-print">
+  <input class="search-input" id="searchInput" aria-label="Search the master hub" placeholder="Search formulas, units, concepts, traps..." oninput="doSearch(this.value)">
+  <button class="btn-green" onclick="window.print()">Print / PDF</button>
+  <button class="btn-orange" onclick="toggleDark()">Dark mode</button>
+  <button class="btn-purple" onclick="toggleRecall()">Active recall</button>
+  <button class="btn-ghost" onclick="expandAll()">Expand all</button>
+  <button class="btn-ghost" onclick="collapseAll()">Collapse all</button>
+  <button class="btn-ghost" onclick="toggleLabels()" title="This hub uses text-only redraw cards — no SVG graph labels exist. Open Markets v2 or Foundations v2 for SVG aids." style="opacity:0.55;cursor:help">Graph labels (text-only)</button>
+  <button class="btn-ghost" style="color:var(--red)" onclick="resetProgress()">Reset progress</button>
+</div>
+<div class="content">
+<!-- HERO -->
+<section class="hero" id="top">
+  <p><span class="badge badge-pink">One file. All units. All exam training. 80%+.</span></p>
+  <h1>ECO114 A3 Final 80%+ Master Hub</h1>
+  <p><strong>This is the only file you need to open for daily study.</strong> It consolidates the War Room, Markets v2 and Foundations v2 into one hub with auto progress tracking. The four backup files are preserved but you do not need to open them.</p>
+  <p><strong>Scope:</strong> Units 1, 2, 3, 4, 5, 6, 7, 8 and 10. Unit 9 excluded unless lecturer confirms. AI-generated notes must be checked against official module materials. Graph sketches are redraw aids, not official replicas.</p>
+  <div class="grid" style="margin-top:14px">
+    <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px"><strong>Units covered</strong><br>9 units (1–8, 10)</div>
+    <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px"><strong>Heatmap top</strong><br>U8 (67 marks), U7 (46), U3 (44)</div>
+    <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px"><strong>Progress</strong><br>Auto-tracked via checkboxes</div>
+    <div style="background:rgba(255,255,255,.12);border-radius:8px;padding:12px"><strong>Version</strong><br>v1.3 — 2026-06-14</div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section class="section" id="dashboard" data-section="dashboard">
+  <h2>Dashboard / Start Here</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="dashboard-read" data-section="dashboard"> Done + understood</label>
+  <div class="card" style="border-left:5px solid var(--hot-pink);margin-bottom:10px;padding:10px 14px"><strong>Progress honesty rule:</strong> Only tick a checkbox after closed-book recall, a redrawn graph from memory, or a completed written practice output. Ticking before you can recall is false confidence.</div>
+  <div class="grid">
+    <div class="card" style="border-left:5px solid var(--red)">
+      <h3>Only open this file for daily study</h3>
+      <p>This hub replaces the need to jump between four files. The four backup files (Index, War Room, Markets v2, Foundations v2) remain available in <code>exports/html/</code> if you need them.</p>
+    </div>
+    <div class="card" style="border-left:5px solid var(--dark-green)">
+      <h3>Study order</h3>
+      <ol style="margin:6px 0;padding-left:18px">
+        <li>Dashboard → Heatmap → Study Route</li>
+        <li>Markets units: <strong>U8 → U7 → U10 → U6</strong></li>
+        <li>Foundations units: <strong>U3 → U4 → U5 → U2 → U1</strong></li>
+        <li>War Room: formulas, graphs, T/F, MCQ, Section C</li>
+        <li>Final Boss → Panic Lines → Mistake Log</li>
+      </ol>
+    </div>
+    <div class="card" style="border-left:5px solid var(--dark-purple)">
+      <h3>Warning</h3>
+      <p>Do not use the legacy hub files (<code>eco114_a3_foundations_units_1_to_5.html</code> or <code>eco114_a3_markets_units_6_7_8_10.html</code>) as your daily study files. They are preserved for reference only.</p>
+    </div>
+    <div class="card" style="border-left:5px solid var(--dark-blue)">
+      <h3>Source status</h3>
+      <ul style="margin:4px 0;padding-left:16px">
+        <li>Built from ECO114 A3 primary hubs and extracted 2022–2024 A3 papers.</li>
+        <li>2025 Afrikaans A3 preserved but not text-extracted.</li>
+        <li>Unit 9 excluded unless lecturer confirms.</li>
+        <li>AI supplementary — check against official module materials.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- HEATMAP -->
+<section class="section" id="heatmap" data-section="heatmap">
+  <h2>High-Yield Unit Heatmap</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="heatmap-read" data-section="heatmap"> Done + understood</label>
+  <div class="heat">
+    <div class="tile tile-very-high">Unit 8<br><small>30 rows / 67 marks</small><br><small>VERY HIGH</small></div>
+    <div class="tile tile-very-high">Unit 7<br><small>23 rows / 46 marks</small><br><small>VERY HIGH</small></div>
+    <div class="tile tile-very-high">Unit 3<br><small>29 rows / 44 marks</small><br><small>VERY HIGH</small></div>
+    <div class="tile tile-very-high">Unit 10<br><small>20 rows / 29 marks</small><br><small>VERY HIGH</small></div>
+    <div class="tile tile-high" style="background:linear-gradient(135deg,#b85010,#e07030)">Unit 6<br><small>15 rows / 25 marks</small><br><small>HIGH</small></div>
+    <div class="tile tile-high" style="background:linear-gradient(135deg,#0a3a6a,#1a5a9a)">Unit 1<br><small>14 rows / 25 marks</small><br><small>HIGH</small></div>
+    <div class="tile tile-high" style="background:linear-gradient(135deg,#0a3a6a,#1a5a9a)">Unit 4<br><small>14 rows / 23 marks</small><br><small>HIGH</small></div>
+    <div class="tile tile-high" style="background:linear-gradient(135deg,#0a3a6a,#1a5a9a)">Unit 5<br><small>12 rows / 22 marks</small><br><small>HIGH</small></div>
+    <div class="tile tile-high" style="background:linear-gradient(135deg,#0a3a6a,#1a5a9a)">Unit 2<br><small>12 rows / 19 marks</small><br><small>HIGH</small></div>
+  </div>
+  <table>
+    <thead><tr><th>Unit</th><th>Priority</th><th>Must-master items</th><th>Marks signal</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Unit 8</strong></td><td><span class="priority-vh">Very High</span></td><td>Equilibrium, taxes, incidence, price controls, surplus/DWL</td><td>30 rows, 67 visible marks</td></tr>
+      <tr><td><strong>Unit 7</strong></td><td><span class="priority-vh">Very High</span></td><td>MR=MC, monopoly, elasticity, profit rectangle, markup, DWL</td><td>23 rows, 46 marks</td></tr>
+      <tr><td><strong>Unit 3</strong></td><td><span class="priority-vh">Very High</span></td><td>MRS/MRT, feasible set, wage effects, income/substitution</td><td>29 rows, 44 marks</td></tr>
+      <tr><td><strong>Unit 10</strong></td><td><span class="priority-vh">Very High</span></td><td>MSC/MSB, externalities, Pigouvian policy, public goods, Coase</td><td>20 rows, 29 marks</td></tr>
+      <tr><td><strong>Unit 6</strong></td><td><span class="priority-h">High</span></td><td>Employment rent, best response, labour discipline, no-shirk wage</td><td>15 rows, 25 marks</td></tr>
+      <tr><td><strong>Unit 1</strong></td><td><span class="priority-h">High</span></td><td>GDP, PPP, capitalism, inequality, planetary limits</td><td>14 rows, 25 marks</td></tr>
+      <tr><td><strong>Unit 4</strong></td><td><span class="priority-h">High</span></td><td>Best responses, Nash, dominance, social dilemmas, Pareto</td><td>14 rows, 23 marks</td></tr>
+      <tr><td><strong>Unit 5</strong></td><td><span class="priority-h">High</span></td><td>Angela-Bruno, feasibility, bargaining, fairness, MRS=MRT</td><td>12 rows, 22 marks</td></tr>
+      <tr><td><strong>Unit 2</strong></td><td><span class="priority-h">High</span></td><td>Opportunity cost, rent, AP/MP, isocost, technology choice</td><td>12 rows, 19 marks</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- STUDY ROUTES -->
+<section class="section" id="study-route" data-section="study-route">
+  <h2>Study Routes</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="route-read" data-section="study-route"> Done + understood</label>
+  <details open><summary>7-Day Route</summary>
+  <table>
+    <thead><tr><th>Day</th><th>Focus</th><th>Output</th><th>Pass gate</th><th>Time</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Heatmap + negative marking + format + Unit 8 definitions</td><td>Know exam structure; complete Unit 8 definitions</td><td>Can explain Qd=Qs and tax wedge</td><td>90 min</td></tr>
+      <tr><td>2</td><td>Unit 8 full: equilibrium, tax, controls, surplus/DWL</td><td>Worked examples; graph redraws; Unit 8 practice</td><td>Can solve equilibrium, tax revenue, DWL without notes</td><td>2.5 h</td></tr>
+      <tr><td>3</td><td>Unit 7: MR=MC, monopoly, profit, elasticity + Unit 10 externalities</td><td>MR=MC drills; Pigouvian tax/subsidy; graph redraws</td><td>Can find Qm, Pm, profit, DWL and Q*</td><td>2.5 h</td></tr>
+      <tr><td>4</td><td>Unit 3: MRS/MRT, working hours, wage effects</td><td>Graph redraws; separate substitution and income effects</td><td>Can explain MRS≠MRT and why hours are ambiguous</td><td>2 h</td></tr>
+      <tr><td>5</td><td>Unit 6: Employment rent + Unit 4: Nash/Pareto + Unit 5: Angela-Bruno</td><td>Rent calculations; payoff matrices; feasibility tests</td><td>Can calculate rent and list Nash equilibria</td><td>2.5 h</td></tr>
+      <tr><td>6</td><td>Units 2 and 1: isocost, rent, GDP, PPP</td><td>Formula drills; short paragraphs on GDP critique</td><td>Can calculate OC and explain GDP omissions</td><td>2 h</td></tr>
+      <tr><td>7</td><td>War Room final: Section C templates, Final Boss, Panic Lines</td><td>Timed practice; mistake log filled</td><td>Can write a full Section C answer with graph/formula</td><td>3 h</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>48-Hour Emergency Loop</summary>
+  <table>
+    <thead><tr><th>Block</th><th>Time</th><th>Output</th><th>Gate</th></tr></thead>
+    <tbody>
+      <tr><td>1. Unit 8 tax/control calc drill</td><td>60 min</td><td>Revenue, DWL, controls solved</td><td>Can solve without notes</td></tr>
+      <tr><td>2. Unit 7 MR=MC drill</td><td>60 min</td><td>Q, P, profit, markup solved</td><td>Read price from demand every time</td></tr>
+      <tr><td>3. Unit 10 externality + Pigouvian</td><td>60 min</td><td>Qm, Q*, tax/subsidy solved</td><td>MSC=MPC+MEC correct every time</td></tr>
+      <tr><td>4. Unit 3 graph redraw</td><td>45 min</td><td>Budget/IC graph + effects separated</td><td>Can label axes, optimum, and name both effects</td></tr>
+      <tr><td>5. Units 4+5+6 rapid fire</td><td>60 min</td><td>Nash, rent, feasibility done</td><td>Nash identified correctly; rent uses net values</td></tr>
+      <tr><td>6. Section C timed writing</td><td>60 min</td><td>2 full answers written and self-marked</td><td>Formula + graph + interpretation in every answer</td></tr>
+      <tr><td>7. Panic Lines + sleep</td><td>30 min</td><td>Review panic lines, set alarm</td><td>Sleep. Confidence not cramming.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Emergency routes by time</summary>
+  <div class="grid">
+    <div class="card"><strong>24 hours left:</strong> Panic lines, formulas, top graphs, T/F traps, Section C templates only. No new low-priority details. Sleep matters.</div>
+    <div class="card"><strong>3 days left:</strong> Unit 8 tax/controls, Unit 7 MR=MC, Unit 10 externalities, Unit 3 MRS/MRT, Nash/Pareto. Templates and formula drills only.</div>
+    <div class="card"><strong>Morning of exam:</strong> Negative marking rules, formula recall, graph labels, confusion pairs. Do not attempt new questions that will shake confidence.</div>
+  </div></details>
+</section>
+
+<!-- WAR ROOM: NEGATIVE MARKING -->
+<section class="section" id="warroom-format" data-section="warroom">
+  <h2>A3 Format and Negative Marking Strategy</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="wr-format" data-section="warroom"> Done + understood</label>
+  <div class="grid">
+    <div class="card" style="border-top:4px solid var(--red)"><h3>Section A: True/False</h3><p>Negative marking: correct answers earn marks, wrong answers lose marks. <strong>Answer only when you can state the correction rule in one sentence.</strong> Leave blank when guessing.</p></div>
+    <div class="card" style="border-top:4px solid var(--darker-orange)"><h3>Section B: MCQ</h3><p>Eliminate options by model first: price-setting or price-taking, private or social, movement or shift, Nash or Pareto. Do not pick from vibes — pick because the graph/formula confirms it.</p></div>
+    <div class="card" style="border-top:4px solid var(--dark-green)"><h3>Section C</h3><p>Show calculations. Label axes. State formula before substituting. Marks come from: axes, curves, equilibrium, policy/social outcome, shaded welfare area, interpretation.</p></div>
+  </div>
+  <details><summary>Decision rules</summary>
+  <ul>
+    <li>Answer T/F if you can identify the exact trap.</li>
+    <li>Skip when all you have is a vibe and negative marking applies.</li>
+    <li>For MCQs: eliminate options that use the wrong model.</li>
+    <li>For graphs: write the condition next to the graph: MR=MC, Qd=Qs, MSC=MPC+MEC, MRS=MRT.</li>
+    <li>For calculations: write units and use post-policy quantities after taxes or controls.</li>
+  </ul></details>
+</section>
+
+<!-- FORMULA BANK -->
+<section class="section" id="formulas" data-section="formulas">
+  <h2>Formula and Calculation Bank</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="formulas-read" data-section="formulas"> Formulas reviewed</label>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="formulas-drill" data-section="formulas"> Formulas drilled (covered and recalled)</label>
+  <div class="card muted" style="margin-bottom:12px">Study route: First pass read. Second pass cover and recall. Third pass redo mistakes.</div>
+  <table>
+    <thead><tr><th>Formula</th><th>Unit</th><th>Rule</th><th>Trap</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td><strong>GDP</strong></td><td>U1</td><td>Market value of final goods/services produced in a country in a period.</td><td>Treating GDP as wellbeing.</td><td>Unpaid household work omitted from GDP even if welfare rises.</td></tr>
+      <tr><td><strong>GDP per capita</strong></td><td>U1</td><td>GDP ÷ population</td><td>Ignoring inequality — it is an average.</td><td>GDP 1,000,000 / 1,000 = R1,000 per person.</td></tr>
+      <tr><td><strong>Growth rate</strong></td><td>U1</td><td>((new – old) / old) × 100</td><td>Dividing by the new value.</td><td>(8016 – 7636)/7636 × 100 = 4.98%</td></tr>
+      <tr><td><strong>Opportunity cost</strong></td><td>U2</td><td>Value of next best alternative forgone.</td><td>Listing all alternatives.</td><td>Studying means losing R200 wages + leisure value.</td></tr>
+      <tr><td><strong>Economic rent</strong></td><td>U2</td><td>Chosen payoff – next best payoff</td><td>Calling all income rent.</td><td>Job R700 – reservation R500 = rent R200.</td></tr>
+      <tr><td><strong>Isocost slope</strong></td><td>U2</td><td>–w/r (K vertical, L horizontal)</td><td>Confusing with marginal product ratio.</td><td>w=900, r=3000 → slope = –0.3</td></tr>
+      <tr><td><strong>MP</strong></td><td>U2</td><td>ΔOutput / ΔInput</td><td>Using total output instead.</td><td>Output rises 300 when L rises 15 → MP=20.</td></tr>
+      <tr><td><strong>AP</strong></td><td>U2</td><td>Total output / input quantity</td><td>Using ΔOutput.</td><td>Q=600, L=30 → AP=20.</td></tr>
+      <tr><td><strong>MRS</strong></td><td>U3</td><td>Slope of indifference curve (subjective trade-off).</td><td>Confusing with MRT.</td><td>If 20 pizzas = 5 milkshakes in preferences, MRS=4.</td></tr>
+      <tr><td><strong>MRT</strong></td><td>U3</td><td>Slope of feasible frontier (opportunity cost from constraint).</td><td>Calling it a preference.</td><td>Forgone R400 consumption per free hour → MRT=400.</td></tr>
+      <tr><td><strong>Optimum condition</strong></td><td>U3</td><td>MRS = MRT at interior optimum</td><td>Assuming every feasible point is optimal.</td><td>MRS > MRT → choose more of the good valued highly.</td></tr>
+      <tr><td><strong>Budget constraint</strong></td><td>U3</td><td>c = w(24 – t) + V, where t = free time, V = unearned income</td><td>Putting work time on free-time axis.</td><td>c = 200(24 – t)</td></tr>
+      <tr><td><strong>Nash equilibrium</strong></td><td>U4</td><td>Mutual best response — no player wants to deviate unilaterally.</td><td>Assuming Nash is efficient or fair.</td><td>Pollute/Pollute when Pollute dominates Clean for both firms.</td></tr>
+      <tr><td><strong>Pareto improvement</strong></td><td>U5</td><td>At least one better off, no one worse off.</td><td>Ignoring one person made worse off.</td><td>(2,2) → (3,2): improvement for P1, neutral for P2.</td></tr>
+      <tr><td><strong>Employment rent (hourly)</strong></td><td>U6</td><td>(Net job value per hour) – (reservation value per hour)</td><td>Using gross wage only.</td><td>Net job value 90–25=65; benefits 30; hourly rent=35.</td></tr>
+      <tr><td><strong>Total employment rent</strong></td><td>U6</td><td>Hourly rent × hours/week × expected weeks unemployed</td><td>Forgetting unemployment duration.</td><td>35 × 40 × 10 = R14,000</td></tr>
+      <tr><td><strong>Cost per efficiency unit</strong></td><td>U6</td><td>w / e</td><td>Using e/w when asked for cost.</td><td>w=60, e=0.6 → cost = 100</td></tr>
+      <tr><td><strong>TR</strong></td><td>U7</td><td>P × Q</td><td>Using old price with new quantity.</td><td>R40 × 100 = R4,000</td></tr>
+      <tr><td><strong>MR from linear demand</strong></td><td>U7</td><td>If P = a – bQ then MR = a – 2bQ</td><td>Not doubling the slope.</td><td>P=100–2Q → MR=100–4Q</td></tr>
+      <tr><td><strong>Monopoly output</strong></td><td>U7</td><td>Set MR=MC, solve Q, read P from demand.</td><td>Using P=MC; reading P from MR.</td><td>100–4Q=20 → Q=20; P=100–2(20)=60</td></tr>
+      <tr><td><strong>Profit</strong></td><td>U7</td><td>(P – AC) × Q</td><td>Using MC instead of AC.</td><td>(60–40)×20 = R400</td></tr>
+      <tr><td><strong>Markup</strong></td><td>U7</td><td>P – MC</td><td>Using AC as MC.</td><td>P=60, MC=20 → markup=40</td></tr>
+      <tr><td><strong>Elasticity</strong></td><td>U7</td><td>|% ΔQ / % ΔP|</td><td>Dropping interpretation or using slope.</td><td>P↑10%, Q↓15% → elasticity=1.5</td></tr>
+      <tr><td><strong>Equilibrium</strong></td><td>U8</td><td>Set Qd = Qs or demand price = supply price; solve.</td><td>Stopping at Q; not finding P.</td><td>68–0.02Q = 28+0.005Q → solve for Q then P.</td></tr>
+      <tr><td><strong>Tax revenue</strong></td><td>U8</td><td>Tax per unit × Q <em>after</em> tax</td><td>Using pre-tax Q.</td><td>Tax R30, Q=700 → revenue R21,000</td></tr>
+      <tr><td><strong>DWL (tax)</strong></td><td>U8</td><td>½ × tax wedge × (Q* – Qt)</td><td>Using full taxed quantity as base.</td><td>Tax=10, Q falls 100→80 → DWL=½×10×20=100</td></tr>
+      <tr><td><strong>Shortage (ceiling)</strong></td><td>U8</td><td>Qd – Qs at ceiling price</td><td>Calling non-binding ceiling a shortage.</td><td>P=11: Qd=21, Qs=3 → shortage=18</td></tr>
+      <tr><td><strong>Surplus (floor)</strong></td><td>U8</td><td>Qs – Qd at floor price</td><td>Using equilibrium Q.</td><td>P=5: Qs=9000, Qd=5000 → surplus=4000</td></tr>
+      <tr><td><strong>MSC</strong></td><td>U10</td><td>MPC + MEC</td><td>Confusing MSC with MEC alone.</td><td>MPC=100+Q, MEC=2Q → MSC=100+3Q</td></tr>
+      <tr><td><strong>Pigouvian tax</strong></td><td>U10</td><td>MEC at efficient quantity Q*</td><td>Using total external damage at Qm.</td><td>MEC=2Q, Q*=150 → tax=300</td></tr>
+      <tr><td><strong>Pigouvian subsidy</strong></td><td>U10</td><td>MEB at efficient quantity Q*</td><td>Taxing a positive externality.</td><td>MEB=1000–Q, Q*=125 → subsidy=875</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- T/F DANGER BANK -->
+<section class="section" id="tf" data-section="tf">
+  <h2>True/False Danger Bank</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="tf-read" data-section="tf"> T/F bank reviewed</label>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="tf-drill" data-section="tf"> T/F bank drilled (covered answers)</label>
+  <div class="card muted" style="margin-bottom:10px">Cover the Answer column. State the rule before revealing. Only answer in exam when you can state the rule.</div>
+  <table>
+    <thead><tr><th>Statement</th><th>T/F</th><th>Rule / Why</th><th>Unit</th></tr></thead>
+    <tbody id="tfTableBody">
+    </tbody>
+  </table>
+</section>
+
+<!-- MCQ TRAP BANK -->
+<section class="section" id="mcq" data-section="mcq">
+  <h2>MCQ Trap Bank</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="mcq-read" data-section="mcq"> MCQ bank reviewed</label>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="mcq-drill" data-section="mcq"> MCQ bank drilled</label>
+  <div id="mcqList"></div>
+</section>
+
+<!-- MARKETS: UNIT 8 -->
+<div class="unit-header" id="unit8-header">
+  <h2>Markets — Unit 8: Competitive Markets, Taxes and Price Controls</h2>
+</div>
+<section class="section" id="unit8" data-section="unit8">
+  <h2>Unit 8: Competitive Markets</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-defs" data-section="unit8"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-equil" data-section="unit8"> Equilibrium calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-tax" data-section="unit8"> Tax/DWL calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-controls" data-section="unit8"> Price controls done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-graphs" data-section="unit8"> Graphs redrawn from memory</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-practice" data-section="unit8"> Practice completed closed-book</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u8-sheet" data-section="unit8"> One-page sheet done</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Unit 8 models markets with many buyers and sellers where no single participant sets price. Demand represents willingness to pay (slopes down). Supply represents willingness to accept/MC (slopes up). Competitive equilibrium: Qd=Qs — market clears. The individual price-taking firm faces horizontal demand at market price and chooses q where P=MC.</p>
+  <p>Policy: a <strong>price ceiling</strong> (max price) binds only below equilibrium → creates shortage (Qd&gt;Qs). A <strong>price floor</strong> (min price) binds only above equilibrium → creates surplus (Qs&gt;Qd). A <strong>per-unit tax</strong> creates a wedge between buyer price and seller price; post-tax quantity falls; tax revenue = tax × Qt; DWL = ½ × tax × (Q* – Qt).</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Plain</th><th>Exam use</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Consumer surplus (CS)</td><td>Buyer gains from paying less than WTP.</td><td>Area below demand and above price.</td><td>Do not put CS below supply.</td></tr>
+      <tr><td>Producer surplus (PS)</td><td>Seller gains above WTA/MC.</td><td>Area above supply and below price.</td><td>Do not call PS profit.</td></tr>
+      <tr><td>Tax wedge</td><td>Gap between buyer price and seller price.</td><td>Pbuyer – Pseller = t at post-tax Q.</td><td>Legal payer ≠ economic burden.</td></tr>
+      <tr><td>Tax incidence</td><td>Economic burden of a tax.</td><td>Less elastic side bears more burden.</td><td>Do not reverse elasticity rule.</td></tr>
+      <tr><td>DWL</td><td>Lost total surplus from blocked beneficial trades.</td><td>Triangle between Q* and Qt.</td><td>Tax DWL base is lost trades, not taxed Q.</td></tr>
+      <tr><td>Zero economic profit</td><td>Normal return after opportunity costs.</td><td>Long-run competitive equilibrium condition.</td><td>Not zero accounting profit.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Theory: Surplus and efficiency</summary>
+  <p>Total surplus = CS + PS. At competitive equilibrium, all units where WTP ≥ MC are traded → efficient. Any policy reducing Q below Q* creates DWL. After a tax: welfare = remaining CS + remaining PS + tax revenue; the triangle lost is DWL.</p>
+  <p><strong>Long-run competitive equilibrium trap:</strong> Entry and exit push economic profit → 0. At zero profit, P = min AC, and since P = MC, we get MC = AC at minimum. So long-run equilibrium condition is P = MC = min AC.</p></details>
+  <details><summary>Graphs to redraw (text-only redraw cards)</summary>
+  <div class="grid">
+    <div class="card"><strong>1. Demand/supply equilibrium</strong><br>Axes: Q (x), P (y). Draw D downward, S upward. Mark P*, Q*. Label D, S, E. Sentences: Qd=Qs at P*; last unit has WTP=WTA. Trap: do not label shortage at equilibrium.</div>
+    <div class="card"><strong>2. Tax wedge, revenue, DWL</strong><br>Draw D, S, then S+tax shifted up. Mark Qt, Pbuyer, Pseller. Revenue rectangle = tax × Qt. DWL triangle from Qt to Q*. Trap: use Qt not Q* for revenue.</div>
+    <div class="card"><strong>3. Price ceiling (binding)</strong><br>Horizontal line below P*. At ceiling price: Qd (right) &gt; Qs (left) = shortage. Trap: ceiling above P* is non-binding.</div>
+    <div class="card"><strong>4. Price floor (binding)</strong><br>Horizontal line above P*. At floor price: Qs (right) &gt; Qd (left) = surplus. Trap: floor below P* is non-binding.</div>
+    <div class="card"><strong>5. CS and PS triangles</strong><br>CS: triangle above price, below D, left of Q*. PS: triangle below price, above S, left of Q*. Shade separately. Trap: never swap positions.</div>
+    <div class="card"><strong>6. Price-taking firm P=MC</strong><br>Horizontal P=MR line at market price. MC curve (U-shape or upward). AC curve. Firm produces where P=MC. Trap: no downward demand for individual price-taker.</div>
+  </div></details>
+  <details><summary>Worked examples</summary>
+  <div class="card"><strong>A. Equilibrium calculation</strong><br>Given: Qd = 68 – 0.02P, Qs = 28 + 0.005P. Set equal: 68 – 0.02P = 28 + 0.005P → 40 = 0.025P → P* = 1,600; Q* = 68 – 0.02(1600) = 36. <em>Trap: stop at Q only.</em></div>
+  <div class="card"><strong>B. Per-unit tax R20</strong><br>Before: Q=100, P=50. After tax: Qt=80, Pbuyer=62, Pseller=42. Tax revenue = 20 × 80 = R1,600. DWL = ½ × 20 × (100–80) = R200. <em>Trap: use Qt=80 not Q=100.</em></div>
+  <div class="card"><strong>C. Binding price ceiling at R11</strong><br>Qd=21, Qs=3 at P=11. Shortage = 21–3 = 18 units. <em>Trap: check if ceiling is below equilibrium first.</em></div>
+  <div class="card"><strong>D. Price floor surplus</strong><br>Floor at P=5: Qs=9,000, Qd=5,000. Surplus = 4,000 units. <em>Trap: use floor-price quantities, not equilibrium quantities.</em></div></details>
+  <details><summary>T/F traps for Unit 8</summary>
+  <ul>
+    <li>A price ceiling binds when it is <em>below</em> equilibrium. (If above → non-binding.) TRUE.</li>
+    <li>Tax revenue uses <em>post-tax</em> quantity. Using pre-tax Q is the classic trap. TRUE.</li>
+    <li>The legal taxpayer always bears the economic burden. FALSE — incidence depends on elasticities.</li>
+    <li>In long-run competitive equilibrium, MC = AC at minimum average cost. TRUE. Entry/exit → zero profit → P = min AC, P=MC, so MC=AC.</li>
+    <li>A demand shift and a movement along demand are the same. FALSE — shift changes all Q at every P; movement follows price change.</li>
+  </ul></details>
+  <details><summary>Section C template: Tax welfare analysis</summary>
+  <div class="card">
+    <strong>Template:</strong><br>
+    1. "A per-unit tax creates a wedge between buyer price and seller price."<br>
+    2. State wedge = Pbuyer – Pseller = tax.<br>
+    3. Revenue = tax × Qt (post-tax quantity).<br>
+    4. DWL = ½ × tax × (Q* – Qt).<br>
+    5. "The tax reduces total surplus because [Qt] mutually beneficial trades no longer take place."<br>
+    6. Incidence: "The less elastic side bears more burden, regardless of legal liability."<br>
+    7. Compare with binding price ceiling: "creates shortage, not revenue."<br>
+    Marks: 1 model + 2 calc + 2 graph + 2 incidence + 2 ceiling compare + 1 trap = 10.
+  </div></details>
+</section>
+
+<!-- UNIT 7 -->
+<div class="unit-header" id="unit7-header">
+  <h2>Markets — Unit 7: Price-Setting Firms, MR=MC, Monopoly</h2>
+</div>
+<section class="section" id="unit7" data-section="unit7">
+  <h2>Unit 7: Monopoly and Price-Setting Firms</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-defs" data-section="unit7"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-mr-mc" data-section="unit7"> MR=MC calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-profit" data-section="unit7"> Profit/markup done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-elastic" data-section="unit7"> Elasticity/TR done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-graphs" data-section="unit7"> Graphs redrawn from memory</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-practice" data-section="unit7"> Practice completed closed-book</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>A price-setting firm faces a downward-sloping demand curve. Because lowering price to sell one more unit lowers revenue on all previous units, <strong>MR lies below demand</strong>. Profit maximisation: set MR=MC, then read price from demand (not MR). Profit = (P – AC) × Q. Markup = P – MC. Monopoly underproduces relative to the efficient output (where D=MC), creating DWL.</p></details>
+  <details><summary>Key rules</summary>
+  <ul>
+    <li>If P = a – bQ, then <strong>MR = a – 2bQ</strong> (same intercept, double slope).</li>
+    <li>Set MR = MC → solve Q. Then substitute Q into demand → get P.</li>
+    <li>Profit = (P – AC) × Q. Markup = P – MC.</li>
+    <li>Efficient output: where demand = MC (Qeff). DWL = triangle between Qm and Qeff.</li>
+    <li>Elasticity: elastic → MR positive; unit elastic → MR=0; inelastic → MR negative. Monopolist never chooses inelastic portion.</li>
+    <li>TR and elasticity: elastic demand → price cut raises TR. Inelastic demand → price rise raises TR.</li>
+  </ul></details>
+  <details><summary>Worked example</summary>
+  <div class="card"><strong>Full calculation</strong><br>
+  Given: P = 100 – 2Q, MC = 20, AC = 40 at chosen output.<br>
+  MR = 100 – 4Q. Set MR=MC: 100–4Q=20 → 4Q=80 → <strong>Qm=20</strong>.<br>
+  Read P from demand: P = 100–2(20) = <strong>R60</strong>.<br>
+  Profit = (60–40)×20 = <strong>R400</strong>. Markup = 60–20 = <strong>R40</strong>.<br>
+  Efficient Q where D=MC: 100–2Q=20 → Qeff=40. <strong>DWL</strong> = ½×(60–20)×(40–20) = R400 triangle.<br>
+  <em>Trap: never read P from MR. Never use P=MC for monopoly.</em></div></details>
+  <details><summary>Graphs to redraw</summary>
+  <div class="grid">
+    <div class="card"><strong>Price-setting firm</strong><br>Axes: Q (x), P/cost (y). Draw D downward, MR below D with same intercept and steeper slope. Draw MC and AC. Mark: Qm where MR=MC, read Pm from D. AC at Qm. Profit rectangle from AC to Pm over Qm units. Qeff where D=MC. DWL triangle between Qm and Qeff.</div>
+    <div class="card"><strong>Elasticity along linear demand</strong><br>Upper half (elastic): TR rises as Q rises / P falls. Midpoint: unit elastic, MR=0. Lower half (inelastic): TR falls as Q falls / P rises. Monopolist produces in elastic region.</div>
+  </div></details>
+  <details><summary>T/F traps for Unit 7</summary>
+  <ul>
+    <li>For a monopolist, MR equals demand. FALSE — MR lies below demand.</li>
+    <li>A profit-maximising monopoly uses P=MC. FALSE — it uses MR=MC then reads P from demand.</li>
+    <li>If demand is elastic, a price increase raises TR. FALSE — elastic: Q falls more than P rises → TR falls.</li>
+    <li>Slope and elasticity are identical. FALSE — elasticity depends on slope and the P/Q ratio.</li>
+    <li>Monopoly underproduces. TRUE — Qm &lt; Qeff where D=MC.</li>
+    <li>AC is minimised where MC crosses AC from below. TRUE.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 10 -->
+<div class="unit-header" id="unit10-header">
+  <h2>Markets — Unit 10: Externalities, Public Goods, Market Failure</h2>
+</div>
+<section class="section" id="unit10" data-section="unit10">
+  <h2>Unit 10: Externalities and Public Goods</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-defs" data-section="unit10"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-neg" data-section="unit10"> Negative externality calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-pos" data-section="unit10"> Positive externality calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-goods" data-section="unit10"> Goods matrix done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-graphs" data-section="unit10"> Graphs redrawn from memory</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u10-practice" data-section="unit10"> Practice completed closed-book</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>A negative externality occurs when production/consumption imposes costs on third parties not captured in market prices. Private market ignores MEC → overproduces (Qm &gt; Q*). Fix: Pigouvian tax = MEC at Q*. A positive externality means private demand understates social value → underproduces (Qm &lt; Q*). Fix: Pigouvian subsidy = MEB at Q*.</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Meaning</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>MSC = MPC + MEC</td><td>Total marginal social cost includes private and external.</td><td>MSC ≠ MEC alone.</td></tr>
+      <tr><td>MSB = MPB + MEB</td><td>Total marginal social benefit includes private and external.</td><td>Do not use for negative externalities.</td></tr>
+      <tr><td>Pigouvian tax</td><td>Equals MEC at efficient Q*. Makes firm internalise external cost.</td><td>Not equal to total external damage at Qm.</td></tr>
+      <tr><td>Pigouvian subsidy</td><td>Equals MEB at efficient Q*. Closes gap between MSB and MPB.</td><td>Do not tax a positive externality.</td></tr>
+      <tr><td>Coase theorem</td><td>If property rights are clear and bargaining costs are low, private bargaining can achieve efficient outcome.</td><td>Fails with many parties or high bargaining costs.</td></tr>
+      <tr><td>Public good</td><td>Non-rival (one person's use doesn't reduce others') and non-excludable (can't prevent access).</td><td>"Public good" is not "government-provided good".</td></tr>
+      <tr><td>Club good</td><td>Non-rival but excludable (e.g. streaming subscriptions).</td><td>Not the same as public good.</td></tr>
+      <tr><td>Common good</td><td>Rival but non-excludable (e.g. fish in the ocean).</td><td>Subject to tragedy of the commons.</td></tr>
+      <tr><td>Moral hazard</td><td>Hidden <em>action</em> after an agreement changes behaviour.</td><td>Do not swap with adverse selection.</td></tr>
+      <tr><td>Adverse selection</td><td>Hidden <em>type</em> before an agreement leads to adverse pool.</td><td>Timing: before = adverse selection; after = moral hazard.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Worked example: Negative externality</summary>
+  <div class="card"><strong>Full calculation</strong><br>
+  P=300–Q, MPC=60+Q, MEC=40.<br>
+  MSC = MPC+MEC = 100+Q.<br>
+  Private equilibrium: D=MPC → 300–Q=60+Q → 240=2Q → <strong>Qm=120</strong>.<br>
+  Efficient: D=MSC → 300–Q=100+Q → 200=2Q → <strong>Q*=100</strong>.<br>
+  Market <em>overproduces</em> by 20 units.<br>
+  Pigouvian tax = MEC at Q*=100 → tax = <strong>R40</strong> per unit.<br>
+  DWL = triangle between Q*=100 and Qm=120.<br>
+  <em>Trap: tax = MEC at Q*, not total damage at Qm.</em></div></details>
+  <details><summary>Worked example: Positive externality</summary>
+  <div class="card"><strong>Full calculation — Q* &gt; Qm (underproduction confirmed)</strong><br>
+  MC = 20 + Q, MPB = 100 − Q, MEB = 20.<br>
+  MSB = MPB + MEB = 120 − Q.<br><br>
+  <strong>Private equilibrium (MPB = MC):</strong><br>
+  100 − Q = 20 + Q → 80 = 2Q → <strong>Qm = 40</strong>.<br><br>
+  <strong>Efficient output (MSB = MC):</strong><br>
+  120 − Q = 20 + Q → 100 = 2Q → <strong>Q* = 50</strong>.<br><br>
+  The market <em>underproduces</em> by 10 units because private buyers ignore MEB.<br>
+  MSB lies <em>above</em> MPB. Q* = 50 &gt; Qm = 40. ✔<br><br>
+  <strong>Pigouvian subsidy</strong> = MEB at Q* = <strong>R20 per unit</strong>.<br>
+  The subsidy shifts effective demand up by MEB, closing the gap between MPB and MSB.<br><br>
+  <em>Trap: positive externalities cause underproduction (Qm &lt; Q*), not overproduction. The correction is a subsidy, not a tax. Q* &gt; Qm always for positive externalities.</em></div></details>
+  <details><summary>Goods classification matrix</summary>
+  <table>
+    <thead><tr><th></th><th>Excludable</th><th>Non-excludable</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rival</strong></td><td>Private good (food, clothing)</td><td>Common good (fish, open-access land)</td></tr>
+      <tr><td><strong>Non-rival</strong></td><td>Club good (streaming, toll road with capacity)</td><td>Public good (national defence, knowledge)</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Moral hazard vs adverse selection MCQs (v1.3 fix)</summary>
+  <div class="grid">
+    <div class="card"><strong>MCQ 1:</strong> A high-risk person buys insurance before the insurer can observe risk type.<br><strong>Answer: Adverse selection.</strong><br><em>Memo: hidden type BEFORE the contract.</em></div>
+    <div class="card"><strong>MCQ 2:</strong> After buying insurance, a person takes less care driving than before.<br><strong>Answer: Moral hazard.</strong><br><em>Memo: hidden action AFTER the contract.</em></div>
+    <div class="card"><strong>MCQ 3:</strong> A regulator wants to fix the problem where lower-risk customers leave the insurance pool because premiums are set for average risk.<br><strong>Answer: Adverse selection. Policy: screening or compulsory pooling.</strong><br><em>Deductibles and monitoring help moral hazard instead.</em></div>
+  </div></details>
+  <details><summary>T/F traps for Unit 10</summary>
+  <ul>
+    <li>Negative externalities cause overproduction in unregulated markets. TRUE.</li>
+    <li>MSC equals MPC plus MEC. TRUE.</li>
+    <li>MEC and MSC mean the same thing. FALSE.</li>
+    <li>Pigouvian tax equals total external damage at market quantity. FALSE — equals MEC at Q*.</li>
+    <li>Positive externalities cause underproduction. TRUE.</li>
+    <li>Public goods are goods provided by government. FALSE — non-rival and non-excludable.</li>
+    <li>Coase bargaining requires clear property rights and low bargaining costs. TRUE.</li>
+    <li>Moral hazard is hidden action AFTER agreement; adverse selection is hidden type BEFORE. TRUE.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 6 -->
+<div class="unit-header" id="unit6-header">
+  <h2>Markets — Unit 6: Employment Rent and Labour Discipline</h2>
+</div>
+<section class="section" id="unit6" data-section="unit6">
+  <h2>Unit 6: Employment Rent</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u6-defs" data-section="unit6"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u6-rent-calc" data-section="unit6"> Rent calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u6-graphs" data-section="unit6"> Graphs redrawn</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u6-practice" data-section="unit6"> Practice completed</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Employment rent is the economic value of keeping a job compared with losing it. Because effort is costly and not perfectly observable/contractible (<strong>incomplete contract</strong>), workers have an incentive to shirk. The firm pays a wage above the reservation wage to make job loss costly — creating rent and discipline. A higher wage on the best-response curve is not kindness; it is profit-maximising because it lowers the cost per efficiency unit.</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Meaning</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Employment rent</td><td>Net job value – reservation option (per period, per unit)</td><td>Not just the wage.</td></tr>
+      <tr><td>Reservation option</td><td>Best alternative to current job (unemployment benefit, other job)</td><td>Higher reservation option → less rent.</td></tr>
+      <tr><td>Incomplete contract</td><td>Effort level cannot be fully specified and enforced.</td><td>Do not assume effort is perfectly observable.</td></tr>
+      <tr><td>Cost per efficiency unit</td><td>w / e</td><td>Use e/w when asked for efficiency units per rand.</td></tr>
+      <tr><td>No-shirk wage</td><td>Wage high enough so job loss is costly enough to deter shirking.</td><td>Do not say high wages are kindness.</td></tr>
+      <tr><td>Involuntary unemployment</td><td>Workers would accept jobs at current wage but no jobs available.</td><td>Not the same as voluntary job refusal.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Worked example</summary>
+  <div class="card"><strong>Standard rent calculation</strong><br>
+  Worker earns <strong>R90/hr</strong>. Effort and travel costs: <strong>R25/hr</strong>. Unemployment benefits: <strong>R30/hr</strong>. Expected unemployment: <strong>10 weeks</strong>. Hours per week: <strong>40</strong>.<br><br>
+  Net job value = 90 – 25 = <strong>R65/hr</strong>.<br>
+  Hourly rent = 65 – 30 = <strong>R35/hr</strong>.<br>
+  Total rent = 35 × 40 × 10 = <strong>R14,000</strong>.<br><br>
+  This rent is costly to lose → incentive to supply effort even without perfect monitoring.<br>
+  <em>Traps: using R90 as rent; ignoring costs; mixing hourly/weekly units.</em></div></details>
+  <details><summary>T/F traps for Unit 6</summary>
+  <ul>
+    <li>Employment rent is simply the wage. FALSE — it is net job value minus reservation option.</li>
+    <li>Higher unemployment benefits always increase employment rent. FALSE — they improve reservation option → reduce rent.</li>
+    <li>A longer expected unemployment duration increases the cost of job loss. TRUE.</li>
+    <li>Labour discipline model assumes effort is perfectly contractible. FALSE.</li>
+    <li>Paying reservation wage gives no employment rent. TRUE.</li>
+    <li>Large firms face principal-agent problems. TRUE — ownership and control can be separated.</li>
+  </ul></details>
+</section>
+
+<!-- FOUNDATIONS HEADER -->
+<div class="unit-header" id="foundations-header" style="background:linear-gradient(90deg,var(--dark-green),var(--dark-blue))">
+  <h2>Foundations Units 3, 4, 5, 2, 1</h2>
+</div>
+
+<!-- UNIT 3 -->
+<section class="section" id="unit3" data-section="unit3">
+  <h2>Unit 3: Feasible Set, MRS/MRT, Working Hours</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u3-defs" data-section="unit3"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u3-mrs-mrt" data-section="unit3"> MRS/MRT explained</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u3-effects" data-section="unit3"> Substitution/income effects done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u3-graphs" data-section="unit3"> Graphs redrawn from memory</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u3-practice" data-section="unit3"> Practice completed closed-book</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Unit 3 asks: how does a worker choose between free time and consumption under scarcity? The budget constraint shows feasible combinations; indifference curves show preferences. <strong>Optimum: MRS = MRT</strong> at an interior tangency. When the wage rises: (1) free time becomes more expensive → substitution effect → more work; (2) worker is richer → income effect → may want more free time if it is a normal good. Net effect on hours is <em>ambiguous</em>.</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Plain</th><th>Exam use</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Feasible set</td><td>All combinations achievable under the constraint.</td><td>Contains affordable/attainable choices.</td><td>Feasible ≠ optimal.</td></tr>
+      <tr><td>MRS</td><td>Slope of indifference curve — subjective willingness to trade.</td><td>Preference trade-off at a point.</td><td>MRS is NOT the wage or MRT.</td></tr>
+      <tr><td>MRT</td><td>Slope of feasible frontier — objective feasible trade-off.</td><td>MRT = wage in the working-hours model.</td><td>MRT is NOT a preference.</td></tr>
+      <tr><td>Substitution effect</td><td>Change in consumption/free time due to changed relative price, holding utility constant.</td><td>Higher wage → free time more expensive → less free time.</td><td>Do not merge with income effect.</td></tr>
+      <tr><td>Income effect</td><td>Change due to changed purchasing power.</td><td>Higher wage → richer → may want more free time if normal.</td><td>Do not assume it always increases work.</td></tr>
+      <tr><td>Normal good</td><td>Demand rises with income.</td><td>Free time is usually normal — income effect may reduce hours.</td><td>Do not ignore normal-good logic.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Graphs to redraw</summary>
+  <div class="grid">
+    <div class="card"><strong>1. Feasible set / budget constraint</strong><br>x-axis: free time. y-axis: consumption. Draw downward-sloping line from max-consumption intercept (0 free time) to max-free-time intercept (0 consumption). Shade feasible region below line. Mark one infeasible point above. <em>Trap: do not put hours worked on free-time axis.</em></div>
+    <div class="card"><strong>2. MRS = MRT optimum</strong><br>Draw budget constraint. Draw several ICs (convex). Mark tangency point (MRS=MRT). Mark one IC through a non-optimal feasible point to show it is on a lower IC. <em>Every feasible point is not optimal.</em></div>
+    <div class="card"><strong>3. Wage increase and effects</strong><br>Draw old budget line (flatter). Rotate to new steeper budget line (same free-time intercept if no unearned income). Mark old optimum (A) and new optimum (B). If B has less free time: substitution dominates. If B has more free time: income effect dominates. <em>Do not assume one outcome.</em></div>
+  </div></details>
+  <details><summary>Section C template: Wage change</summary>
+  <div class="card">
+    1. "The budget constraint shows feasible combinations of free time and consumption, with slope equal to the wage (MRT)."<br>
+    2. "A wage rise rotates the budget line: free time becomes more expensive."<br>
+    3. "Substitution effect: higher opportunity cost of free time pushes toward more work."<br>
+    4. "Income effect: higher income may increase demand for free time if it is a normal good."<br>
+    5. "Net effect on hours worked is ambiguous — depends on which effect dominates."<br>
+    Marks: 2 graph + 2 MRS/MRT + 2 substitution + 2 income + 1 ambiguity + 1 trap = 10.
+  </div></details>
+  <details><summary>T/F traps for Unit 3</summary>
+  <ul>
+    <li>A change in income changes the shape of indifference curves. FALSE — preferences shape ICs; income changes the budget constraint.</li>
+    <li>If a wage rises, every worker must work more hours. FALSE — income and substitution effects can oppose.</li>
+    <li>MRS measures what is feasible in production. FALSE — MRS measures preferences; MRT measures feasibility.</li>
+    <li>At interior optimum, MRS = MRT. TRUE.</li>
+    <li>The opportunity cost of one hour of free time is the wage forgone. TRUE.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 4 -->
+<section class="section" id="unit4" data-section="unit4">
+  <h2>Unit 4: Game Theory — Nash, Pareto, Social Dilemmas</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u4-defs" data-section="unit4"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u4-matrix" data-section="unit4"> Payoff matrices done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u4-nash" data-section="unit4"> Nash equilibria identified correctly</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u4-pareto" data-section="unit4"> Pareto comparisons done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u4-practice" data-section="unit4"> Practice completed</label>
+  </div>
+  <details open><summary>Core story and method</summary>
+  <p><strong>Method for finding Nash:</strong> For each cell, ask "would Player 1 deviate?" and "would Player 2 deviate?" A Nash equilibrium is where neither player wants to deviate unilaterally. Mark each player's best response (underline or circle within their payoffs for each opponent action). Nash = cell where both players have best response marked.</p>
+  <p><strong>Social dilemma:</strong> Individually rational behaviour leads to a collectively worse outcome. The Nash equilibrium is Pareto inefficient — another feasible outcome makes everyone better off.</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Meaning</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Best response</td><td>Action giving highest payoff for one player GIVEN the other player's action.</td><td>Compare the SAME player's payoffs — not across players.</td></tr>
+      <tr><td>Nash equilibrium</td><td>Mutual best response — no unilateral profitable deviation.</td><td>Nash ≠ fair, efficient or highest total payoff.</td></tr>
+      <tr><td>Dominant strategy</td><td>Best action regardless of what the other player does.</td><td>Stronger than Nash — check every opponent action separately.</td></tr>
+      <tr><td>Pareto improvement</td><td>At least one better off, no one worse off.</td><td>Must check BOTH players.</td></tr>
+      <tr><td>Pareto efficient</td><td>No Pareto improvement is feasible.</td><td>Efficient can still be very unfair.</td></tr>
+      <tr><td>Social dilemma</td><td>Nash leads to outcome worse for all than a cooperative outcome.</td><td>Nash can be Pareto inefficient.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Worked example: Pollution game</summary>
+  <div class="card"><strong>Payoff matrix: Clean vs Pollute</strong><br>
+  Clean/Clean: (4,4). Clean/Pollute: (1,6). Pollute/Clean: (6,1). Pollute/Pollute: (2,2).<br><br>
+  <strong>Find Nash:</strong><br>
+  If Firm B plays Clean → Firm A: Pollute(6) &gt; Clean(4) → A prefers Pollute.<br>
+  If Firm B plays Pollute → Firm A: Pollute(2) &gt; Clean(1) → A prefers Pollute.<br>
+  Pollute is Firm A's dominant strategy. By symmetry, Pollute dominates for Firm B too.<br>
+  <strong>Nash = Pollute/Pollute (2,2).</strong><br><br>
+  <strong>Social optimum:</strong> Clean/Clean (4,4) — total payoff 8 &gt; 4 at Nash.<br>
+  Clean/Clean is a <strong>Pareto improvement</strong> over Nash (both move from 2→4).<br>
+  <strong>Social dilemma:</strong> private incentives lead to (2,2) though (4,4) is better for both.<br>
+  <em>Trap: do not choose the cell with highest total payoff as Nash.</em></div></details>
+  <details><summary>T/F traps for Unit 4</summary>
+  <ul>
+    <li>A Nash equilibrium is always a dominant strategy equilibrium. FALSE — Nash needs mutual BR; dominance is stronger.</li>
+    <li>A Nash equilibrium is always Pareto efficient. FALSE — prisoner's dilemma Nash is Pareto inefficient.</li>
+    <li>A dominant strategy is the strategy that gives the largest total payoff. FALSE — it is best for that player against every opponent action.</li>
+    <li>In a payoff matrix, compare one player's payoff with the other player's payoff to find best responses. FALSE — compare same player's payoffs.</li>
+    <li>A social dilemma has no Nash equilibrium. FALSE — it has one, but it is collectively worse.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 5 -->
+<section class="section" id="unit5" data-section="unit5">
+  <h2>Unit 5: Angela-Bruno, Institutions, Bargaining and Fairness</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u5-defs" data-section="unit5"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u5-feasibility" data-section="unit5"> Feasibility tests done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u5-bargaining" data-section="unit5"> Bargaining and surplus done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u5-fairness" data-section="unit5"> Fairness distinction done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u5-practice" data-section="unit5"> Practice completed</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Institutions are the rules determining who can do what and who gets what. The Angela-Bruno model shows how bargaining power affects allocation. The <strong>feasible frontier</strong> shows technically possible allocations. The <strong>biological survival constraint (BSC)</strong> is the minimum Angela needs to survive. The <strong>reservation indifference curve (RIC)</strong> shows Angela's outside option — she must be at least as well off as without the agreement. A take-it-or-leave-it offer from Bruno can be voluntary (Angela accepts) and on the frontier (Pareto efficient) but still <em>unfair</em> if Bruno captures most surplus.</p>
+  <p><strong>Three tests to separate:</strong> Efficiency (on frontier / no Pareto improvement?), Voluntariness (on or above RIC?), Fairness (how is surplus distributed?).</p></details>
+  <details><summary>Numeric example (v1.3 gap fix)</summary>
+  <div class="card"><strong>Scenario: Total grain = 12</strong><br>
+  Angela biological survival minimum = 3. Angela reservation = 5. Bruno reservation = 4.<br>
+  <table style="margin-top:8px">
+    <thead><tr><th>Allocation</th><th>Angela</th><th>Bruno</th><th>Technical feasibility</th><th>Biological</th><th>Economic</th><th>Efficient/fair?</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>3</td><td>9</td><td>Yes (3+9=12)</td><td>Yes (≥3)</td><td>No (Angela &lt; reservation 5)</td><td>Bruno better off, Angela at survival only</td></tr>
+      <tr><td>B</td><td>5</td><td>7</td><td>Yes</td><td>Yes</td><td>Yes (both ≥ reservation)</td><td>Voluntary; efficient if on frontier; unfair if Bruno has power</td></tr>
+      <tr><td>C</td><td>7</td><td>5</td><td>Yes</td><td>Yes</td><td>Yes</td><td>More equitable split</td></tr>
+      <tr><td>D</td><td>9</td><td>3</td><td>Yes</td><td>Yes</td><td>No (Bruno &lt; reservation 4)</td><td>Bruno won't accept</td></tr>
+    </tbody>
+  </table>
+  <p><strong>Key conclusions:</strong> Bargaining power determines which economically feasible allocation is chosen. Efficiency and fairness are separate judgements. Allocation B may be voluntary and efficient but substantively unfair if Bruno can make take-it-or-leave-it offers.</p></div></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Meaning</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Institutions</td><td>Rules of the game — who can do what.</td><td>Not just laws; includes norms and property rights.</td></tr>
+      <tr><td>Feasible frontier</td><td>Boundary of technically possible allocations.</td><td>Being on the frontier is not the same as being fair.</td></tr>
+      <tr><td>BSC (Biological Survival Constraint)</td><td>Minimum Angela needs to survive.</td><td>NOT the same as the reservation IC.</td></tr>
+      <tr><td>Reservation IC</td><td>Minimum utility Angela gets from outside option.</td><td>NOT survival — it is her alternative option.</td></tr>
+      <tr><td>Pareto efficient allocation</td><td>No Pareto improvement is feasible.</td><td>Pareto efficient ≠ fair.</td></tr>
+      <tr><td>Procedural fairness</td><td>Was the process/rules fair?</td><td>Separate from substantive fairness.</td></tr>
+      <tr><td>Substantive fairness</td><td>Is the distribution fair?</td><td>Separate from voluntariness or efficiency.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>T/F traps for Unit 5</summary>
+  <ul>
+    <li>A Pareto efficient allocation is always fair. FALSE.</li>
+    <li>A voluntary exchange always reflects equal bargaining power. FALSE.</li>
+    <li>BSC and reservation IC are the same object. FALSE — BSC is survival; RIC is outside option preference.</li>
+    <li>A take-it-or-leave-it offer always gives both parties equal surplus. FALSE — proposer can capture most surplus.</li>
+    <li>A theft allocation can be Pareto efficient. TRUE — if no reallocation helps one without hurting the other.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 2 -->
+<section class="section" id="unit2" data-section="unit2">
+  <h2>Unit 2: Technology, Opportunity Cost and Isocost</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u2-defs" data-section="unit2"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u2-calc" data-section="unit2"> OC/rent/AP/MP calculations done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u2-isocost" data-section="unit2"> Isocost/technology choice done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u2-practice" data-section="unit2"> Practice completed</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Unit 2 asks how firms choose technology and what determines production efficiency. Every choice has an opportunity cost — the next best option forgone. Economic rent is the surplus over the next best. Firms choose among technologies based on isocost lines (input-price trade-offs). A dominated technology uses more of every input for the same output and is never chosen. Production exhibits diminishing marginal product in the Malthusian model: more labour eventually raises output less than proportionately.</p></details>
+  <details><summary>Key definitions</summary>
+  <table>
+    <thead><tr><th>Term</th><th>Rule</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>Opportunity cost</td><td>Value of next best alternative forgone.</td><td>List only the NEXT BEST, not all alternatives.</td></tr>
+      <tr><td>Economic rent</td><td>Chosen payoff – next best payoff.</td><td>Not the same as accounting profit or wage.</td></tr>
+      <tr><td>Isocost line</td><td>All input combinations with same total cost. Slope = –w/r.</td><td>Slope is input price ratio, not marginal product ratio.</td></tr>
+      <tr><td>Dominated technology</td><td>Uses more of every input for same output — never chosen.</td><td>A dominated technology cannot be cost-minimising.</td></tr>
+      <tr><td>MP (Marginal Product)</td><td>ΔOutput / ΔInput</td><td>Do not confuse with AP = output / input.</td></tr>
+      <tr><td>AP (Average Product)</td><td>Total output / input quantity</td><td>Not the same as MP.</td></tr>
+    </tbody>
+  </table></details>
+  <details><summary>Worked examples</summary>
+  <div class="grid">
+    <div class="card"><strong>Isocost technology choice</strong><br>w=R900/worker, r=R3,000/unit of capital. Isocost slope = –900/3000 = –0.3. A firm prefers the technology on the lowest isocost line (least expensive combination).</div>
+    <div class="card"><strong>MP and AP</strong><br>Labour rises from 20 to 35 (ΔL=15), output rises from 300 to 600 (ΔQ=300). MP = 300/15 = 20. AP at L=35: 600/35 = 17.1. <em>Trap: AP when asked for MP or vice versa.</em></div>
+    <div class="card"><strong>Economic rent</strong><br>Current job pays R700. Next best pays R500. Economic rent = R700 – R500 = R200. <em>Trap: calling all R700 rent.</em></div>
+  </div></details>
+  <details><summary>T/F traps for Unit 2</summary>
+  <ul>
+    <li>Ceteris paribus means changing all variables at once. FALSE — it means holding other factors constant.</li>
+    <li>Marginal product is total output divided by total labour. FALSE — that is AP; MP is ΔOutput/ΔInput.</li>
+    <li>A dominated technology can be cost-minimising. FALSE — dominated means more input for same output.</li>
+    <li>The slope of an isocost line depends on relative input prices. TRUE.</li>
+    <li>Economic rent is the same as wage. FALSE — rent is chosen payoff minus next best.</li>
+  </ul></details>
+</section>
+
+<!-- UNIT 1 -->
+<section class="section" id="unit1" data-section="unit1">
+  <h2>Unit 1: GDP, Capitalism, Inequality and Planetary Limits</h2>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u1-defs" data-section="unit1"> Definitions understood</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u1-gdp" data-section="unit1"> GDP critique done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u1-practice" data-section="unit1"> Practice completed</label>
+  </div>
+  <details open><summary>Core story</summary>
+  <p>Unit 1 introduces the long-run picture: how capitalism generated sustained growth (the hockey-stick GDP graph), why growth is unequal, and what GDP measures and omits. GDP = market value of final goods and services produced in a country in a period. GDP per capita = GDP ÷ population (an average that hides distribution). PPP adjusts for purchasing power differences across countries. Capitalism requires private property, markets and firms — not zero government. The Malthusian trap: population pressure offsets productivity gains. Planetary limits: growth cannot continue indefinitely on a finite planet.</p></details>
+  <details><summary>GDP critique — what to include in answers</summary>
+  <ul>
+    <li><strong>What GDP measures:</strong> paid market production at market prices; a useful summary of economic activity.</li>
+    <li><strong>What GDP omits:</strong> unpaid household work, leisure, inequality, environmental degradation, wellbeing dimensions not sold in markets.</li>
+    <li><strong>How to critique without dismissing:</strong> "GDP is a useful but incomplete measure. It captures market production but omits [X]. A better measure of wellbeing would also include [Y]."</li>
+    <li><strong>PPP:</strong> adjusts money values for local price differences → better cross-country comparison.</li>
+    <li><strong>Hockey-stick graph:</strong> GDP per capita was nearly flat for centuries; sharp rise after Industrial Revolution.</li>
+  </ul></details>
+  <details><summary>v1.3 Premium Section C exemplar: Unit 1 GDP novel application</summary>
+  <div class="premium-card">
+    <h3>Question (8–10 marks)</h3>
+    <p>"An IMF research paper finds that redistributing unpaid household work between men and women could raise measured GDP by 4%. Explain, using GDP measurement concepts, why this is possible. In your answer, explain why it would be wrong to say that GDP rises simply because the IMF transfers money, or because previously unpaid household work is automatically counted in GDP."</p>
+    <div class="card"><strong>What the examiner is testing:</strong> GDP definition, what is counted in GDP, market production vs non-market production, how unpaid work can enter GDP indirectly, and two common misconceptions.</div>
+    <div class="card"><strong>30-second planning box:</strong>
+      <ul><li>Define GDP: market value of paid final output.</li><li>Unpaid household work is not in GDP (not sold in markets).</li><li>Redistribution → more market production → higher GDP.</li><li>Misconception 1: IMF transfer ≠ domestic GDP rise.</li><li>Misconception 2: Unpaid work not automatically counted.</li></ul>
+    </div>
+    <details open><summary>Full model answer</summary>
+    <p class="answer">GDP measures the market value of final goods and services produced in a country during a given period. This means it counts only production that is exchanged in markets at a price. Unpaid household work — such as childcare, cooking and cleaning performed without payment — is generally excluded from measured GDP even if it contributes to household wellbeing, because it does not appear as a market transaction.</p>
+    <p class="answer">The IMF finding is possible because redistributing unpaid work could free up the time of one group to enter paid market employment. If women, for example, currently perform most unpaid household tasks and redistribution shifts some of those tasks to men (or to paid services), women can enter or expand their participation in paid work. This additional paid market production would be counted in GDP. In this way, unpaid work enters GDP indirectly — not because it is now counted directly, but because its redistribution enables more measured market activity.</p>
+    <p class="answer">It would be wrong to say GDP rises simply because the IMF transfers money. An international transfer from the IMF to individuals does not automatically generate new domestic production. GDP measures output, not income transfers. Receiving a transfer payment does not by itself increase the value of goods and services produced in the domestic economy.</p>
+    <p class="answer">It would also be wrong to say unpaid household work is automatically counted in GDP. By definition, GDP excludes non-market production. Even if unpaid household work has high social value, it does not enter GDP unless it is converted into a paid market transaction.</p>
+    <p class="answer">This question illustrates why GDP is an imperfect measure of wellbeing: it may undercount total economic activity when a large share of productive work is unpaid, and it may miss distributional dimensions that affect welfare.</p></details>
+    <p><strong>Mark allocation:</strong> 2 GDP definition + what counted; 2 mechanism (redistribution → market entry → higher measured output); 2 misconception 1 (transfer ≠ GDP); 2 misconception 2 (unpaid not automatic); 1 GDP limitation conclusion; 1 clarity = 10.</p>
+    <p><strong>80% vs 100%:</strong> 80% defines GDP and says redistribution enables market participation. 100% adds both misconceptions with clear reasoning and GDP-limitation conclusion.</p>
+    <p><strong>Common lost marks:</strong> Saying unpaid work is now counted in GDP; conflating transfer payments with production; no conclusion about GDP as a measure.</p>
+    <p><strong>Panic version:</strong> GDP = market value of paid output. Unpaid work excluded. Redistribution → some tasks shift → frees time for market work → higher GDP. Transfer ≠ GDP rise. Unpaid work not automatically counted.</p>
+  </div></details>
+  <details><summary>T/F traps for Unit 1</summary>
+  <ul>
+    <li>GDP includes unpaid household work. FALSE — GDP measures market production only.</li>
+    <li>GDP per capita can hide inequality. TRUE — it is an average.</li>
+    <li>A country can be capitalist even if government has an economic role. TRUE.</li>
+    <li>PPP helps compare living standards by adjusting for price differences. TRUE.</li>
+    <li>In the Malthusian model, higher living standards always persist. FALSE — population pressure can erode gains.</li>
+  </ul></details>
+</section>
+
+<!-- PREMIUM SECTION C -->
+<section class="section" id="section-c" data-section="section-c">
+  <h2>Premium Section C Answer Bank (8–10 Mark Training)</h2>
+  <div class="card muted">Use after formulas and graphs are understood. Write each answer closed-book first, then mark against the allocation, then rewrite only the weak paragraph.</div>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u8" data-section="section-c"> Unit 8 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u7" data-section="section-c"> Unit 7 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u10" data-section="section-c"> Unit 10 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u6" data-section="section-c"> Unit 6 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u3" data-section="section-c"> Unit 3 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u4" data-section="section-c"> Unit 4 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u5" data-section="section-c"> Unit 5 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u2" data-section="section-c"> Unit 2 premium answer complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u1" data-section="section-c"> Unit 1 premium answer complete</label>
+  </div>
+
+  <div class="premium-card" id="premium-u8">
+    <h3>Unit 8: Per-unit Tax / Price Control Welfare Analysis <span class="badge badge-red">10 marks</span></h3>
+    <p><strong>Question:</strong> A city introduces a R20 per-unit tax on bottled water. Before tax: Q=100, P=R50. After tax: Qt=80, Pbuyer=R62, Pseller=R42. Analyse the welfare effect and contrast with a binding price ceiling.</p>
+    <p><strong>Examiner tests:</strong> tax wedge, post-tax quantity, revenue, DWL, incidence, ceiling comparison.</p>
+    <div class="card"><strong>Planning box:</strong> Model = Unit 8 competitive market + per-unit tax. Formulas: revenue = tax × Qt; DWL = ½ × tax × lost trades. Graph: D, S, S+tax, Pbuyer, Pseller, revenue rectangle, DWL triangle. Avoid: using Q=100 for revenue.</div>
+    <details open><summary>Full model answer</summary>
+    <p class="answer">A per-unit tax creates a wedge between the price paid by buyers and the price received by sellers. Here the wedge is R62 – R42 = R20, matching the tax. The post-tax quantity is 80, so tax revenue is R20 × 80 = R1,600. The tax reduces quantity from 100 to 80, so 20 mutually beneficial trades no longer take place. The deadweight loss is ½ × R20 × 20 = R200. On the graph, the tax shifts the effective supply curve upward by R20 or creates a vertical wedge at Q=80. The revenue rectangle is the R20 wedge over 80 units; the DWL triangle lies between Q=80 and Q=100 where willingness to pay still exceeds seller cost but the tax prevents trade. Economic incidence depends on relative elasticities, not on who legally pays. A binding price ceiling is set below equilibrium; it creates a shortage (Qd &gt; Qs) and quantity traded is limited by the short side. Both policies can reduce surplus, but the tax raises government revenue while the ceiling mainly creates rationing costs.</p></details>
+    <p><strong>Marks:</strong> 1 model; 2 revenue/DWL; 2 graph; 2 incidence; 2 ceiling contrast; 1 trap avoidance.</p>
+    <p><strong>80% vs 100%:</strong> 80% states tax wedge, calculates revenue and DWL with post-tax quantity, and notes incidence depends on elasticity. 100% adds the fully labelled graph (Pbuyer, Pseller, revenue rectangle, DWL triangle), explicitly contrasts ceiling shortage vs tax revenue, and names the less-elastic-side rule with a concrete direction.</p>
+    <p><strong>Panic:</strong> Wedge = R20. Revenue = 20×80 = R1,600. DWL = ½×20×20 = R200. Draw D, S, S+tax, Pbuyer, Pseller. Ceiling → shortage not revenue.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u7">
+    <h3>Unit 7: Monopoly MR=MC, Profit and DWL <span class="badge badge-red">10 marks</span></h3>
+    <p><strong>Question:</strong> P=100–2Q, MR=100–4Q, MC=20, AC=40 at chosen output. Find Qm, Pm, profit, explain welfare loss.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">A price-setting firm faces downward-sloping demand, so MR lies below demand. Set MR=MC: 100–4Q=20 → Q=20 (Qm). Price from demand: P=100–2(20)=R60. Profit = (P–AC)×Q = (60–40)×20 = R400. Markup = P–MC = 60–20 = R40. Efficient output: D=MC → 100–2Q=20 → Qeff=40. DWL = triangle between Qm=20 and Qeff=40 because 20 units with WTP above MC are not produced. Market power means P&gt;MC and underproduction.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% finds Qm, Pm, profit and explains MR lies below demand. 100% adds the profit rectangle on the graph (AC to Pm over Qm units), labels Qeff where D=MC, shades DWL triangle, uses markup correctly (P−MC), and links monopoly underproduction to welfare loss.</p>
+    <p><strong>Panic:</strong> MR=MC → Qm=20. P from demand → R60. Profit = (60–40)×20 = R400. Markup = R40. DWL from Qm to Qeff.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u10">
+    <h3>Unit 10: Negative Externality and Pigouvian Tax <span class="badge badge-red">10 marks</span></h3>
+    <p><strong>Question:</strong> P=300–Q, MPC=60+Q, MEC=40. Find Qm, Q*, Pigouvian tax, explain overproduction.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">MSC = MPC+MEC = 100+Q. Private: D=MPC → 300–Q=60+Q → Qm=120. Efficient: D=MSC → 300–Q=100+Q → Q*=100. Market overproduces by 20 units because MEC is ignored. Pigouvian tax = MEC at Q*=100 → tax = R40. This aligns private cost with social cost. DWL = triangle between Q*=100 and Qm=120.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% builds MSC, finds Qm and Q*, states overproduction, and names Pigouvian tax = MEC at Q*. 100% adds the graph with MPC and MSC labelled, shades DWL between Q* and Qm, and explicitly states "tax = MEC at Q* not at Qm" as a named trap.</p>
+    <p><strong>Panic:</strong> MSC=100+Q. Qm=120. Q*=100. Tax=R40 at Q*. Draw D, MPC, MSC, Qm, Q*, DWL.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u6">
+    <h3>Unit 6: Employment Rent and Labour Discipline <span class="badge badge-orange">8 marks</span></h3>
+    <p><strong>Question:</strong> Worker earns R90/hr, effort+travel costs R25/hr, unemployment benefits R30/hr, 10 weeks expected unemployment, 40 hrs/week. Calculate rent, explain labour discipline.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">Net job value = 90–25 = R65/hr. Reservation option = R30/hr. Hourly rent = 65–30 = R35. Total rent = 35×40×10 = R14,000. Because effort is not perfectly contractible, the threat of job loss (losing R14,000 of rent) creates incentive to work. The firm pays above reservation wage not from kindness but because it lowers the cost per efficiency unit (w/e) along the best-response curve.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% correctly calculates hourly and total rent and links rent to effort incentive. 100% explicitly states incomplete contract as the reason monitoring fails, links rent to the best-response curve (higher wage lowers cost per efficiency unit), and contrasts with paying reservation wage (zero rent, no discipline).</p>
+    <p><strong>Panic:</strong> Net = 90–25=65. Rent/hr=65–30=35. Total=35×40×10=R14,000. Job loss is costly → effort incentive.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u3">
+    <h3>Unit 3: Wage Change, MRS/MRT, Substitution and Income Effects <span class="badge badge-red">10 marks</span></h3>
+    <p><strong>Question:</strong> Explain how a wage increase affects the budget constraint and why hours worked may rise or fall.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">The budget constraint shows feasible combinations of free time and consumption; its slope (MRT) equals the wage. A wage rise rotates the budget line: free time becomes more expensive. MRS is the subjective trade-off (IC slope); at interior optimum MRS=MRT. Substitution effect: higher opportunity cost of free time → less free time → more work. Income effect: richer → may want more free time if it is a normal good → fewer hours. Net effect is ambiguous: hours rise if substitution dominates; fall if income effect dominates.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% rotates the budget line, names both effects and states the net is ambiguous. 100% draws both optima on the graph, shows substitution effect as movement along the original IC, shows income effect as a parallel shift, labels both, and specifies the direction for a normal good.</p>
+    <p><strong>Panic:</strong> Wage=MRT. Wage rise rotates budget line. Substitution → less free time. Income (if normal) → more free time. Net hours: ambiguous.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u4">
+    <h3>Unit 4: Nash vs Pareto/Social Optimum <span class="badge badge-orange">8 marks</span></h3>
+    <p><strong>Question:</strong> Payoffs: Clean/Clean (4,4), Pollute/Clean (6,1), Clean/Pollute (1,6), Pollute/Pollute (2,2). Find Nash, compare with social optimum.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">Best responses: if B plays Clean, A prefers Pollute (6&gt;4). If B plays Pollute, A prefers Pollute (2&gt;1). Pollute dominates for A; by symmetry for B. Nash = Pollute/Pollute (2,2). Social optimum = Clean/Clean (total payoff 8 vs 4). Clean/Clean is a Pareto improvement over Nash (both move from 2→4). This is a social dilemma: individual rationality leads to a collectively worse outcome.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% identifies Nash correctly and names the social dilemma. 100% marks best responses for all four cells explicitly, states Pollute is a dominant strategy (not just Nash) for both players, shows Clean/Clean as a Pareto improvement with both payoffs improving (2→4), and proposes a solution mechanism (binding agreement or regulation).</p>
+    <p><strong>Panic:</strong> Mark best responses. Pollute dominates → Nash = Pollute/Pollute (2,2). Clean/Clean = social optimum (total 8). Pareto improvement over Nash.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u5">
+    <h3>Unit 5: Angela-Bruno Efficiency, Voluntariness and Fairness <span class="badge badge-red">10 marks</span></h3>
+    <p><strong>Question:</strong> An allocation is on the feasible frontier and on Angela's reservation IC but gives Bruno most surplus. Is it efficient, voluntary and fair?</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">Institutions determine who can do what and who gets what. An allocation on the feasible frontier can be Pareto efficient because moving along the frontier to help one person usually hurts the other. If it is on Angela's reservation IC, she is as well off as her outside option — it may be voluntary in the narrow sense. But voluntary does not mean fair. If Bruno makes a take-it-or-leave-it offer, he captures most surplus. The outcome is efficient (on frontier), possibly voluntary (Angela accepts), but substantively unfair (surplus concentrated in Bruno). Procedural fairness asks about the process; substantive fairness asks about the distribution. These three tests must be applied separately.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% applies all three tests and states results separately. 100% distinguishes substantive fairness (distribution) from procedural fairness (process), uses BSC vs RIC explicitly, names institutions as the mechanism through which Bruno's bargaining power operates, and links to a policy implication (e.g. labour law).</p>
+    <p><strong>Panic:</strong> On frontier = possibly Pareto efficient. On RIC = possibly voluntary. Unequal surplus = unfair. Efficiency, voluntariness and fairness are separate tests.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u2">
+    <h3>Unit 2: Opportunity Cost, Rent and Isocost <span class="badge badge-orange">8 marks</span></h3>
+    <p><strong>Question:</strong> Explain opportunity cost and economic rent in a production context. Show how input prices determine technology choice.</p>
+    <details><summary>Full model answer</summary>
+    <p class="answer">Opportunity cost is the value of the next best alternative forgone. Economic rent is the payoff from a chosen option minus the next best option. When input prices are w (wage) and r (capital cost), the isocost line shows all input combinations with the same total cost. Its slope is –w/r. A rational firm chooses the technology on the lowest attainable isocost line. A dominated technology uses more of every input for the same output and is never chosen. Changes in relative input prices change the slope of isocost lines and can change the cost-minimising technology.</p></details>
+    <p><strong>80% vs 100%:</strong> 80% defines OC and rent correctly and states the isocost rule. 100% provides a numeric isocost example (specific w, r, slope calculated), shows a dominated technology with concrete input numbers, and explains how a relative price change shifts the cost-minimising technology choice.</p>
+    <p><strong>Panic:</strong> OC = next best forgone. Rent = chosen – next best. Isocost slope = –w/r. Choose lowest-cost technology. Dominated techs never chosen.</p>
+  </div>
+
+  <div class="premium-card" id="premium-u1">
+    <h3>Unit 1: GDP Novel Application (v1.3 new exemplar) <span class="badge badge-red">10 marks</span></h3>
+    <p>See the full exemplar in the Unit 1 section above (GDP critique + IMF scenario).</p>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sc-u1-full" data-section="section-c"> Unit 1 IMF/GDP exemplar read and planned</label>
+  </div>
+</section>
+
+<!-- FULL PRACTICE BANK -->
+<section class="section" id="practice-bank" data-section="practice-bank">
+  <h2>Full Practice Bank: Heatmap-Weighted Real Questions</h2>
+  <div class="card muted" style="margin-bottom:12px"><strong>How to use:</strong> Cover the memo before answering. Write or say your answer closed-book. Then mark against the memo. Only tick the unit checkbox after you complete the whole set without notes.</div>
+  <div class="card" style="border-left:5px solid var(--hot-pink);margin-bottom:14px"><strong>Graph note:</strong> This hub uses text-only redraw cards. For SVG graph aids open Markets v2 or Foundations v2 from <code>exports/html/</code>.</div>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u8" data-section="practice-bank"> Unit 8 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u7" data-section="practice-bank"> Unit 7 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u10" data-section="practice-bank"> Unit 10 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u3" data-section="practice-bank"> Unit 3 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u6" data-section="practice-bank"> Unit 6 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u4" data-section="practice-bank"> Unit 4 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u5" data-section="practice-bank"> Unit 5 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u2" data-section="practice-bank"> Unit 2 full practice complete (closed-book)</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="pb-u1" data-section="practice-bank"> Unit 1 full practice complete (closed-book)</label>
+  </div>
+
+  <!-- U8 PRACTICE -->
+  <details open><summary><strong>Unit 8 Practice &mdash; 12 items (Competitive Markets, Taxes, Controls)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U8-P1: Equilibrium</strong>
+  <p>Qd = 100 &minus; 2P and Qs = 20 + 3P. Find P* and Q*.</p>
+  <details><summary>Memo</summary><p>100 &minus; 2P = 20 + 3P &rarr; 80 = 5P &rarr; <strong>P* = 16</strong>. Q* = 100 &minus; 2(16) = <strong>68</strong>. Trap: stop at P and omit Q.</p></details></div>
+
+  <div class="card"><strong>U8-P2: Tax revenue and DWL</strong>
+  <p>Before: Q=200, P=R50. After R10 tax: Qt=170, Pbuyer=R57, Pseller=R47. Calculate tax revenue and DWL.</p>
+  <details><summary>Memo</summary><p>Revenue = 10 &times; 170 = <strong>R1,700</strong>. DWL = &frac12; &times; 10 &times; (200&minus;170) = <strong>R150</strong>. Trap: using Q=200 for revenue.</p></details></div>
+
+  <div class="card"><strong>U8-P3: Binding ceiling &mdash; shortage</strong>
+  <p>P* = R40. Ceiling at R35. At R35: Qd=90, Qs=50. Is it binding? Calculate shortage.</p>
+  <details><summary>Memo</summary><p><strong>Binding</strong> (R35 &lt; R40). Shortage = 90 &minus; 50 = <strong>40 units</strong>. Trap: ceiling above equilibrium is non-binding.</p></details></div>
+
+  <div class="card"><strong>U8-P4: Non-binding ceiling</strong>
+  <p>P* = R30. Ceiling at R45. Is this binding? Effect on market?</p>
+  <details><summary>Memo</summary><p><strong>Non-binding</strong> (R45 &gt; R30). Market clears at P* = R30. No shortage created.</p></details></div>
+
+  <div class="card"><strong>U8-P5: Binding floor &mdash; surplus</strong>
+  <p>P* = R20. Floor at R25. At R25: Qs=8,000, Qd=5,000. Is it binding? Calculate surplus.</p>
+  <details><summary>Memo</summary><p><strong>Binding</strong> (R25 &gt; R20). Surplus = 8,000 &minus; 5,000 = <strong>3,000 units</strong>. Trap: floor below equilibrium is non-binding.</p></details></div>
+
+  <div class="card"><strong>U8-P6: Non-binding floor</strong>
+  <p>P* = R50. Floor at R40. Effect?</p>
+  <details><summary>Memo</summary><p><strong>Non-binding.</strong> Market settles at R50 naturally. No surplus created.</p></details></div>
+
+  <div class="card"><strong>U8-P7: Tax incidence and elasticity (T/F)</strong>
+  <p>True or False: If buyers have perfectly inelastic demand, they bear the entire economic burden of a per-unit tax.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Perfectly inelastic: Qd unchanged by price. Full tax wedge passes to buyers. Legal payer is irrelevant &mdash; elasticity determines incidence.</p></details></div>
+
+  <div class="card"><strong>U8-P8: CS and PS triangles (graph question)</strong>
+  <p>Draw a supply-demand diagram. Label CS triangle, PS triangle, Q*, P*. State the formula for each.</p>
+  <details><summary>Memo</summary><p>CS = triangle above P* and below D, left of Q* (area = &frac12; &times; base &times; height). PS = triangle below P* and above S, left of Q*. Trap: never put CS below supply or PS above demand.</p></details></div>
+
+  <div class="card"><strong>U8-P9: Full tax welfare analysis (10-mark Section C)</strong>
+  <p>Q*=500, P*=R80. After R20 tax: Qt=420, Pbuyer=R94, Pseller=R74. Analyse welfare effects.</p>
+  <details><summary>Memo</summary><p>1. Model: competitive market + per-unit tax (1 mark).<br>2. Wedge: 94&minus;74=R20 (1).<br>3. Revenue = 20&times;420 = <strong>R8,400</strong> (1).<br>4. DWL = &frac12;&times;20&times;(500&minus;420) = <strong>R800</strong> (2: formula + calc).<br>5. Graph: D, S, S+tax, Pbuyer, Pseller, rectangle, DWL triangle (2).<br>6. Incidence: less elastic side bears more (2).<br>7. Total surplus falls by DWL = R800 (1).</p></details></div>
+
+  <div class="card"><strong>U8-P10: Long-run competitive equilibrium trap (T/F)</strong>
+  <p>True or False: In long-run competitive equilibrium, MC = AC at minimum AC.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Entry/exit &rarr; zero economic profit &rarr; P = min AC. Price-taking: P = MC. Therefore MC = AC at minimum. Trap: confusing zero economic profit with zero accounting profit.</p></details></div>
+
+  <div class="card"><strong>U8-P11: Simultaneous shifts</strong>
+  <p>Demand increases (shifts right) and supply decreases (shifts left). What definitely happens to price and quantity?</p>
+  <details><summary>Memo</summary><p><strong>Price definitely rises</strong> (both shifts push price up). <strong>Quantity is ambiguous</strong> &mdash; shifts pull in opposite directions. Net depends on magnitude of each shift.</p></details></div>
+
+  <div class="card"><strong>U8-P12: Who bears burden? (explain)</strong>
+  <p>R15 tax imposed on sellers. After tax: Pbuyer rises R10; Pseller falls R5. Who bears the larger burden and why?</p>
+  <details><summary>Memo</summary><p><strong>Buyers</strong> (R10 of R15). Buyers&apos; demand is less elastic than sellers&apos; supply here. Legal payer (sellers) is irrelevant. Market splits burden by relative elasticities.</p></details></div>
+  </div></details>
+
+  <!-- U7 PRACTICE -->
+  <details><summary><strong>Unit 7 Practice &mdash; 10 items (Monopoly, MR=MC, Profit, DWL)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U7-P1: Inverse demand and MR</strong>
+  <p>Qd = 80 &minus; 2P. Rearrange to get inverse demand then write the MR function.</p>
+  <details><summary>Memo</summary><p>80&minus;2P=Q &rarr; P = 40&minus;0.5Q. MR = <strong>40&minus;Q</strong> (same intercept, double slope). Trap: halving instead of doubling the slope.</p></details></div>
+
+  <div class="card"><strong>U7-P2: MR double-slope rule (T/F)</strong>
+  <p>True or False: If inverse demand is P = 60 &minus; 3Q then MR = 60 &minus; 6Q.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Same intercept (60), coefficient on Q doubled (3&rarr;6). Rule applies only to linear inverse demand.</p></details></div>
+
+  <div class="card"><strong>U7-P3: MR=MC calculation</strong>
+  <p>P = 120 &minus; 2Q, MC = 30. Find profit-maximising Q and P.</p>
+  <details><summary>Memo</summary><p>MR = 120&minus;4Q. Set MR=MC: 120&minus;4Q=30 &rarr; <strong>Qm=22.5</strong>. P from demand: 120&minus;2(22.5) = <strong>R75</strong>. Trap: reading P from MR curve instead of demand.</p></details></div>
+
+  <div class="card"><strong>U7-P4: Profit and markup</strong>
+  <p>From U7-P3: Qm=22.5, Pm=R75, AC=R50. Calculate profit and markup.</p>
+  <details><summary>Memo</summary><p>Profit = (75&minus;50)&times;22.5 = <strong>R562.50</strong>. Markup = P&minus;MC = 75&minus;30 = <strong>R45</strong>. Trap: using MC not AC in profit formula.</p></details></div>
+
+  <div class="card"><strong>U7-P5: Efficient output and DWL</strong>
+  <p>From U7-P3: P=120&minus;2Q, MC=30, Qm=22.5. Find Qeff and describe DWL.</p>
+  <details><summary>Memo</summary><p>D=MC: 120&minus;2Q=30 &rarr; <strong>Qeff=45</strong>. DWL = triangle from Qm=22.5 to Qeff=45 where WTP&gt;MC but goods not produced due to market power.</p></details></div>
+
+  <div class="card"><strong>U7-P6: Markup under monopoly (explain)</strong>
+  <p>MC=R25, P=R60. Calculate markup. Why is this possible under monopoly but not perfect competition?</p>
+  <details><summary>Memo</summary><p>Markup = 60&minus;25 = <strong>R35</strong>. Perfect competition: P=MC long-run (price-taking). Monopoly: no close substitutes &rarr; downward-sloping demand &rarr; MR&lt;P &rarr; MR=MC gives P&gt;MC.</p></details></div>
+
+  <div class="card"><strong>U7-P7: Elasticity and TR (T/F)</strong>
+  <p>True or False: If a monopolist lowers price in the elastic region of demand, total revenue will rise.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Elastic: |&epsilon;|&gt;1 &rarr; 1% price fall causes &gt;1% Q rise &rarr; TR rises. Monopolist always operates in elastic region (MR&gt;0).</p></details></div>
+
+  <div class="card"><strong>U7-P8: DWL explanation (Section C component)</strong>
+  <p>Explain in 3&ndash;4 sentences why monopoly creates DWL. Reference MR, MC, Qm, Qeff.</p>
+  <details><summary>Memo</summary><p>Monopolist sets MR=MC producing Qm. Because MR lies below demand, Qm &lt; Qeff (where P=MC). Units between Qm and Qeff have WTP above MC but are not produced. This gap is permanently lost welfare &mdash; the DWL of market power.</p></details></div>
+
+  <div class="card"><strong>U7-P9: Zero-profit condition trap (T/F)</strong>
+  <p>True or False: A monopolist makes zero economic profit when MR = AC.</p>
+  <details><summary>Memo</summary><p><strong>False.</strong> Zero economic profit when <em>P = AC</em> (height of profit rectangle = 0). MR=AC is not an economic equilibrium condition.</p></details></div>
+
+  <div class="card"><strong>U7-P10: Full Section C (10 marks)</strong>
+  <p>P=80&minus;Q, MR=80&minus;2Q, MC=20, AC=35 at chosen output. (a) Find Qm, Pm. (b) Profit. (c) Qeff. (d) Welfare loss graph.</p>
+  <details><summary>Memo</summary><p>(a) 80&minus;2Q=20 &rarr; Qm=30. Pm=80&minus;30=<strong>R50</strong>. (b) Profit=(50&minus;35)&times;30=<strong>R450</strong>. (c) 80&minus;Q=20 &rarr; <strong>Qeff=60</strong>. (d) Graph: D down, MR below D, MC at 20, AC at 35. Mark Qm=30, Pm=50, profit rectangle (35&rarr;50), Qeff=60, DWL triangle shaded.<br>Marks: 1 model; 2 Qm/Pm; 1 profit; 1 Qeff; 2 graph; 2 welfare; 1 trap.</p></details></div>
+  </div></details>
+
+  <!-- U10 PRACTICE -->
+  <details><summary><strong>Unit 10 Practice &mdash; 10 items (Externalities, Public Goods, Market Failure)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U10-P1: Negative externality calculation</strong>
+  <p>MPC=50+2Q, MEC=30, MPB=200&minus;Q. Find Qm, Q*, overproduction, and Pigouvian tax.</p>
+  <details><summary>Memo</summary><p>MSC=80+2Q. Qm: 200&minus;Q=50+2Q &rarr; 150=3Q &rarr; <strong>Qm=50</strong>. Q*: 200&minus;Q=80+2Q &rarr; 120=3Q &rarr; <strong>Q*=40</strong>. Overproduction=10 units. Tax=MEC at Q*=<strong>R30</strong>.</p></details></div>
+
+  <div class="card"><strong>U10-P2: Positive externality (corrected &mdash; Q*&gt;Qm)</strong>
+  <p>MC=10+Q, MPB=90&minus;Q, MEB=15. Find Qm, Q*, underproduction, subsidy. Confirm Q*&gt;Qm.</p>
+  <details><summary>Memo</summary><p>MSB=105&minus;Q. Qm: 90&minus;Q=10+Q &rarr; <strong>Qm=40</strong>. Q*: 105&minus;Q=10+Q &rarr; <strong>Q*=47.5</strong>. Q*&gt;Qm &#10004;. Underproduction=7.5 units. Subsidy=MEB at Q*=<strong>R15</strong>. Trap: taxing a positive externality.</p></details></div>
+
+  <div class="card"><strong>U10-P3: Pigouvian tax &mdash; correct vs wrong value</strong>
+  <p>MEC=2Q. Qm=100, Q*=70. What is the correct Pigouvian tax? What is the classic wrong answer?</p>
+  <details><summary>Memo</summary><p>Correct: tax = MEC at Q* = 2&times;70 = <strong>R140</strong>. Wrong (trap): MEC at Qm = 2&times;100 = R200 &mdash; this is total external damage at private equilibrium, not the efficient tax.</p></details></div>
+
+  <div class="card"><strong>U10-P4: Pigouvian subsidy calculation</strong>
+  <p>MEB=60&minus;Q, Q*=40. Calculate the subsidy and explain its market effect.</p>
+  <details><summary>Memo</summary><p>Subsidy = MEB at Q* = 60&minus;40 = <strong>R20 per unit</strong>. Shifts effective demand up by MEB, making private buyers act as if they receive full social benefit, raising traded Q from Qm to Q*.</p></details></div>
+
+  <div class="card"><strong>U10-P5: Coase payment range</strong>
+  <p>Factory (A) causes R300 damage to farmer (B). A earns R500 with pollution, R150 without. What is the Coase bargaining range?</p>
+  <details><summary>Memo</summary><p>A pays up to R500&minus;R150 = <strong>R350 maximum</strong>. B accepts at least <strong>R300</strong> (damage). Bargaining range: R300&ndash;R350. Agreement is possible &rarr; illustrates Coase theorem.</p></details></div>
+
+  <div class="card"><strong>U10-P6: Goods matrix</strong>
+  <p>Classify: (a) National defence, (b) Netflix streaming, (c) Wild fish in ocean, (d) A pizza slice.</p>
+  <details><summary>Memo</summary><p>(a) <strong>Public good</strong>: non-rival + non-excludable. (b) <strong>Club good</strong>: non-rival + excludable (subscription). (c) <strong>Common good</strong>: rival + non-excludable. (d) <strong>Private good</strong>: rival + excludable. Trap: &ldquo;public&rdquo; &#8800; government-provided.</p></details></div>
+
+  <div class="card"><strong>U10-P7: Moral hazard vs adverse selection (3 scenarios)</strong>
+  <p>(a) Doctors order more tests after switching to salaried pay. (b) Only high-risk drivers buy comprehensive insurance. (c) After buying home insurance, owners install fewer smoke alarms. MH or AS?</p>
+  <details><summary>Memo</summary><p>(a) <strong>Moral hazard</strong> &mdash; action changes after contract. (b) <strong>Adverse selection</strong> &mdash; hidden type before contract. (c) <strong>Moral hazard</strong> &mdash; hidden action after contract. Rule: before = AS; after = MH.</p></details></div>
+
+  <div class="card"><strong>U10-P8: Free rider problem (explain)</strong>
+  <p>Why do markets underprovide public goods? Use free riding.</p>
+  <details><summary>Memo</summary><p>Public good is non-excludable &mdash; once provided, all benefit regardless of payment. Rational agents free ride: wait for others to pay while still receiving the benefit. Private providers cannot recover costs through pricing. Market provision is zero or insufficient. Government provision or regulation needed.</p></details></div>
+
+  <div class="card"><strong>U10-P9: Direction trap (T/F)</strong>
+  <p>True or False: A negative externality causes underproduction; a positive externality causes overproduction.</p>
+  <details><summary>Memo</summary><p><strong>False &mdash; completely reversed.</strong> Negative externality: MPC&lt;MSC &rarr; ignores MEC &rarr; <em>overproduces</em> (Qm&gt;Q*). Positive externality: MPB&lt;MSB &rarr; ignores MEB &rarr; <em>underproduces</em> (Qm&lt;Q*). One of the most common exam misconceptions.</p></details></div>
+
+  <div class="card"><strong>U10-P10: Full Section C (10 marks)</strong>
+  <p>Bee-keeper&rsquo;s bees pollinate neighbours. MPC=5, MPB=80&minus;Q, MEB=20. (a) Qm, Q*. (b) Externality type. (c) Policy + calculation. (d) Graph.</p>
+  <details><summary>Memo</summary><p>(a) MSB=100&minus;Q. Qm: 80&minus;Q=5 &rarr; <strong>Qm=75</strong>. Q*: 100&minus;Q=5 &rarr; <strong>Q*=95</strong>. Q*&gt;Qm &#10004;.<br>(b) <strong>Positive externality.</strong><br>(c) Subsidy = MEB at Q*=20 &rarr; <strong>R20/unit</strong>.<br>(d) Graph: MPB down; MSB above MPB (+20 parallel shift); MPC horizontal at 5. Mark Qm=75 (MPB=MPC), Q*=95 (MSB=MPC). Shade DWL between 75 and 95.<br>Marks: 2 Qm/Q*; 1 type; 2 policy+calc; 2 graph; 2 interpretation; 1 trap.</p></details></div>
+  </div></details>
+
+  <!-- U3 PRACTICE -->
+  <details><summary><strong>Unit 3 Practice &mdash; 8 items (MRS/MRT, Working Hours, Wage Effects)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U3-P1: MRS vs MRT (T/F)</strong>
+  <p>True or False: MRS is determined by the wage rate; MRT is determined by preferences.</p>
+  <details><summary>Memo</summary><p><strong>False &mdash; reversed.</strong> MRS = slope of IC = subjective preference trade-off. MRT = slope of budget constraint = objective market opportunity cost (= wage in this model). Trap: swapping the two.</p></details></div>
+
+  <div class="card"><strong>U3-P2: Budget constraint equation</strong>
+  <p>Wage w=R200/hr, unearned income V=R400. Write the budget constraint (c as a function of t). Max consumption? Max free time?</p>
+  <details><summary>Memo</summary><p>c = 200(24&minus;t)+400 = <strong>5,200&minus;200t</strong>. Max c (t=0): R5,200. Max free time: constrained to t&le;24; at t=24, c=V=R400. Trap: forgetting unearned income.</p></details></div>
+
+  <div class="card"><strong>U3-P3: Wage increase rotation</strong>
+  <p>Wage rises R150&rarr;R250/hr, no unearned income. Describe the budget constraint change.</p>
+  <details><summary>Memo</summary><p>Free-time intercept (24h) unchanged. Consumption intercept: 150&times;24=R3,600 &rarr; 250&times;24=R6,000. Line rotates outward/steeper. MRT rises from 150 to 250. Each free hour now costs more forgone consumption.</p></details></div>
+
+  <div class="card"><strong>U3-P4: Substitution effect direction</strong>
+  <p>Wage rises. Which direction does the substitution effect push free time and hours worked?</p>
+  <details><summary>Memo</summary><p>Substitution effect: free time &darr;; hours worked &uarr;. Mechanism: higher wage &rarr; higher OC of free time. Holding utility constant (along old IC), worker substitutes away from now-more-expensive free time toward consumption.</p></details></div>
+
+  <div class="card"><strong>U3-P5: Income effect direction</strong>
+  <p>Wage rises. If free time is a normal good, which direction does the income effect push hours worked?</p>
+  <details><summary>Memo</summary><p>Income effect: free time &uarr;; hours worked &darr;. Richer worker demands more normal goods including leisure. This is the pure purchasing-power effect. It works <em>against</em> the substitution effect on hours.</p></details></div>
+
+  <div class="card"><strong>U3-P6: Ambiguous net effect</strong>
+  <p>Why is the effect of a wage rise on hours worked ambiguous?</p>
+  <details><summary>Memo</summary><p>Substitution pushes toward more work; income effect (normal good) pushes toward less work. Both operate simultaneously. Net hours depend on which dominates. Empirically: low earners tend to increase hours (substitution dominates); high earners may reduce hours (income dominates) &rarr; backward-bending labour supply.</p></details></div>
+
+  <div class="card"><strong>U3-P7: Interior optimum (T/F)</strong>
+  <p>True or False: At interior optimum, the slope of the IC equals the slope of the budget constraint.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> MRS = MRT at interior tangency. IC slope = MRS; budget line slope = MRT (= wage). Trap: this is the interior condition &mdash; corner solutions are different.</p></details></div>
+
+  <div class="card"><strong>U3-P8: Section C (8 marks)</strong>
+  <p>Minimum wage rises from R100 to R160/hr. Will the worker definitely work more hours? Draw the graph.</p>
+  <details><summary>Memo</summary><p>Definitely not. Graph: free time (x), consumption (y). Old line slope 100. New line steeper slope 160. Same free-time intercept (24h). Substitution: free time now costs R160/hr &rarr; less free time. Income: richer &rarr; more free time (if normal). Net is <em>ambiguous</em>.<br>Marks: 2 graph (axes, rotation, two optima); 1 MRS=MRT; 2 substitution; 2 income; 1 ambiguity.</p></details></div>
+  </div></details>
+
+  <!-- U6 PRACTICE -->
+  <details><summary><strong>Unit 6 Practice &mdash; 6 items (Employment Rent, Labour Discipline)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U6-P1: Hourly rent</strong>
+  <p>Worker earns R120/hr. Costs R30/hr. Benefit R40/hr. Hourly rent?</p>
+  <details><summary>Memo</summary><p>Net = 120&minus;30 = R90. Rent/hr = 90&minus;40 = <strong>R50</strong>. Trap: using gross wage R120; ignoring costs.</p></details></div>
+
+  <div class="card"><strong>U6-P2: Total rent</strong>
+  <p>From U6-P1 (R50/hr): 35 hrs/week, 8 weeks expected unemployment. Total rent?</p>
+  <details><summary>Memo</summary><p>Total rent = 50 &times; 35 &times; 8 = <strong>R14,000</strong>. This is the stake if the worker loses the job &mdash; incentive to supply effort.</p></details></div>
+
+  <div class="card"><strong>U6-P3: Cost per efficiency unit</strong>
+  <p>w=R80, e=0.4. Cost/unit? If w rises to R100 and e rises to 0.6, does cost rise or fall?</p>
+  <details><summary>Memo</summary><p>80/0.4 = <strong>R200/unit</strong>. At w=100, e=0.6: 100/0.6 = <strong>R166.67</strong> &mdash; cost <em>falls</em>. Higher wage raises effort enough to reduce cost per efficiency unit &rarr; profit-maximising.</p></details></div>
+
+  <div class="card"><strong>U6-P4: Benefit effect on rent (T/F)</strong>
+  <p>True or False: Higher unemployment benefits always increase employment rent.</p>
+  <details><summary>Memo</summary><p><strong>False.</strong> Higher benefits improve reservation option &rarr; rent = net job value &minus; reservation falls. Workers less deterred by job loss &rarr; less discipline incentive. Classic exam trap.</p></details></div>
+
+  <div class="card"><strong>U6-P5: Involuntary unemployment</strong>
+  <p>Explain why involuntary unemployment exists in equilibrium in the labour discipline model.</p>
+  <details><summary>Memo</summary><p>Firm pays above reservation wage to create rent and deter shirking (effort not contractible). At profit-maximising wage, Qs &gt; Qd for labour. Workers who would accept current wage cannot find jobs &mdash; involuntarily unemployed. Full employment would destroy rent and the effort incentive.</p></details></div>
+
+  <div class="card"><strong>U6-P6: Section C (8 marks)</strong>
+  <p>w=R150, costs=R35, benefit=R50, 12 weeks unemployment, 40 hrs/week. Calculate rent and explain discipline mechanism.</p>
+  <details><summary>Memo</summary><p>Net = 115/hr. Rent/hr = 65. Total = 65&times;40&times;12 = <strong>R31,200</strong>. Mechanism: effort unobservable (incomplete contract) &rarr; if caught shirking, fired &rarr; loses R31,200 &rarr; rational to work. Firm sets wage on best-response curve to minimise w/e.<br>Marks: 1 net; 1 hourly rent; 1 total; 2 mechanism; 1 incomplete contract; 1 best-response; 1 conclusion.</p></details></div>
+  </div></details>
+
+  <!-- U4 PRACTICE -->
+  <details><summary><strong>Unit 4 Practice &mdash; 6 items (Game Theory, Nash, Social Dilemmas)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U4-P1: Best-response marking</strong>
+  <p>Payoffs (A,B): Up/Left=(5,4); Up/Right=(2,6); Down/Left=(3,7); Down/Right=(6,2). Mark best responses for each player in each opponent scenario.</p>
+  <details><summary>Memo</summary><p>A: B=Left &rarr; Up(5)&gt;Down(3). B=Right &rarr; Down(6)&gt;Up(2). B: A=Up &rarr; Right(6)&gt;Left(4). A=Down &rarr; Left(7)&gt;Right(2). No cell has both best-responses &rarr; no pure Nash equilibrium. Trap: comparing A payoff with B payoff.</p></details></div>
+
+  <div class="card"><strong>U4-P2: Nash equilibrium</strong>
+  <p>Payoffs (A,B): X/X=(3,3); X/Y=(1,4); Y/X=(4,1); Y/Y=(2,2). Find all Nash equilibria.</p>
+  <details><summary>Memo</summary><p>A: B=X &rarr; Y(4)&gt;X(3). B=Y &rarr; Y(2)&gt;X(1). Y dominates A. B: A=X &rarr; Y(4)&gt;X(3). A=Y &rarr; Y(2)&gt;X(1). Y dominates B. Nash = <strong>(Y,Y)=(2,2)</strong>. Social optimum = (X,X)=(3,3). Prisoner&rsquo;s dilemma.</p></details></div>
+
+  <div class="card"><strong>U4-P3: Dominant strategy (T/F)</strong>
+  <p>True or False: If both players have a dominant strategy, their intersection is a Nash equilibrium.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Dominant strategy is best regardless of opponent. If both have one, neither wants to deviate from it &rarr; by definition a Nash equilibrium.</p></details></div>
+
+  <div class="card"><strong>U4-P4: Multiple Nash equilibria</strong>
+  <p>Payoffs: U/L=(2,2); U/R=(0,0); D/L=(0,0); D/R=(3,3). Find all Nash equilibria.</p>
+  <details><summary>Memo</summary><p>(U,L): A&rarr;U(2)&gt;D(0); B&rarr;L(2)&gt;R(0) &rarr; <strong>Nash</strong>. (D,R): A&rarr;D(3)&gt;U(0); B&rarr;R(3)&gt;L(0) &rarr; <strong>Nash</strong>. Two Nash equilibria &mdash; coordination game, not prisoner&rsquo;s dilemma.</p></details></div>
+
+  <div class="card"><strong>U4-P5: Pareto improvement identification</strong>
+  <p>Current: (Pollute,Pollute)=(2,2). Alternative: (Clean,Clean)=(4,4). Is the alternative a Pareto improvement? Is the current outcome Pareto efficient?</p>
+  <details><summary>Memo</summary><p>(Clean,Clean) IS a Pareto improvement: both move 2&rarr;4 (at least one better, none worse). (Pollute,Pollute) is <strong>Pareto inefficient</strong> &mdash; a Pareto improvement exists. Nash can be Pareto inefficient in social dilemmas.</p></details></div>
+
+  <div class="card"><strong>U4-P6: Section C (8 marks)</strong>
+  <p>Payoffs: Not/Not=(4,4); Invest/Not=(1,7); Not/Invest=(7,1); Invest/Invest=(5,5). Find Nash, social optimum, explain social dilemma.</p>
+  <details><summary>Memo</summary><p>Not dominates for A (4&gt;1 if B=Not; 7&gt;5 if B=Invest). By symmetry, Not dominates B. Nash = <strong>(Not,Not)=(4,4)</strong>. Social optimum = (Invest,Invest)=(5,5). (5,5) is Pareto improvement over Nash. Social dilemma: each firm rationally defects even though cooperation yields higher payoff for both. Solution: binding agreement, regulation, or tax incentives.<br>Marks: 2 Nash; 1 social optimum; 2 dilemma; 2 Pareto comparison; 1 solution.</p></details></div>
+  </div></details>
+
+  <!-- U5 PRACTICE -->
+  <details><summary><strong>Unit 5 Practice &mdash; 6 items (Angela-Bruno, Bargaining, Fairness)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U5-P1: Feasibility tests</strong>
+  <p>Total grain=15. Angela BSC=4, reservation=6. Bruno reservation=3. Assess: (a) A=4, B=11. (b) A=7, B=8. (c) A=10, B=3. (d) A=12, B=2.</p>
+  <details><summary>Memo</summary><p>(a) Technical &#10004;. BSC &#10004;. Economic: Angela(4)&lt;reservation(6) &rarr; <strong>not feasible for Angela</strong>.<br>(b) Technical &#10004;. BSC &#10004;. Both &ge; reservation &rarr; <strong>economically feasible</strong>.<br>(c) Technical &#10004;. BSC &#10004;. Both &ge; reservation &rarr; <strong>feasible</strong>.<br>(d) Technical &#10004;. BSC &#10004;. Bruno(2)&lt;3 &rarr; <strong>not feasible for Bruno</strong>.</p></details></div>
+
+  <div class="card"><strong>U5-P2: BSC vs RIC (T/F)</strong>
+  <p>True or False: If Angela is at her biological survival constraint she must also be at her reservation indifference curve.</p>
+  <details><summary>Memo</summary><p><strong>False.</strong> BSC = physical survival minimum. RIC = utility of best outside option. Entirely different concepts. RIC may be above or below BSC. Angela can be alive (above BSC) but economically unwilling to work (below RIC).</p></details></div>
+
+  <div class="card"><strong>U5-P3: Bargaining power effect</strong>
+  <p>Bruno has take-it-or-leave-it power. Economically feasible range: Angela 6&ndash;11. What allocation does Bruno choose?</p>
+  <details><summary>Memo</summary><p>Bruno offers Angela exactly her reservation value: <strong>Angela=6, Bruno=9</strong>. He maximises his share subject to Angela accepting. Outcome may be voluntary (Angela accepts) but is substantively unfair (Bruno captures most surplus).</p></details></div>
+
+  <div class="card"><strong>U5-P4: Efficient but unfair</strong>
+  <p>Allocation (A=6, B=9) is on the feasible frontier. Is it Pareto efficient? Is it fair?</p>
+  <details><summary>Memo</summary><p>On frontier &rarr; likely <strong>Pareto efficient</strong> (helping Angela requires taking from Bruno). But substantively <strong>unfair</strong> &mdash; Bruno gets 9/15 (60%) while Angela gets only her reservation minimum. Efficiency and fairness are logically separate judgements.</p></details></div>
+
+  <div class="card"><strong>U5-P5: Procedural vs substantive fairness</strong>
+  <p>Distinguish procedural and substantive fairness in the Angela-Bruno context.</p>
+  <details><summary>Memo</summary><p><strong>Procedural:</strong> was the process fair? Were rules and property rights legitimate? <strong>Substantive:</strong> is the distribution fair? A transaction can be procedurally fair (Angela freely consented) but substantively unfair (Bruno gets most surplus). Both are separate normative judgements to apply independently.</p></details></div>
+
+  <div class="card"><strong>U5-P6: Numeric surplus split</strong>
+  <p>Total grain=20. Angela reservation=7, Bruno reservation=5. (a) Total surplus? (b) Equal surplus split &rarr; how much each? (c) Is 50/50 grain split an equal surplus split?</p>
+  <details><summary>Memo</summary><p>(a) Surplus = 20&minus;7&minus;5 = <strong>8 units</strong>. (b) Equal surplus: each gets 4 above reservation. Angela=7+4=<strong>11</strong>; Bruno=5+4=<strong>9</strong>. (c) 50/50 grain (10 each): Angela surplus=10&minus;7=3; Bruno surplus=10&minus;5=5 &rarr; <em>unequal surplus</em>. Equal grain &ne; equal surplus when reservations differ.</p></details></div>
+  </div></details>
+
+  <!-- U2 PRACTICE -->
+  <details><summary><strong>Unit 2 Practice &mdash; 6 items (Technology, Opportunity Cost, Isocost)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U2-P1: Opportunity cost</strong>
+  <p>Student spends 3 hours studying instead of earning R90/hr. What is the opportunity cost?</p>
+  <details><summary>Memo</summary><p>OC = next best alternative forgone = 3 &times; R90 = <strong>R270</strong>. Trap: listing all alternatives instead of only the best one; adding multiple forgone options.</p></details></div>
+
+  <div class="card"><strong>U2-P2: Economic rent</strong>
+  <p>Nurse earns R8,000/month. Next best job pays R6,000. Reservation value R5,500. Calculate economic rent.</p>
+  <details><summary>Memo</summary><p>Rent = chosen &minus; next best = 8,000 &minus; 6,000 = <strong>R2,000/month</strong>. Reservation value determines feasibility, not the rent calculation. Trap: using reservation (R5,500) instead of next best (R6,000).</p></details></div>
+
+  <div class="card"><strong>U2-P3: AP vs MP</strong>
+  <p>At L=10: Q=500. At L=15: Q=650. Calculate MP and AP at L=15.</p>
+  <details><summary>Memo</summary><p>MP = &Delta;Q/&Delta;L = (650&minus;500)/(15&minus;10) = 150/5 = <strong>30</strong>. AP at L=15 = 650/15 = <strong>43.3</strong>. Note: AP&gt;MP here &rarr; MP is pulling AP down. Trap: swapping formulas.</p></details></div>
+
+  <div class="card"><strong>U2-P4: Isocost slope</strong>
+  <p>w=R600, r=R1,800. Write the isocost equation and calculate slope (K vertical, L horizontal).</p>
+  <details><summary>Memo</summary><p>Total cost C = 600L + 1800K. Slope = &minus;w/r = &minus;600/1800 = <strong>&minus;1/3</strong>. Trap: using &minus;r/w = &minus;3 (inverted) or confusing with marginal product ratio.</p></details></div>
+
+  <div class="card"><strong>U2-P5: Technology choice</strong>
+  <p>Tech A: 4L+2K. Tech B: 2L+4K. Tech C: 3L+3K. w=R300, r=R150. Minimum cost technology?</p>
+  <details><summary>Memo</summary><p>Cost A = 4(300)+2(150) = <strong>R1,500</strong>. Cost B = 2(300)+4(150) = <strong>R1,200</strong>. Cost C = 3(300)+3(150) = <strong>R1,350</strong>. <strong>Tech B minimises cost.</strong> If wages rise relative to capital, shift toward capital-intensive technologies.</p></details></div>
+
+  <div class="card"><strong>U2-P6: Dominated technology (T/F)</strong>
+  <p>Tech X: 5L+3K to produce 100 units. Tech Y: 5L+4K to produce 100 units. Is Y dominated?</p>
+  <details><summary>Memo</summary><p><strong>Yes.</strong> Y uses more K (4&gt;3) and same L for same output. For any positive r, Y costs more than X. Dominated technology: same or more of every input for same or less output &rarr; never chosen by a rational firm.</p></details></div>
+  </div></details>
+
+  <!-- U1 PRACTICE -->
+  <details><summary><strong>Unit 1 Practice &mdash; 6 items (GDP, Capitalism, Inequality, Planetary Limits)</strong></summary>
+  <div class="grid-2">
+  <div class="card"><strong>U1-P1: GDP vs wellbeing</strong>
+  <p>Why is GDP per capita a limited measure of wellbeing? Give two specific omissions.</p>
+  <details><summary>Memo</summary><p>GDP measures market value of paid final output only. Omissions: (1) <strong>Unpaid household/care work</strong> &mdash; contributes to wellbeing but excluded from market measurement. (2) <strong>Inequality</strong> &mdash; GDP per capita is an average; it rises even if all gains go to top 1%. Other valid: environmental degradation, leisure, subjective wellbeing. Trap: dismissing GDP entirely &mdash; it is useful but incomplete.</p></details></div>
+
+  <div class="card"><strong>U1-P2: GDP per capita and growth rate</strong>
+  <p>GDP = R4,500,000,000. Population = 15,000,000. Calculate GDP per capita. GDP rises to R4,725,000,000 next year. Growth rate?</p>
+  <details><summary>Memo</summary><p>GDP per capita = 4.5bn/15m = <strong>R300</strong>. Growth rate = (4.725&minus;4.5)/4.5 &times; 100 = <strong>5%</strong>. Trap: dividing by new value; forgetting &times;100.</p></details></div>
+
+  <div class="card"><strong>U1-P3: PPP adjustment</strong>
+  <p>Country A: USD 10,000 per capita. Country B: USD 8,000 per capita at market rates. After PPP: Country B = USD 12,000. What does this mean?</p>
+  <details><summary>Memo</summary><p>PPP adjusts for price level differences. At market rates A appears richer. After PPP, a dollar in B buys more real goods than in A &rarr; B residents have higher real purchasing power. PPP is better for comparing real living standards. Trap: using market exchange rates as a proxy for purchasing power.</p></details></div>
+
+  <div class="card"><strong>U1-P4: Unpaid work and GDP (T/F)</strong>
+  <p>True or False: If a parent quits paid work to care for their child at home, GDP falls but wellbeing may not fall.</p>
+  <details><summary>Memo</summary><p><strong>True.</strong> Quitting paid work removes wage from GDP (paid market production falls). But childcare continues &mdash; just unpaid. Family wellbeing may be unchanged or improved. Illustrates why GDP measures market activity, not welfare directly.</p></details></div>
+
+  <div class="card"><strong>U1-P5: Capitalism definition (MCQ)</strong>
+  <p>Which is NOT required for capitalism? (a) Private property. (b) Labour markets. (c) Firms. (d) Zero government intervention.</p>
+  <details><summary>Memo</summary><p><strong>(d)</strong> Zero government intervention is not required. Capitalism is defined by private property, markets, and firms. Government intervenes in all capitalist economies. Trap: equating capitalism with laissez-faire.</p></details></div>
+
+  <div class="card"><strong>U1-P6: Hockey-stick and Malthus</strong>
+  <p>Why was GDP per capita nearly flat for centuries, then rose sharply? What did Malthus predict and why was he wrong long-run?</p>
+  <details><summary>Memo</summary><p>Flat era: any productivity gain was eroded by population growth (Malthusian trap). Malthus: higher income &rarr; population rises &rarr; living standards return to subsistence. He was right about the mechanism but wrong about the pace of technological change. Industrial Revolution innovations outpaced population growth &rarr; persistent real living standard rise. The hockey-stick kink marks sustained productivity exceeding the Malthusian trap.</p></details></div>
+  </div></details>
+
+</section><!-- practice-bank -->
+<!-- FINAL BOSS -->
+<section class="section" id="final-boss" data-section="final-boss">
+  <h2>Final Boss Practice Set</h2>
+  <div class="card muted">Scoring: T/F — +1 correct, –½ wrong. MCQ — +2 correct, –¼ wrong. Section C — mark formula, substitution, graph labels and interpretation separately. Answer only when you can explain the rule.</div>
+  <div class="grid">
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="fb-tf" data-section="final-boss"> T/F attempt complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="fb-mcq" data-section="final-boss"> MCQ attempt complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="fb-sc" data-section="final-boss"> Section C attempt complete</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="fb-log" data-section="final-boss"> Mistakes logged</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="fb-redo" data-section="final-boss"> Redo of weak areas complete</label>
+  </div>
+
+  <details><summary>Final Boss: 10 T/F (cover answer, state rule, then reveal)</summary>
+  <table>
+    <thead><tr><th>#</th><th>Statement</th><th>T/F</th><th>Rule</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Tax revenue is calculated using the original pre-tax quantity.</td><td>F</td><td>Use Q after tax.</td></tr>
+      <tr><td>2</td><td>In long-run competitive equilibrium, MC = AC at minimum AC.</td><td>T</td><td>Entry/exit → P=min AC and P=MC → MC=AC.</td></tr>
+      <tr><td>3</td><td>For a monopolist, MR equals demand.</td><td>F</td><td>MR lies below demand when D slopes down.</td></tr>
+      <tr><td>4</td><td>At interior optimum, MRS = MRT.</td><td>T</td><td>Subjective trade-off = feasible trade-off.</td></tr>
+      <tr><td>5</td><td>A Nash equilibrium is always Pareto efficient.</td><td>F</td><td>Prisoner's dilemma Nash is Pareto inferior.</td></tr>
+      <tr><td>6</td><td>Pareto efficient means fair.</td><td>F</td><td>A thief taking all can be Pareto efficient but deeply unfair.</td></tr>
+      <tr><td>7</td><td>Employment rent is simply the wage.</td><td>F</td><td>Rent = net job value – reservation option.</td></tr>
+      <tr><td>8</td><td>MSC = MPC + MEC.</td><td>T</td><td>Social cost adds private and external marginal costs.</td></tr>
+      <tr><td>9</td><td>Pigouvian tax equals total external damage at market quantity.</td><td>F</td><td>It equals MEC at efficient Q*.</td></tr>
+      <tr><td>10</td><td>Public goods are goods provided by government.</td><td>F</td><td>Public goods are non-rival and non-excludable by definition.</td></tr>
+    </tbody>
+  </table></details>
+
+  <details><summary>Final Boss: 10 MCQ (attempt before reading answer)</summary>
+  <div class="grid-2">
+    <div class="card"><strong>1.</strong> A price ceiling of R12 is imposed when equilibrium is R13. What is true?<br>A. Binding — creates shortage. B. Non-binding. C. Creates surplus. D. Creates monopoly.<br><details><summary>Answer</summary>A — below equilibrium → binding → Qd &gt; Qs → shortage.</details></div>
+    <div class="card"><strong>2.</strong> Profit rectangle equals:<br>A. P×Q. B. MC×Q. C. (P–MC)×Q. D. (P–AC)×Q.<br><details><summary>Answer</summary>D — markup uses MC; profit rectangle uses AC.</details></div>
+    <div class="card"><strong>3.</strong> If demand is elastic, a small price decrease will:<br>A. Raise TR. B. Lower TR. C. Leave TR unchanged. D. Make MR=AC.<br><details><summary>Answer</summary>A — elastic: Q rises proportionally more than P falls → TR rises.</details></div>
+    <div class="card"><strong>4.</strong> A Nash equilibrium is:<br>A. A mutual best response. B. Always socially optimal. C. Always a dominant strategy equilibrium. D. The outcome with the highest total payoff.<br><details><summary>Answer</summary>A — no player wants to deviate unilaterally.</details></div>
+    <div class="card"><strong>5.</strong> At an interior constrained optimum:<br>A. MRS = MRT. B. MRS is always &gt; MRT. C. Person is on lowest IC. D. Budget line is irrelevant.<br><details><summary>Answer</summary>A — subjective trade-off equals feasible trade-off.</details></div>
+    <div class="card"><strong>6.</strong> Optimal Pigouvian tax equals:<br>A. Total external damage at Qm. B. AC at Q*. C. MEC at efficient Q*. D. CS before tax.<br><details><summary>Answer</summary>C — marginal, not total; evaluated at Q* not Qm.</details></div>
+    <div class="card"><strong>7.</strong> Employment rent rises when:<br>A. Job loss becomes more costly. B. Unemployment becomes more attractive. C. Worker is paid reservation wage. D. Effort costs rise only.<br><details><summary>Answer</summary>A — rent is the cost of job loss; bigger gap → more rent.</details></div>
+    <div class="card"><strong>8.</strong> A demand increase and supply decrease definitely causes:<br>A. Price rises, quantity ambiguous. B. Quantity rises, price ambiguous. C. Both fall. D. No effect.<br><details><summary>Answer</summary>A — both shifts push price up; they pull quantity in opposite directions.</details></div>
+    <div class="card"><strong>9.</strong> Cost per efficiency unit is:<br>A. e/w. B. w+e. C. w/e. D. w–e.<br><details><summary>Answer</summary>C — wage divided by effort.</details></div>
+    <div class="card"><strong>10.</strong> Moral hazard involves:<br>A. Hidden type before agreement. B. Hidden action after agreement. C. Adverse selection. D. Coase bargaining.<br><details><summary>Answer</summary>B — after the agreement, hidden action changes behaviour.</details></div>
+  </div></details>
+
+  <details><summary>Final Boss: 4 Section C questions (write before opening)</summary>
+  <div class="grid-2">
+    <div class="card"><h3>Section C 1 (10 marks)</h3><p>A firm faces demand P=80–Q and MC=20. Identify the market structure, find profit-maximising Q and P, calculate profit if AC=30 at that output, and explain the welfare loss.</p><details><summary>Model answer</summary><p class="answer">Price-setting firm: MR=80–2Q. Set MR=MC: 80–2Q=20 → Q=30. P from demand: P=80–30=R50. Profit=(50–30)×30=R600. Qeff where D=MC: 80–Q=20 → Q=60. DWL = triangle from Qm=30 to Qeff=60 where P&gt;MC. Market power creates underproduction relative to social optimum.</p></details></div>
+    <div class="card"><h3>Section C 2 (10 marks)</h3><p>Explain why a competitive market with a negative externality overproduces and how a Pigouvian tax corrects this. Use MSC, MPC, MEC and label a graph.</p><details><summary>Model answer</summary><p class="answer">Private market equilibrium: D=MPC → Qm. Efficient output: D=MSC=MPC+MEC → Q* &lt; Qm. Market overproduces because producers ignore MEC. Pigouvian tax = MEC at Q*. Tax shifts effective supply upward by MEC, reducing Q from Qm to Q*. DWL eliminated at Q*. Graph: D downward, MPC upward, MSC above MPC. Qm at D=MPC. Q* at D=MSC. Tax wedge = MEC. DWL triangle between Q* and Qm.</p></details></div>
+    <div class="card"><h3>Section C 3 (8 marks)</h3><p>A worker's wage rises. Using the labour-leisure model, explain why hours worked might fall. Draw the graph and separate substitution from income effects.</p><details><summary>Model answer</summary><p class="answer">Budget constraint: consumption on y-axis, free time on x-axis. Wage = slope (MRT). Wage rise rotates budget line steeper at free-time axis. Old optimum A: MRS=MRT. New budget line: steeper. Substitution effect: free time more expensive → move along old IC toward less free time → more work. Income effect: richer → demand more normal goods including free time → less work. If income effect dominates: new optimum B has more free time than A → hours worked fall.</p></details></div>
+    <div class="card"><h3>Section C 4 (8 marks)</h3><p>Two firms (A and B) face: Clean/Clean (6,6), Pollute/Clean (8,2), Clean/Pollute (2,8), Pollute/Pollute (3,3). Find the Nash equilibrium and explain why cooperation is difficult without binding agreements.</p><details><summary>Model answer</summary><p class="answer">Best responses: If B=Clean: A prefers Pollute (8&gt;6). If B=Pollute: A prefers Pollute (3&gt;2). Pollute dominates for A. By symmetry Pollute dominates for B. Nash = Pollute/Pollute (3,3). Social optimum = Clean/Clean (total 12 vs 6). Clean/Clean is Pareto improvement. Without binding agreements, each firm's dominant incentive is to Pollute regardless of what the other does. This is a social dilemma: private rationality leads to a collectively worse outcome than cooperation would achieve.</p></details></div>
+  </div></details>
+</section>
+
+<!-- PANIC LINES / FINAL RECALL -->
+<section class="section" id="panic-lines" data-section="final-recall">
+  <h2>Panic Lines and Final Recall</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="panic-read" data-section="final-recall"> Panic lines memorised</label>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="formulas-final" data-section="final-recall"> Final formula list recalled</label>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="graphs-labels" data-section="final-recall"> Graph labels checked</label>
+  <div class="grid">
+    <div class="card" style="border-top:4px solid var(--dark-purple)"><h3>Unit panic lines</h3>
+      <ul>
+        <li><strong>U1:</strong> Define the measure, then say what it misses.</li>
+        <li><strong>U2:</strong> Identify the next best alternative or input-price trade-off.</li>
+        <li><strong>U3:</strong> Separate preferences from constraints. Separate substitution from income effect.</li>
+        <li><strong>U4:</strong> Mark best responses. Nash = mutual best response.</li>
+        <li><strong>U5:</strong> Efficiency is not fairness. Voluntary is not fair.</li>
+        <li><strong>U6:</strong> Employment rent = cost of job loss. Not the wage.</li>
+        <li><strong>U7:</strong> MR=MC. Read P from demand, not MR. Profit = (P–AC)×Q.</li>
+        <li><strong>U8:</strong> Find equilibrium before policy. Tax revenue = tax × Qt.</li>
+        <li><strong>U10:</strong> Compare private and social curves. Tax = MEC at Q*, not total damage.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:4px solid var(--dark-blue)"><h3>Calculation rescue</h3>
+      <ul>
+        <li>Write formula first, then substitute, then solve, then interpret.</li>
+        <li>If tax appears: use after-tax quantity.</li>
+        <li>If elasticity appears: link to total revenue direction.</li>
+        <li>If externality appears: build MSC or MSB before applying policy.</li>
+        <li>If rent appears: net job value minus reservation, then multiply by hours and weeks.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:4px solid var(--dark-green)"><h3>Graph rescue</h3>
+      <ul>
+        <li>Axes first, curves second, equilibrium third, policy fourth, welfare shading last.</li>
+        <li>Labels earn marks even when the drawing is imperfect.</li>
+        <li>Write the condition next to the graph: MR=MC, Qd=Qs, MSC=MPC+MEC, MRS=MRT.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:4px solid var(--hot-pink)"><h3>Definition rescue</h3>
+      <p>"This model shows [curves/parties]. The equilibrium is [condition]. The mechanism is [why]. The conclusion is [efficiency/fairness/policy]."</p>
+    </div>
+  </div>
+  <details><summary>Final formula cheat sheet</summary>
+  <div class="grid">
+    <div class="card"><strong>Markets:</strong><br>Tax rev = t × Qt<br>DWL = ½ × t × ΔQ<br>Shortage = Qd – Qs at ceiling<br>Surplus = Qs – Qd at floor<br>CS = area below D above P<br>PS = area above S below P</div>
+    <div class="card"><strong>Monopoly:</strong><br>MR = a – 2bQ (if P=a–bQ)<br>Set MR=MC → Qm<br>P from demand → Pm<br>Profit = (Pm–AC)×Qm<br>Markup = Pm–MC<br>DWL: Qeff from D=MC</div>
+    <div class="card"><strong>Externalities:</strong><br>MSC = MPC+MEC<br>MSB = MPB+MEB<br>Tax = MEC at Q*<br>Subsidy = MEB at Q*<br>Qm: D=MPC; Q*: D=MSC or MSB=MC</div>
+    <div class="card"><strong>Labour:</strong><br>Hourly rent = net job value – reservation<br>Total rent = hourly × hours × weeks<br>Cost/efficiency unit = w/e<br>MRS=MRT at optimum<br>Wage rise → rotate budget line</div>
+    <div class="card"><strong>Foundations:</strong><br>OC = next best forgone<br>Economic rent = chosen – next best<br>AP = Q/L; MP = ΔQ/ΔL<br>Isocost slope = –w/r<br>Nash = mutual best response<br>Pareto improv: 1 better, none worse</div>
+    <div class="card"><strong>GDP:</strong><br>GDP = market value of final output<br>GDP per capita = GDP/population<br>Growth rate = (new–old)/old × 100<br>PPP adjusts for purchasing power<br>Unpaid household work excluded</div>
+  </div></details>
+</section>
+
+<!-- MISTAKE LOG -->
+<section class="section" id="mistake-log" data-section="mistakes">
+  <h2>Mistake Log</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="mistakes-updated" data-section="mistakes"> Mistake log updated this session</label>
+  <p class="muted">Saved locally in this browser. Add every mistake immediately after practice — the pattern becomes visible fast.</p>
+  <div class="mistake-row no-print">
+    <input type="date" id="mDate" aria-label="Mistake date">
+    <input type="text" id="mTopic" aria-label="Unit or topic" placeholder="Unit/topic">
+    <select id="mType" aria-label="Mistake type"><option>T/F</option><option>MCQ</option><option>Calculation</option><option>Graph</option><option>Section C</option></select>
+    <input type="text" id="mMistake" aria-label="What I got wrong" placeholder="What I got wrong">
+    <input type="text" id="mRule" aria-label="Correct rule" placeholder="Correct rule">
+    <select id="mConf" aria-label="Confidence level"><option>Red</option><option>Amber</option><option>Green</option></select>
+  </div>
+  <div class="no-print" style="display:flex;gap:8px;margin:8px 0">
+    <button class="btn-green" id="addMistake">Add mistake</button>
+    <button class="btn-ghost" id="clearMistakes">Clear log</button>
+  </div>
+  <div id="mistakeTable"></div>
+  <label style="display:block;margin-top:12px">Free-form notes (saved locally)
+    <textarea data-note="freeMistakes" aria-label="Free-form notes and patterns" placeholder="Write patterns, corrections, redraws here..." style="margin-top:6px"></textarea>
+  </label>
+</section>
+
+<!-- SOURCE STATUS -->
+<section class="section" id="sources" data-section="dashboard">
+  <h2>Source Status / Honesty</h2>
+  <label class="understood-wrap"><input class="cb" type="checkbox" data-id="sources-read" data-section="dashboard"> Source status read</label>
+  <ul>
+    <li>Built from: ECO114 A3 Index, Exam War Room, Markets v2 Unit Tabs, Foundations v2 Unit Tabs (extracted 2022–2024 A3 papers).</li>
+    <li>v1.3 gap fixes added: Unit 1 novel GDP Section C exemplar; Unit 8 long-run MC=AC T/F; Unit 10 moral hazard vs adverse selection MCQs; Unit 5 numeric bargaining example.</li>
+    <li>Legacy hubs (eco114_a3_markets_units_6_7_8_10.html, eco114_a3_foundations_units_1_to_5.html) preserved for reference only.</li>
+    <li>2025 Afrikaans A3 preserved but not text-extracted.</li>
+    <li>Unit 9 excluded unless lecturer confirms it is examinable.</li>
+    <li>Graph sketches are redraw aids, not official diagram replicas.</li>
+    <li>AI is a supplementary study tool — all content must be checked against official module materials.</li>
+  </ul>
+</section>
+
+<footer class="section" style="margin-top:30px;background:linear-gradient(90deg,var(--dark-purple),var(--dark-blue));color:#fff">
+  <strong>ECO114 A3 Final 80%+ Master Hub</strong> v1.3 — Built 2026-06-14.<br>
+  <small>localStorage key: <code>eco114_a3_final_master_progress_v1</code> — progress survives reload. All four backup files preserved in exports/html/.</small>
+</footer>
+
+</div><!-- .content -->
+</div><!-- .main -->
+</div><!-- .app -->
+<script>
+const STORE='eco114_a3_final_master_progress_v1';
+const MEM={};
+function sk(k){return STORE+':'+k;}
+function safeGet(fk,fb=''){try{return localStorage.getItem(fk)??fb;}catch(e){return MEM[fk]??fb;}}
+function safeSet(fk,v){try{localStorage.setItem(fk,v);}catch(e){MEM[fk]=v;}}
+function loadVal(k,def){return safeGet(sk(k),def??'');}
+function saveVal(k,v){safeSet(sk(k),v);}
+
+/* ---- Sections for sidebar progress ---- */
+const SECTIONS={
+  'dashboard':'Dashboard',
+  'heatmap':'Heatmap',
+  'study-route':'Study Routes',
+  'warroom':'War Room/Format',
+  'formulas':'Formulas',
+  'tf':'T/F Bank',
+  'mcq':'MCQ Bank',
+  'unit8':'Unit 8 Markets',
+  'unit7':'Unit 7 Monopoly',
+  'unit10':'Unit 10 Externalities',
+  'unit6':'Unit 6 Labour',
+  'unit3':'Unit 3 MRS/MRT',
+  'unit4':'Unit 4 Games',
+  'unit5':'Unit 5 Angela-Bruno',
+  'unit2':'Unit 2 Technology',
+  'unit1':'Unit 1 GDP',
+  'section-c':'Section C Premium',
+  'practice-bank':'Full Practice Bank',
+  'final-boss':'Final Boss',
+  'final-recall':'Panic Lines',
+  'mistakes':'Mistake Log'
+};
+
+/* ---- Nav items ---- */
+const NAV=[
+  {group:'Overview'},
+  {id:'top',label:'Start Here'},
+  {id:'dashboard',label:'Dashboard'},
+  {id:'heatmap',label:'Heatmap'},
+  {id:'study-route',label:'Study Routes'},
+  {group:'War Room'},
+  {id:'warroom-format',label:'Format/Neg Marking'},
+  {id:'formulas',label:'Formula Bank'},
+  {id:'tf',label:'T/F Danger Bank'},
+  {id:'mcq',label:'MCQ Trap Bank'},
+  {group:'Markets'},
+  {id:'unit8',label:'Unit 8: Markets'},
+  {id:'unit7',label:'Unit 7: Monopoly'},
+  {id:'unit10',label:'Unit 10: Externalities'},
+  {id:'unit6',label:'Unit 6: Labour'},
+  {group:'Foundations'},
+  {id:'unit3',label:'Unit 3: MRS/MRT'},
+  {id:'unit4',label:'Unit 4: Games'},
+  {id:'unit5',label:'Unit 5: Angela-Bruno'},
+  {id:'unit2',label:'Unit 2: Technology'},
+  {id:'unit1',label:'Unit 1: GDP'},
+  {group:'Exam Training'},
+  {id:'section-c',label:'Premium Section C'},
+  {id:'practice-bank',label:'Full Practice Bank'},
+  {id:'final-boss',label:'Final Boss'},
+  {id:'panic-lines',label:'Panic Lines'},
+  {id:'mistake-log',label:'Mistake Log'},
+  {id:'sources',label:'Source Status'}
+];
+
+/* ---- T/F bank data ---- */
+const TF=[
+  ['GDP includes unpaid household work.','F','GDP measures market production; unpaid work is omitted.','U1'],
+  ['GDP per capita is an average and can hide inequality.','T','It divides GDP by population; says nothing about distribution.','U1'],
+  ['A country can be capitalist even if government has an economic role.','T','Capitalism requires private property, markets and firms; not zero state.','U1'],
+  ['PPP helps compare living standards by adjusting for price differences.','T','PPP adjusts purchasing power rather than using exchange rates alone.','U1'],
+  ['In the Malthusian model, higher living standards always persist.','F','Population pressure can erode productivity gains.','U1'],
+  ['Ceteris paribus means changing all variables at once.','F','It means holding other relevant factors constant.','U2'],
+  ['Opportunity cost is the value of the next best alternative forgone.','T','The next best option is the relevant comparison.','U2'],
+  ['The slope of an isocost line depends on relative input prices.','T','With K vertical and L horizontal, slope is –w/r.','U2'],
+  ['Marginal product is total output divided by total labour.','F','That is average product. MP = ΔOutput/ΔInput.','U2'],
+  ['A dominated technology can be cost-minimising.','F','Dominated means more of every input for same output — never chosen.','U2'],
+  ['A change in income changes the shape of indifference curves.','F','Preferences shape ICs; income changes the budget constraint.','U3'],
+  ['At interior optimum, MRS equals MRT.','T','Subjective and feasible trade-offs are equal.','U3'],
+  ['If a wage rises, every worker must work more hours.','F','Income and substitution effects can work in opposite directions.','U3'],
+  ['The opportunity cost of one hour of free time is the wage forgone.','T','One more hour of free time means one less hour of paid work.','U3'],
+  ['MRS measures what is feasible in production.','F','MRS measures preferences; MRT measures feasibility.','U3'],
+  ['A Nash equilibrium is always a dominant strategy equilibrium.','F','Nash requires mutual best responses; dominance is a stronger condition.','U4'],
+  ['A dominant strategy is the best action regardless of what the other player does.','T','It wins for that player in every opponent scenario.','U4'],
+  ['A Nash equilibrium is always Pareto efficient.','F','Prisoner dilemmas have Pareto-inefficient Nash equilibria.','U4'],
+  ['A social dilemma occurs when individually rational actions create a collectively worse outcome.','T','The Nash outcome is worse than another feasible outcome for the group.','U4'],
+  ['In a payoff matrix, compare Player 1 payoff with Player 2 payoff to find best responses.','F','Compare the same player\'s payoffs across that player\'s strategies.','U4'],
+  ['A Pareto improvement makes at least one person better off and no one worse off.','T','Both parts of the definition are required.','U5'],
+  ['Pareto efficient means fair.','F','An allocation can be Pareto efficient and deeply unfair.','U5'],
+  ['BSC and reservation IC are the same object.','F','BSC is survival feasibility; RIC is outside-option preference.','U5'],
+  ['A voluntary exchange always reflects equal bargaining power.','F','Institutions and reservation options affect fairness.','U5'],
+  ['Employment rent is simply the wage.','F','It is the value of keeping the job relative to losing it.','U6'],
+  ['Higher unemployment benefits always increase employment rent.','F','They improve the reservation option and can reduce rent.','U6'],
+  ['A longer expected unemployment duration increases the cost of job loss.','T','The worker expects more periods without the current job.','U6'],
+  ['The labour discipline model assumes effort is perfectly contractible.','F','Effort is hard to observe and not fully contractible.','U6'],
+  ['For a monopolist, the MR curve equals demand.','F','MR lies below demand when demand slopes downward.','U7'],
+  ['A profit-maximising monopoly uses P=MC.','F','It uses MR=MC, then reads P from demand.','U7'],
+  ['If demand is elastic, a price increase raises total revenue.','F','Elastic: quantity falls proportionally more → TR falls.','U7'],
+  ['Profit = (P – AC) × Q.','T','This is the profit rectangle formula.','U7'],
+  ['Perfectly competitive firms are price takers.','T','Individual firms cannot influence market price.','U8'],
+  ['A price ceiling binds when it is above the equilibrium price.','F','A ceiling binds BELOW equilibrium.','U8'],
+  ['A price floor binds when it is above the equilibrium price.','T','It prevents price from falling to equilibrium.','U8'],
+  ['Tax revenue equals tax per unit times the original pre-tax quantity.','F','Use the after-tax quantity sold.','U8'],
+  ['The legal taxpayer always bears the economic burden of a tax.','F','Incidence depends on relative elasticities.','U8'],
+  ['A binding price ceiling creates a shortage.','T','Qd exceeds Qs at the controlled price.','U8'],
+  ['Negative externalities cause overproduction in an unregulated market.','T','Private decision-makers ignore external costs.','U10'],
+  ['MSC equals MPC plus MEC.','T','Social cost includes private and external marginal costs.','U10'],
+  ['Optimal Pigouvian tax equals MEC at efficient quantity.','T','It aligns private cost with social cost at Q*.','U10'],
+  ['Positive externalities cause underproduction.','T','Private buyers ignore external benefits.','U10'],
+  ['Public goods are always provided by government.','F','Public goods are non-rival and non-excludable.','U10'],
+  ['Moral hazard is hidden action after agreement; adverse selection is hidden type before.','T','Timing and information type distinguish them.','U10']
+];
+
+/* ---- MCQ bank data ---- */
+const MCQ=[
+  {u:'U8',stem:'A price ceiling of R12 is imposed when equilibrium price is R13. What is true?',opts:{A:'Binding — creates shortage.',B:'Non-binding because it is below equilibrium.',C:'Creates a surplus.',D:'Creates a monopoly.'},ans:'A',why:'Below equilibrium → binding → Qd > Qs → shortage.'},
+  {u:'U8',stem:'Tax revenue is calculated using which quantity?',opts:{A:'Original pre-tax quantity.',B:'Quantity demanded at old price.',C:'Quantity sold after the tax.',D:'Efficient quantity before any tax.'},ans:'C',why:'Revenue = tax × Qt. Using pre-tax Q is the classic trap.'},
+  {u:'U8',stem:'If demand is perfectly inelastic and supply is elastic, who bears most tax burden?',opts:{A:'Buyers bear most or all.',B:'Sellers bear most.',C:'Legal taxpayer always bears all.',D:'Split equally.'},ans:'A',why:'Less elastic side bears more burden.'},
+  {u:'U7',stem:'For a monopolist, after finding MR=MC, price is read from:',opts:{A:'Marginal revenue curve.',B:'Demand curve.',C:'Marginal cost curve.',D:'Average cost curve.'},ans:'B',why:'Reading price from MR is the biggest monopoly graph trap.'},
+  {u:'U7',stem:'If P=100–2Q, MR is:',opts:{A:'MR=100–2Q',B:'MR=50–Q',C:'MR=100–4Q',D:'MR=2Q–100'},ans:'C',why:'Same intercept, double the slope on Q.'},
+  {u:'U7',stem:'Profit rectangle equals:',opts:{A:'P×Q',B:'MC×Q',C:'(P–MC)×Q',D:'(P–AC)×Q'},ans:'D',why:'Markup uses MC; profit uses AC.'},
+  {u:'U3',stem:'At an interior constrained optimum:',opts:{A:'MRS=MRT.',B:'MRS>MRT always.',C:'Person is on lowest IC.',D:'Budget line is irrelevant.'},ans:'A',why:'Subjective trade-off equals feasible trade-off.'},
+  {u:'U3',stem:'A wage increase rotates the labour-leisure budget because:',opts:{A:'Preferences change.',B:'Day becomes longer.',C:'Opportunity cost of free time changes.',D:'Benefits must fall.'},ans:'C',why:'Wage changes the slope (MRT), not the preference map.'},
+  {u:'U4',stem:'A Nash equilibrium is:',opts:{A:'Mutual best response.',B:'Always socially optimal.',C:'Always a dominant strategy equilibrium.',D:'Outcome with highest total payoff.'},ans:'A',why:'Nash: no unilateral profitable deviation.'},
+  {u:'U4',stem:'A social dilemma has:',opts:{A:'No Nash equilibrium.',B:'Individually rational behaviour with collectively worse outcome.',C:'Only Pareto-efficient outcomes.',D:'No private incentives.'},ans:'B',why:'Nash can be Pareto inferior to cooperative outcome.'},
+  {u:'U5',stem:'Pareto efficient means:',opts:{A:'Outcome is fair.',B:'Everyone has equal goods.',C:'No Pareto improvement is feasible.',D:'Outcome is voluntary.'},ans:'C',why:'Efficient: no one can be helped without hurting another.'},
+  {u:'U6',stem:'Employment rent rises when:',opts:{A:'Job loss becomes more costly.',B:'Unemployment becomes more attractive.',C:'Worker is paid reservation wage.',D:'Effort costs rise only.'},ans:'A',why:'Higher gap between job value and outside option = more rent.'},
+  {u:'U6',stem:'Cost per efficiency unit is:',opts:{A:'e/w',B:'w+e',C:'w/e',D:'w–e'},ans:'C',why:'Wage divided by effort. e/w is efficiency per rand.'},
+  {u:'U10',stem:'Optimal Pigouvian tax equals:',opts:{A:'Total external damage at Qm.',B:'AC at Q*.',C:'MEC at efficient quantity.',D:'CS before tax.'},ans:'C',why:'Marginal, not total; evaluated at Q* not Qm.'},
+  {u:'U10',stem:'A pure public good is:',opts:{A:'Non-rival and non-excludable.',B:'Rival and excludable.',C:'Non-rival and excludable.',D:'Rival and non-excludable.'},ans:'A',why:'Public goods are non-rival and non-excludable by definition.'},
+  {u:'U10',stem:'Moral hazard involves:',opts:{A:'Hidden type before agreement.',B:'Hidden action after agreement.',C:'Compulsory pooling.',D:'Coase bargaining.'},ans:'B',why:'After the agreement, hidden action changes behaviour.'}
+];
+
+/* ---- Render T/F table ---- */
+function renderTF(){
+  const tbody=document.getElementById('tfTableBody');
+  if(!tbody)return;
+  tbody.innerHTML=TF.map((r,i)=>`<tr>
+    <td>${esc(r[0])}</td>
+    <td><strong style="color:${r[1]==='T'?'var(--dark-green)':'var(--red)'}">${r[1]}</strong></td>
+    <td class="answer">${esc(r[2])}</td>
+    <td><span class="badge badge-blue">${esc(r[3])}</span></td>
+  </tr>`).join('');
+}
+
+/* ---- Render MCQ list ---- */
+function renderMCQ(){
+  const el=document.getElementById('mcqList');
+  if(!el)return;
+  el.innerHTML=MCQ.map((q,i)=>`<div class="card" style="margin:10px 0">
+    <strong><span class="badge badge-blue">${esc(q.u)}</span> ${esc(q.stem)}</strong>
+    <div class="grid" style="margin-top:8px">${Object.entries(q.opts).map(([k,v])=>`<div><strong>${k}.</strong> ${esc(v)}</div>`).join('')}</div>
+    <details style="margin-top:8px"><summary>Answer</summary>
+      <p><strong>${esc(q.ans)}</strong> — ${esc(q.why)}</p>
+    </details>
+  </div>`).join('');
+}
+
+/* ---- Build sidebar nav ---- */
+function buildNav(){
+  const nav=document.getElementById('sideNav');
+  if(!nav)return;
+  nav.innerHTML=NAV.map(item=>{
+    if(item.group)return`<div class="nav-group">${esc(item.group)}</div>`;
+    const sec=getSectionForNav(item.id);
+    const pct=sec?getSectionPct(sec):'';
+    const pctHtml=sec?`<span class="nav-pct" data-nav-pct="${esc(sec)}">${pct}%</span>`:'';
+    return`<a href="#${esc(item.id)}" data-nav-id="${esc(item.id)}">${esc(item.label)}${pctHtml}</a>`;
+  }).join('');
+  nav.addEventListener('click',e=>{
+    const a=e.target.closest('a[href^="#"]');
+    if(!a)return;
+    e.preventDefault();
+    const id=a.getAttribute('href').slice(1);
+    const el=document.getElementById(id);
+    if(el){el.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>{el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse')},100);}
+    history.replaceState(null,'','#'+id);
+    updateProgress();
+  });
+}
+
+/* ---- Map nav id to section key ---- */
+function getSectionForNav(id){
+  const m={'warroom-format':'warroom','unit8-header':'unit8','unit7-header':'unit7','unit10-header':'unit10','unit6-header':'unit6','foundations-header':'unit3','panic-lines':'final-recall','mistake-log':'mistakes','sources':'dashboard'};
+  if(m[id])return m[id];
+  const k=Object.keys(SECTIONS).find(s=>id.startsWith(s)||s===id);
+  return k||null;
+}
+
+/* ---- Progress tracking ---- */
+function getAllCBs(){return Array.from(document.querySelectorAll('.cb'));}
+
+function getSectionCBs(sec){return getAllCBs().filter(cb=>cb.dataset.section===sec);}
+
+function getSectionPct(sec){
+  const cbs=getSectionCBs(sec);
+  if(!cbs.length)return 0;
+  const done=cbs.filter(cb=>cb.checked).length;
+  return Math.round(done/cbs.length*100);
+}
+
+function updateProgress(){
+  const all=getAllCBs();
+  const total=all.length;
+  const done=all.filter(cb=>cb.checked).length;
+  const pct=total?Math.round(done/total*100):0;
+  // Overall
+  const op=document.getElementById('overallPct');const of=document.getElementById('overallFill');
+  const sp=document.getElementById('sptPct');const sf=document.getElementById('sptFill');
+  const sc=document.getElementById('sptCount');
+  if(op)op.textContent=pct+'%';
+  if(of)of.style.width=pct+'%';
+  if(sp)sp.textContent=pct+'%';
+  if(sf)sf.style.width=pct+'%';
+  if(sc)sc.textContent=done+'/'+total+' understood';
+  // Per-section mini bars
+  const sptSecs=document.getElementById('sptSections');
+  if(sptSecs){
+    sptSecs.innerHTML=Object.entries(SECTIONS).map(([key,label])=>{
+      const cbs=getSectionCBs(key);
+      if(!cbs.length)return'';
+      const d=cbs.filter(c=>c.checked).length;
+      const p=Math.round(d/cbs.length*100);
+      return`<div class="spt-sec">
+        <div class="spt-sec-head"><span class="spt-sec-title">${esc(label)}</span><span class="spt-sec-pct">${p}%</span></div>
+        <div class="mini-bar"><span style="width:${p}%"></span></div>
+      </div>`;
+    }).filter(Boolean).join('');
+  }
+  // Nav percentages
+  document.querySelectorAll('[data-nav-pct]').forEach(el=>{
+    const sec=el.dataset.navPct;
+    el.textContent=getSectionPct(sec)+'%';
+  });
+  // Highlight active nav
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.remove('active'));
+  const hash=location.hash.slice(1);
+  if(hash){const a=document.querySelector(`.nav a[data-nav-id="${hash}"]`);if(a)a.classList.add('active');}
+}
+
+function initProgress(){
+  getAllCBs().forEach(cb=>{
+    const id=cb.dataset.id;
+    cb.checked=loadVal('cb:'+id,'0')==='1';
+    const wrap=cb.closest('.understood-wrap');
+    if(wrap&&cb.checked)wrap.classList.add('done');
+    cb.addEventListener('change',()=>{
+      saveVal('cb:'+id,cb.checked?'1':'0');
+      const w=cb.closest('.understood-wrap');
+      if(w){w.classList.toggle('done',cb.checked);}
+      updateProgress();
+    });
+  });
+  updateProgress();
+}
+
+/* ---- Dark mode ---- */
+function toggleDark(){
+  document.body.classList.toggle('dark');
+  saveVal('dark',document.body.classList.contains('dark')?'1':'0');
+}
+if(loadVal('dark','0')==='1')document.body.classList.add('dark');
+
+/* ---- Recall mode ---- */
+function toggleRecall(){
+  const on=document.body.classList.toggle('recall');
+  if(on)document.querySelectorAll('.answer').forEach(el=>el.classList.remove('revealed'));
+}
+document.addEventListener('click',e=>{
+  if(!document.body.classList.contains('recall'))return;
+  const a=e.target.closest('.answer');
+  if(a)a.classList.toggle('revealed');
+});
+
+/* ---- Expand/collapse all details ---- */
+function expandAll(){document.querySelectorAll('details').forEach(d=>d.setAttribute('open',''));}
+function collapseAll(){document.querySelectorAll('details').forEach(d=>d.removeAttribute('open'));}
+
+/* ---- Graph labels ---- */
+let labelsHidden=false;
+function toggleLabels(){
+  labelsHidden=!labelsHidden;
+  document.body.classList.toggle('hide-labels',labelsHidden);
+}
+
+/* ---- Reset progress ---- */
+function resetProgress(){
+  if(!confirm('Reset all study progress? This cannot be undone.'))return;
+  getAllCBs().forEach(cb=>{
+    cb.checked=false;
+    saveVal('cb:'+cb.dataset.id,'0');
+    const w=cb.closest('.understood-wrap');
+    if(w)w.classList.remove('done');
+  });
+  updateProgress();
+}
+
+/* ---- Search ---- */
+function doSearch(q){
+  const term=q.toLowerCase().trim();
+  document.querySelectorAll('.section,.card,details').forEach(el=>{
+    if(!term){el.style.display='';return;}
+    const txt=el.textContent.toLowerCase();
+    el.style.display=txt.includes(term)?'':'none';
+  });
+  if(!term)document.querySelectorAll('.section,.card,details').forEach(el=>el.style.display='');
+}
+
+/* ---- Mistake log ---- */
+function loadMistakes(){return JSON.parse(loadVal('mistakes','[]'));}
+function saveMistakes(arr){saveVal('mistakes',JSON.stringify(arr));}
+function renderMistakes(){
+  const arr=loadMistakes();
+  const el=document.getElementById('mistakeTable');
+  if(!el)return;
+  if(!arr.length){el.innerHTML='<p class="muted">No mistakes logged yet.</p>';return;}
+  el.innerHTML=`<table><thead><tr><th>Date</th><th>Unit</th><th>Type</th><th>Mistake</th><th>Rule</th><th>Conf</th></tr></thead><tbody>${arr.map(r=>`<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td><td>${esc(r[3])}</td><td>${esc(r[4])}</td><td><span class="badge ${r[5]==='Red'?'badge-red':r[5]==='Green'?'badge-green':'badge-yellow'}">${esc(r[5])}</span></td></tr>`).join('')}</tbody></table>`;
+}
+function initMistakeLog(){
+  const add=document.getElementById('addMistake');
+  const clear=document.getElementById('clearMistakes');
+  if(add)add.addEventListener('click',()=>{
+    const date=document.getElementById('mDate').value||new Date().toISOString().split('T')[0];
+    const topic=document.getElementById('mTopic').value||'';
+    const type=document.getElementById('mType').value;
+    const mistake=document.getElementById('mMistake').value||'';
+    const rule=document.getElementById('mRule').value||'';
+    const conf=document.getElementById('mConf').value;
+    if(!topic&&!mistake)return;
+    const arr=loadMistakes();arr.push([date,topic,type,mistake,rule,conf]);saveMistakes(arr);renderMistakes();
+    document.getElementById('mTopic').value='';document.getElementById('mMistake').value='';document.getElementById('mRule').value='';
+  });
+  if(clear)clear.addEventListener('click',()=>{if(confirm('Clear mistake log?')){saveMistakes([]);renderMistakes();}});
+  renderMistakes();
+  // Free notes
+  const ta=document.querySelector('[data-note="freeMistakes"]');
+  if(ta){ta.value=loadVal('note:freeMistakes','');ta.addEventListener('input',()=>saveVal('note:freeMistakes',ta.value));}
+}
+
+/* ---- Escape ---- */
+function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+
+/* ---- Init ---- */
+document.addEventListener('DOMContentLoaded',()=>{
+  buildNav();
+  renderTF();
+  renderMCQ();
+  initProgress();
+  initMistakeLog();
+  // Hash highlight
+  window.addEventListener('hashchange',updateProgress);
+  if(location.hash){
+    const el=document.getElementById(location.hash.slice(1));
+    if(el)setTimeout(()=>{el.classList.add('pulse');updateProgress();},250);
+  }
+});
+</script>
+</body>
+</html>
