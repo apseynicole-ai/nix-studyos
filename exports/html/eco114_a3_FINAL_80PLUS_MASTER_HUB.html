@@ -452,50 +452,241 @@ body.dark .premium-card h3{color:var(--hot-pink)!important}
 
 <!-- UNIT 7 -->
 <div class="unit-header" id="unit7-header">
-  <h2>Markets — Unit 7: Price-Setting Firms, MR=MC, Monopoly</h2>
+  <h2>Markets — Unit 7: Price-Setting Firms, Elasticity &amp; Efficiency</h2>
 </div>
 <section class="section" id="unit7" data-section="unit7">
-  <h2>Unit 7: Monopoly and Price-Setting Firms</h2>
+  <h2>Unit 7: Price-Setting Firms, MR=MC, Elasticity &amp; Gains from Trade</h2>
   <div class="grid">
     <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-defs" data-section="unit7"> Definitions understood</label>
     <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-mr-mc" data-section="unit7"> MR=MC calculations done</label>
-    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-profit" data-section="unit7"> Profit/markup done</label>
+    <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-profit" data-section="unit7"> Profit/markup &amp; DWL done</label>
     <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-elastic" data-section="unit7"> Elasticity/TR done</label>
     <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-graphs" data-section="unit7"> Graphs redrawn from memory</label>
     <label class="understood-wrap"><input class="cb" type="checkbox" data-id="u7-practice" data-section="unit7"> Practice completed closed-book</label>
   </div>
-  <details open><summary>Core story</summary>
-  <p>A price-setting firm faces a downward-sloping demand curve. Because lowering price to sell one more unit lowers revenue on all previous units, <strong>MR lies below demand</strong>. Profit maximisation: set MR=MC, then read price from demand (not MR). Profit = (P – AC) × Q. Markup = P – MC. Monopoly underproduces relative to the efficient output (where D=MC), creating DWL.</p></details>
-  <details><summary>Key rules</summary>
+
+  <details open><summary>Core story — read this first if you haven't seen Unit 7 before</summary>
+  <p>Unit 8 introduced the <strong>price-taking</strong> firm: so many competitors that no one can affect the market price — you just accept P and choose Q. Unit 7 is the opposite: a <strong>price-setting</strong> (monopoly or differentiated-product) firm <em>faces the whole market demand curve</em>. It can charge whatever price it likes — but higher price means fewer sales. The demand curve is its constraint.</p>
+  <p>Because of this, there is a hidden cost to selling one more unit: you have to <em>lower your price for every unit already sold</em>. That makes <strong>marginal revenue (MR) always less than price</strong>. The gap between demand (= price) and MR is the key to understanding monopoly behaviour.</p>
+  <p><strong>The 4-step rule</strong> for any price-setting firm: (1) Find MR from demand. (2) Set MR = MC → solve for Q<sub>m</sub>. (3) Substitute Q<sub>m</sub> into the <em>demand</em> curve → get P<sub>m</sub>. (4) Profit = (P<sub>m</sub> – AC) × Q<sub>m</sub>. The efficient output is where demand = MC (not MR = MC) — the monopolist underproduces, creating DWL.</p>
+  </details>
+
+  <details><summary>Part A: Why does a price-setting firm exist? Market power explained</summary>
+  <p>A firm has <strong>market power</strong> when it sells a product with no perfect substitute — a <em>differentiated product</em>. It is the only seller of that specific variety. Examples: a specific smartphone brand, a car model, a local service.</p>
+  <p>Because buyers cannot instantly switch to an identical alternative, the firm can raise price without losing ALL its customers. This means its demand curve slopes downward (unlike the flat demand for a price-taker). The steeper the demand curve relative to its height, the less market power. The flatter, the more competition constrains the firm.</p>
+  <div class="card"><strong>Price-taker vs price-setter — the critical difference</strong><br>
+  <strong>Price-taker (Unit 8):</strong> Faces horizontal demand at market price P. Sets P = MC to choose Q. No market power.<br>
+  <strong>Price-setter (Unit 7):</strong> Faces downward-sloping demand. Chooses both Q and P. Sets MR = MC then reads P from demand. Has market power.<br>
+  <em>Trap: a price-setter does NOT choose P directly — it chooses Q, and demand then tells it what price the market will bear.</em></div>
+  </details>
+
+  <details><summary>Part B: Where MR comes from — the hidden cost of selling more</summary>
+  <p>Suppose a firm's inverse demand is P = 8 000 – 80Q (from the "Beautiful Cars" example in your slides). At Q = 20, price = 6 400 and TR = 128 000. At Q = 21, price = 6 320 and TR = 132 720. MR = 132 720 – 128 000 = <strong>4 720</strong>. But price at Q=21 is 6 320. MR (4 720) is far below price (6 320).</p>
+  <p>Why? Selling the 21st car earns 6 320 — but to sell it you had to drop the price from 6 400 to 6 320, losing 80 on each of the first 20 cars (= –1 600). Net = 6 320 – 1 600 = 4 720. That "lost revenue on previous units" is the MR gap.</p>
+  <div class="card"><strong>The MR formula for any linear demand</strong><br>
+  If demand is P = a – bQ, then <strong>MR = a – 2bQ</strong><br>
+  Same P-intercept as demand. Slope of MR is <em>twice</em> as steep as demand.<br>
+  MR intersects the Q-axis at <em>half</em> the Q-axis intercept of demand.<br>
+  <em>Derivation: TR = P×Q = (a – bQ)×Q = aQ – bQ². Take derivative (or difference): dTR/dQ = a – 2bQ = MR.</em></div>
+  <p><strong>Quick check:</strong> For P = 100 – 2Q → MR = 100 – 4Q. For P = 60 – 4Q → MR = 60 – 8Q. Pattern: same intercept, double the slope coefficient.</p>
+  </details>
+
+  <details><summary>Part C: CS, PS and gains from trade in a price-setting market</summary>
+  <p>These concepts apply everywhere — not just competitive markets. Recall:</p>
   <ul>
-    <li>If P = a – bQ, then <strong>MR = a – 2bQ</strong> (same intercept, double slope).</li>
-    <li>Set MR = MC → solve Q. Then substitute Q into demand → get P.</li>
-    <li>Profit = (P – AC) × Q. Markup = P – MC.</li>
-    <li>Efficient output: where demand = MC (Qeff). DWL = triangle between Qm and Qeff.</li>
-    <li>Elasticity: elastic → MR positive; unit elastic → MR=0; inelastic → MR negative. Monopolist never chooses inelastic portion.</li>
-    <li>TR and elasticity: elastic demand → price cut raises TR. Inelastic demand → price rise raises TR.</li>
-  </ul></details>
-  <details><summary>Worked example</summary>
-  <div class="card"><strong>Full calculation</strong><br>
-  Given: P = 100 – 2Q, MC = 20, AC = 40 at chosen output.<br>
-  MR = 100 – 4Q. Set MR=MC: 100–4Q=20 → 4Q=80 → <strong>Qm=20</strong>.<br>
-  Read P from demand: P = 100–2(20) = <strong>R60</strong>.<br>
-  Profit = (60–40)×20 = <strong>R400</strong>. Markup = 60–20 = <strong>R40</strong>.<br>
-  Efficient Q where D=MC: 100–2Q=20 → Qeff=40. <strong>DWL</strong> = ½×(60–20)×(40–20) = R400 triangle.<br>
-  <em>Trap: never read P from MR. Never use P=MC for monopoly.</em></div></details>
-  <details><summary>Graphs to redraw</summary>
+    <li><strong>WTP</strong> (willingness to pay): the maximum a buyer would pay. The demand curve shows WTP for each unit.</li>
+    <li><strong>WTA</strong> (willingness to accept): the minimum a seller would accept. The MC curve shows WTA for each unit (the cost of producing it).</li>
+    <li><strong>CS = WTP – P</strong> for each unit. Summed: area between demand curve and price line.</li>
+    <li><strong>PS = P – WTA</strong> for each unit. Summed: area between price line and MC curve.</li>
+    <li><strong>Total surplus (TS) = CS + PS</strong>. This is the total gains from trade.</li>
+  </ul>
+  <div class="card"><strong>Beautiful Cars worked example (from your lecture slides)</strong><br>
+  Demand: P = 8 000 – 80Q. MC = 1 344 + 48Q. MR = 8 000 – 160Q.<br><br>
+  <strong>Profit-max:</strong> MR = MC → 8 000 – 160Q = 1 344 + 48Q → 6 656 = 208Q → Q<sub>m</sub> = 32.<br>
+  Price: P = 8 000 – 80(32) = <strong>$5 440</strong>.<br><br>
+  <strong>CS:</strong> Triangle above $5 440 below demand, from Q=0 to Q=32.<br>
+  CS = ½ × 32 × (8 000 – 5 440) = ½ × 32 × 2 560 = <strong>$40 960</strong>.<br><br>
+  <strong>PS:</strong> Trapezoid between price ($5 440) and MC curve, from Q=0 to Q=32.<br>
+  MC at Q=0: 1 344. MC at Q=32: 1 344 + 48(32) = 2 880.<br>
+  PS = ½ × [(5 440 – 2 880) + (5 440 – 1 344)] × 32 = ½ × [2 560 + 4 096] × 32 = ½ × 6 656 × 32 = <strong>$106 496</strong>.<br><br>
+  <strong>TS = $40 960 + $106 496 = $147 456</strong>.<br>
+  Notice the firm captures a <em>much larger share</em> of TS than consumers do. This raises fairness questions — but it is the firm's legal profit-maximising choice.</div>
+  </details>
+
+  <details><summary>Part D: Is the monopoly output Pareto efficient? DWL explained</summary>
+  <p><strong>Pareto efficiency</strong> means: no way to make anyone better off without making someone worse off. The competitive equilibrium IS Pareto efficient — all mutually beneficial trades happen. But is the monopoly equilibrium at Q<sub>m</sub> Pareto efficient?</p>
+  <p>No. At Q<sub>m</sub> = 32, a 33rd consumer is willing to pay more than it costs to produce a 33rd car (D > MC at Q = 33). Both the firm and that consumer could gain from trading — but the firm refuses because the price cut needed to sell the 33rd car would reduce profit on all 32 existing sales. The firm sacrifices TS to protect its profit margin.</p>
+  <div class="card"><strong>DWL from monopoly — Beautiful Cars</strong><br>
+  Efficient output (where D = MC): 8 000 – 80Q = 1 344 + 48Q → 6 656 = 128Q → Q<sub>eff</sub> = 52.<br>
+  At Q<sub>eff</sub> = 52: price = MC = 8 000 – 80(52) = 8 000 – 4 160 = <strong>$3 840</strong> (competitive price).<br><br>
+  DWL = ½ × (P<sub>m</sub> – MC at Q<sub>m</sub>) × (Q<sub>eff</sub> – Q<sub>m</sub>)<br>
+  = ½ × (5 440 – 2 880) × (52 – 32) = ½ × 2 560 × 20 = <strong>$25 600</strong><br><br>
+  This triangle represents the value of 20 cars that <em>should</em> have been produced and sold (WTP > MC for each) but were not — because the firm restricted output to keep price high.<br>
+  <em>Trap: DWL is the triangle from Q<sub>m</sub> to Q<sub>eff</sub> — NOT the whole profit rectangle.</em></div>
+  <p><strong>Why doesn't the firm just lower price to $3 840?</strong> It would maximise total surplus — but not its own profit. If it charged $3 840 to everyone, profit = (3 840 – AC) × 52, which is less than (5 440 – AC) × 32. The firm trades off efficiency (TS) for private gain (profit).</p>
+  <p><strong>Price discrimination:</strong> If the firm could charge different prices to different customers (price discrimination), it could sell more units without dropping price on all existing sales. This raises TS — but may be illegal or impractical.</p>
+  <p><strong>Market failure conclusion:</strong> A price-setting firm with market power creates DWL. This is a form of market failure — the market does not produce the efficient quantity. Government may regulate (price caps, competition law) to push output toward Q<sub>eff</sub>.</p>
+  </details>
+
+  <details><summary>Part E: Pareto efficiency vs fairness — don't confuse them</summary>
+  <p>The <em>competitive</em> market equilibrium is Pareto efficient. But <strong>efficient ≠ fair</strong>. Pareto efficiency only asks: "can we make someone better off without hurting anyone?" It says nothing about whether the distribution of surplus between rich and poor is just.</p>
+  <ul>
+    <li>A market can be Pareto efficient and deeply unequal — e.g. if all the surplus goes to one firm.</li>
+    <li>Even competitive equilibrium has limitations: it assumes price-takers, no externalities, and complete contracts (no hidden information). Few real markets satisfy all three.</li>
+    <li>A person with no money cannot participate in market trade — so they get no gains from trade, even if a trade would benefit them and a seller.</li>
+  </ul>
+  <div class="card"><strong>Two questions to always separate in Unit 7:</strong><br>
+  1. Is this allocation <strong>efficient</strong>? (Does it maximise TS? Are there unexploited gains from trade?)<br>
+  2. Is this allocation <strong>fair</strong>? (Is the distribution of surplus between buyers and sellers, or rich and poor, just?)<br>
+  <em>Competitive equilibrium: efficient ✔ but not necessarily fair. Monopoly: neither fully efficient (DWL) nor necessarily fair.</em></div>
+  </details>
+
+  <details><summary>Part F: Price elasticity of demand — from scratch</summary>
+  <p><strong>Why elasticity matters:</strong> Slope of a demand curve tells you how steeply price changes with quantity — but slope depends on units (kilograms vs tonnes, rands vs cents). A unit-free measure is better. That's elasticity.</p>
+  <p><strong>Price elasticity of demand (PED or ε):</strong> How sensitive is quantity demanded to a change in price?</p>
+  <div class="card"><strong>The formula</strong><br>
+  ε = (−) % change in Q<sub>d</sub> / % change in P = (−) (ΔQ/Q) / (ΔP/P)<br><br>
+  The (−) sign: demand slopes down, so ΔQ and ΔP move in opposite directions — the formula would naturally give a negative number. We report the absolute value as a positive number by convention.<br><br>
+  <strong>Interpreting ε:</strong><br>
+  ε &gt; 1: <strong>Elastic</strong> — Q falls by a larger % than P rises. Buyers are sensitive to price.<br>
+  ε &lt; 1: <strong>Inelastic</strong> — Q falls by a smaller % than P rises. Buyers are not very sensitive.<br>
+  ε = 1: <strong>Unit elastic</strong> — Q and P change by the same %. TR is maximised at this point.<br>
+  ε = ∞: <strong>Perfectly elastic</strong> — any price rise kills all demand (price-taker's demand curve is flat).<br>
+  ε = 0: <strong>Perfectly inelastic</strong> — quantity never changes regardless of price (life-saving drug with no substitute).</div>
+  <div class="card"><strong>Worked calculation from lecture slides</strong><br>
+  Price rises from R12 to R15. Quantity falls from 210 to 190.<br><br>
+  %ΔQ = (190 − 210) / 210 × 100 = −20/210 × 100 = −9.52%<br>
+  %ΔP = (15 − 12) / 12 × 100 = 3/12 × 100 = +25%<br>
+  ε = (−)(−9.52 / 25) = 0.38<br><br>
+  ε = 0.38 &lt; 1 → <strong>inelastic</strong>. A 1% price increase causes only a 0.38% fall in quantity demanded.<br>
+  <em>Trap: always use (new − old) / old for % change, not (old − new) / new.</em></div>
+  </details>
+
+  <details><summary>Part G: Elasticity along a linear demand curve</summary>
+  <p>For a straight-line demand curve, the slope is constant — but elasticity changes at every point. This is one of the most-tested concepts in Unit 7.</p>
+  <div class="card"><strong>The pattern to memorise</strong><br>
+  Think of a linear demand curve from top-left to bottom-right:<br><br>
+  <strong>Top half (high P, low Q):</strong> ε &gt; 1 — elastic. A 1% price cut → more than 1% rise in Q.<br>
+  At high prices, Q is small, so even a small ΔQ is a large %ΔQ. Elastic = sensitive.<br><br>
+  <strong>Midpoint (P = half the P-intercept, Q = half the Q-intercept):</strong> ε = 1 — unit elastic.<br>
+  TR = P × Q is MAXIMISED here. MR = 0 at this point.<br><br>
+  <strong>Bottom half (low P, high Q):</strong> ε &lt; 1 — inelastic. A 1% price cut → less than 1% rise in Q.<br>
+  At low prices, Q is large, so ΔQ is a small % of the large base. Inelastic = not sensitive.<br><br>
+  <em>Key exam rule: A monopolist NEVER chooses the inelastic portion. When ε &lt; 1, MR &lt; 0 — cutting price reduces TR. The firm can always raise profit by raising price (reducing Q into the elastic region).</em></div>
+  <div class="card"><strong>Numerical example (from lecture: P = 8 000 – 80Q)</strong><br>
+  At Q = 20, P = 6 400: ΔQ = 1, %ΔQ = 1/20 × 100 = 5. ΔP = −80, %ΔP = −80/6 400 × 100 = −1.25. ε = 5/1.25 = <strong>4 → elastic</strong>. MR = 8 000 – 160(20) = 4 800 &gt; 0. ✔<br><br>
+  At Q = 40, P = 4 800: ε = (1/40)/(80/4 800) = (0.025)/(0.0167) = <strong>1.5 → elastic</strong>. MR = 8 000 – 160(40) = 1 600 &gt; 0. ✔<br><br>
+  At Q = 70, P = 2 400: ε = (1/70)/(80/2 400) = (0.0143)/(0.033) = <strong>0.43 → inelastic</strong>. MR = 8 000 – 160(70) = −3 200 &lt; 0. ✔<br><br>
+  Midpoint of demand: Q-intercept = 100, so midpoint Q = 50. At Q = 50: MR = 8 000 – 160(50) = 0. ε = 1. TR is maximised.</div>
+  </details>
+
+  <details><summary>Part H: Elasticity, TR and MR — the connection</summary>
+  <p>TR = P × Q. When you lower price to sell more: P falls but Q rises. Whether TR rises or falls depends on which effect wins — and that is exactly what elasticity measures.</p>
+  <table>
+    <thead><tr><th>Elasticity</th><th>What it means</th><th>Price cut → TR</th><th>Price rise → TR</th><th>MR</th></tr></thead>
+    <tbody>
+      <tr><td>ε &gt; 1 (elastic)</td><td>%ΔQ &gt; %ΔP — quantity effect dominates</td><td>TR rises ↑</td><td>TR falls ↓</td><td>MR &gt; 0</td></tr>
+      <tr><td>ε = 1 (unit elastic)</td><td>%ΔQ = %ΔP — effects cancel</td><td>TR unchanged</td><td>TR unchanged</td><td>MR = 0</td></tr>
+      <tr><td>ε &lt; 1 (inelastic)</td><td>%ΔQ &lt; %ΔP — price effect dominates</td><td>TR falls ↓</td><td>TR rises ↑</td><td>MR &lt; 0</td></tr>
+    </tbody>
+  </table>
+  <div class="card"><strong>Intuition for exams:</strong><br>
+  Elastic demand → price cuts pay off (TR rises). Firm has little market power — near-perfect substitutes exist.<br>
+  Inelastic demand → price rises pay off (TR rises). Firm has market power — no close substitutes. Think salt, insulin, electricity.<br><br>
+  <em>Why salt taxes work:</em> Salt demand is inelastic (no substitute, essential). A tax raises price but barely reduces quantity. Government collects large revenue and creates little DWL. Exactly why rulers throughout history taxed salt.</div>
+  </details>
+
+  <details><summary>Part I: Factors that affect price elasticity</summary>
+  <p>Five factors determine how elastic or inelastic a demand curve is:</p>
+  <ol>
+    <li><strong>Availability of close substitutes.</strong> More substitutes → more elastic. (Coke vs "any cola" → Coke demand is more elastic because Pepsi is a close substitute.)</li>
+    <li><strong>How broadly defined the product.</strong> Narrowly defined → more elastic. ("Luxury cars" is more elastic than "vehicles in general" — you can switch to other vehicles.)</li>
+    <li><strong>Essential vs optional.</strong> Essential goods (bread, medicine) → inelastic. Luxuries (holidays, jewellery) → elastic.</li>
+    <li><strong>Proportion of income spent.</strong> A large share of income → more elastic (you search harder for deals). A tiny share → inelastic (you don't bother.)</li>
+    <li><strong>Time elapsed since price change.</strong> More time → more elastic. In the short run, you can't easily adjust. In the long run, you find alternatives (buy a more fuel-efficient car if petrol price stays high).</li>
+  </ol>
+  </details>
+
+  <details><summary>Part J: Elasticity and market power / markup</summary>
+  <p>There is a precise relationship between elasticity and the monopoly markup (how far above MC the firm prices):</p>
+  <div class="card"><strong>Lerner Index (markup formula)</strong><br>
+  (P − MC) / P = 1 / ε<br><br>
+  Where ε is the price elasticity of demand.<br><br>
+  <strong>Elastic demand (ε = 4):</strong> Markup = 1/4 = 25%. Firm cannot charge far above MC — buyers switch away.<br>
+  <strong>Inelastic demand (ε = 1.25):</strong> Markup = 1/1.25 = 80%. Firm can charge far above MC — buyers have no choice.<br><br>
+  <em>This explains why pharmaceuticals (inelastic) earn massive markups, while supermarket staples (elastic — many substitutes) have tiny margins.</em></div>
+  <p><strong>DWL and elasticity:</strong> When demand is <em>inelastic</em>, a price-setting firm can charge a high markup. The DWL triangle is large (big gap between P and MC). When demand is <em>elastic</em>, the firm cannot charge much above MC (buyers leave), so DWL is smaller.</p>
+  </details>
+
+  <details><summary>Full worked example — exam-ready calculation</summary>
+  <div class="card"><strong>Example A: Cathy's maths lessons (from lecture slides)</strong><br>
+  Demand: Q<sub>d</sub> = 200 − 2P → inverse: P = 100 − ½Q. MR = 100 − Q. MC = 40 + Q.<br><br>
+  <strong>Step 1 — MR=MC:</strong> 100 − Q = 40 + Q → 60 = 2Q → <strong>Q<sub>m</sub> = 30</strong>.<br>
+  <strong>Step 2 — Price from demand:</strong> P = 100 − ½(30) = <strong>R85</strong>.<br>
+  <strong>Step 3 — DWL:</strong> Efficient Q where D = MC: 100 − ½Q = 40 + Q → 60 = 1.5Q → Q<sub>eff</sub> = 40.<br>
+  MC at Q<sub>eff</sub> = 40 + 40 = 80. P at Q<sub>eff</sub> from demand = 100 − ½(40) = 80. ✔ (P = MC at efficient output).<br>
+  DWL = ½ × (85 − 70) × (40 − 30) = ½ × 15 × 10 = <strong>R75</strong>.<br>
+  (MC at Q<sub>m</sub>=30 is 40+30=70; P<sub>m</sub>=85; gap = 15. Lost quantity = 40−30 = 10.)</div>
+
+  <div class="card"><strong>Example B: Standard MR=MC with profit</strong><br>
+  P = 100 − 2Q, MC = 20, AC = 40 at Q<sub>m</sub>.<br>
+  MR = 100 − 4Q. MR=MC: 100−4Q=20 → Q<sub>m</sub>=20. P = 100−2(20) = <strong>R60</strong>.<br>
+  Profit = (P − AC) × Q = (60 − 40) × 20 = <strong>R400</strong>. Markup = P − MC = 60 − 20 = <strong>R40</strong>.<br>
+  Efficient Q: 100−2Q=20 → Q<sub>eff</sub>=40. DWL = ½ × (60−20) × (40−20) = ½×40×20 = <strong>R400</strong>.<br>
+  <em>Traps: read P from demand (100−2Q), NOT from MR. Use AC for profit rectangle, not MC.</em></div>
+
+  <div class="card"><strong>Example C: Elasticity calculation from data</strong><br>
+  Hamburger price drops from R60 to R48. Quantity rises from 1 500 to 2 400.<br>
+  %ΔQ = (2 400 − 1 500) / 1 500 × 100 = 60%<br>
+  %ΔP = (48 − 60) / 60 × 100 = −20%<br>
+  ε = (−)(60 / −20) = <strong>3 → elastic</strong>.<br>
+  Policy: elastic demand → price cut raises TR. New TR = 48 × 2 400 = R115 200 &gt; old TR = 60 × 1 500 = R90 000. ✔<br>
+  <em>Advice: to increase revenue when demand is elastic, lower price.</em></div>
+  </details>
+
+  <details><summary>Graphs to redraw (text-only cards)</summary>
   <div class="grid">
-    <div class="card"><strong>Price-setting firm</strong><br>Axes: Q (x), P/cost (y). Draw D downward, MR below D with same intercept and steeper slope. Draw MC and AC. Mark: Qm where MR=MC, read Pm from D. AC at Qm. Profit rectangle from AC to Pm over Qm units. Qeff where D=MC. DWL triangle between Qm and Qeff.</div>
-    <div class="card"><strong>Elasticity along linear demand</strong><br>Upper half (elastic): TR rises as Q rises / P falls. Midpoint: unit elastic, MR=0. Lower half (inelastic): TR falls as Q falls / P rises. Monopolist produces in elastic region.</div>
+    <div class="card"><strong>G07 — Price-setting firm (monopoly)</strong><br>
+    Axes: Q (x), P/cost (y). Step 1: Draw D downward from y-axis. Step 2: Draw MR below D — same y-intercept, double the slope (hits x-axis at half of D's x-intercept). Step 3: Draw flat or rising MC. Step 4: Mark Q<sub>m</sub> where MR = MC (drop a vertical). Step 5: Go UP to D → read P<sub>m</sub>. Step 6: Mark AC at Q<sub>m</sub>. Shade profit rectangle from AC up to P<sub>m</sub>, width = Q<sub>m</sub>. Step 7: Find Q<sub>eff</sub> where D = MC. Shade DWL triangle from Q<sub>m</sub> to Q<sub>eff</sub>, between D and MC.<br>
+    <em>Exam sentence: "The monopolist produces Q<sub>m</sub> where MR=MC and charges P<sub>m</sub> read from demand. This is below the efficient output Q<sub>eff</sub> where D=MC, creating DWL equal to the triangle between Q<sub>m</sub> and Q<sub>eff</sub>."</em></div>
+
+    <div class="card"><strong>G08 — Elasticity along linear demand</strong><br>
+    Draw one downward-sloping linear demand curve. Mark the midpoint (halfway along both axes). Label the upper half "elastic (ε &gt; 1)" and the lower half "inelastic (ε &lt; 1)". Mark midpoint as "unit elastic (ε = 1), MR = 0, TR max". Draw MR below demand — it hits zero at the midpoint quantity. Optionally sketch TR as an inverted U below (peaking at midpoint Q).<br>
+    <em>Exam sentence: "Elasticity falls from infinity at the price axis to zero at the quantity axis along a linear demand curve. A monopolist always operates in the elastic region where MR &gt; 0."</em></div>
+
+    <div class="card"><strong>CS/PS in a price-setting market</strong><br>
+    Draw D and MC (not S — there is no supply curve for a monopolist). Mark Q<sub>m</sub> and P<sub>m</sub>. CS = triangle above P<sub>m</sub> below D from 0 to Q<sub>m</sub>. PS = area above MC below P<sub>m</sub> from 0 to Q<sub>m</sub> (trapezoid if MC is linear). DWL = triangle to the right of Q<sub>m</sub> between D and MC up to Q<sub>eff</sub>.<br>
+    <em>Exam sentence: "Total surplus = CS + PS. At Q<sub>m</sub> &lt; Q<sub>eff</sub>, some surplus that could exist is not created — this is the deadweight loss from market power."</em></div>
   </div></details>
-  <details><summary>T/F traps for Unit 7</summary>
+
+  <details><summary>Key formulas — exam-ready summary</summary>
+  <table>
+    <thead><tr><th>Formula</th><th>When to use</th><th>Trap</th></tr></thead>
+    <tbody>
+      <tr><td>MR = a – 2bQ (if P = a – bQ)</td><td>Finding MR from any linear demand</td><td>Same intercept, DOUBLE slope — not just P − 1.</td></tr>
+      <tr><td>Set MR = MC → Q<sub>m</sub></td><td>Profit-max output for price-setter</td><td>Then substitute Q<sub>m</sub> into DEMAND to get P<sub>m</sub>, not into MR.</td></tr>
+      <tr><td>Profit = (P<sub>m</sub> − AC) × Q<sub>m</sub></td><td>Economic profit</td><td>AC, not MC. AC is the full average cost including fixed costs.</td></tr>
+      <tr><td>Markup = P<sub>m</sub> − MC at Q<sub>m</sub></td><td>How far above MC is the price</td><td>Markup uses MC (not AC).</td></tr>
+      <tr><td>Q<sub>eff</sub>: set D = MC</td><td>Efficient output (maximises TS)</td><td>At competitive equilibrium, P = MC — not P = MR.</td></tr>
+      <tr><td>DWL = ½ × (P<sub>m</sub> − MC<sub>Qm</sub>) × (Q<sub>eff</sub> − Q<sub>m</sub>)</td><td>Welfare loss from underproduction</td><td>Base = (Q<sub>eff</sub> − Q<sub>m</sub>), height = (P<sub>m</sub> − MC at Q<sub>m</sub>). Triangle, not rectangle.</td></tr>
+      <tr><td>ε = (−) %ΔQ / %ΔP</td><td>Price elasticity of demand</td><td>Always use percentage changes, not absolute. Report as positive.</td></tr>
+      <tr><td>(P − MC) / P = 1/ε</td><td>Lerner markup index</td><td>Higher ε → lower markup (more elastic demand constrains pricing).</td></tr>
+    </tbody>
+  </table>
+  </details>
+
+  <details><summary>T/F traps for Unit 7 — all high-frequency</summary>
   <ul>
-    <li>For a monopolist, MR equals demand. FALSE — MR lies below demand.</li>
-    <li>A profit-maximising monopoly uses P=MC. FALSE — it uses MR=MC then reads P from demand.</li>
-    <li>If demand is elastic, a price increase raises TR. FALSE — elastic: Q falls more than P rises → TR falls.</li>
-    <li>Slope and elasticity are identical. FALSE — elasticity depends on slope and the P/Q ratio.</li>
-    <li>Monopoly underproduces. TRUE — Qm &lt; Qeff where D=MC.</li>
-    <li>AC is minimised where MC crosses AC from below. TRUE.</li>
+    <li>For a price-setting firm, MR lies below the demand curve. <strong>TRUE</strong> — because lowering price to sell one more unit reduces revenue on all prior units.</li>
+    <li>A profit-maximising monopolist sets P = MC. <strong>FALSE</strong> — sets MR = MC, then reads P from demand. P > MC always for monopolist.</li>
+    <li>The monopoly output is Pareto efficient. <strong>FALSE</strong> — DWL exists; trades between Q<sub>m</sub> and Q<sub>eff</sub> are unexploited.</li>
+    <li>A competitive market equilibrium is always fair. <strong>FALSE</strong> — Pareto efficient ≠ fair. Those without money cannot participate.</li>
+    <li>If demand is elastic (ε &gt; 1), a price increase raises total revenue. <strong>FALSE</strong> — elastic: % fall in Q exceeds % rise in P → TR falls.</li>
+    <li>Slope of demand curve equals price elasticity. <strong>FALSE</strong> — elasticity = slope × (P/Q). Same slope → different elasticity at different points on the curve.</li>
+    <li>A monopolist will never produce where MR &lt; 0. <strong>TRUE</strong> — in the inelastic region MR &lt; 0 and TR falls; reducing output always raises TR there.</li>
+    <li>Inelastic demand gives a firm more market power to raise prices. <strong>TRUE</strong> — buyers have no close substitutes; Lerner index (P−MC)/P = 1/ε is larger when ε is smaller.</li>
+    <li>The DWL from monopoly is the entire profit rectangle. <strong>FALSE</strong> — DWL is the triangle between Q<sub>m</sub> and Q<sub>eff</sub>. The profit rectangle is a transfer from consumers to the firm, not a social loss.</li>
+    <li>Total surplus = CS + PS is maximised at the competitive equilibrium. <strong>TRUE</strong> — all units where WTP ≥ MC are traded; no further gains from trade exist.</li>
   </ul></details>
 </section>
 
