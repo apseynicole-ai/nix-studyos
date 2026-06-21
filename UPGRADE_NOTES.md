@@ -32,12 +32,17 @@ This version upgrades the original generic Stellenbosch study app into a persona
 - `npm run build` passed.
 - Build warning: bundle size exceeds 500 kB. Codex can improve this by code-splitting routes with lazy imports.
 
-## Suggested Codex final upgrade prompts
+## Implemented since first upgrade
 
-1. Convert route pages to lazy-loaded chunks to reduce the main bundle.
-2. Add Firestore-backed module mastery records instead of static confidence numbers.
-3. Add editable topic trackers per module with confidence, practice count, last reviewed and retest date.
-4. Add calendar export or ICS generation for task due dates and assessments.
-5. Add import/export JSON backup for marks, tasks, mistakes and sessions.
-6. Add PWA support and offline-first caching for campus use.
-7. Add charts for weekly study minutes, marks projection and weak-topic trends.
+- Route-level lazy loading (all pages via React.lazy + Suspense) — bundle size reduced.
+- JSON backup import/export/reset via src/lib/localData.ts.
+- PWA support and offline-first caching via vite-plugin-pwa and Workbox.
+- Server-side Gemini AI proxy at /api/study-ai. GEMINI_API_KEY and optional GEMINI_MODEL (default: gemini-2.5-flash) are server/deployment env variables only — never client-bundled.
+- Topic Mastery Tracker with confidence, practice count, retest dates and final-boss flagging.
+- Mistake Bank with correction rules, retest scheduling and Final Boss list.
+
+## Remaining Codex upgrade prompts
+
+1. Add Firestore-backed module mastery records instead of static confidence numbers.
+2. Add calendar export or ICS generation for task due dates and assessments.
+3. Add charts for weekly study minutes, marks projection and weak-topic trends.

@@ -4,6 +4,8 @@ import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+
 const STUDY_AI_SYSTEM_INSTRUCTION = `You are LexAI, a specialised academic assistant for a Stellenbosch University BAccLLB student.
 
 Core behaviour:
@@ -71,7 +73,7 @@ async function startServer() {
 
     try {
       const result = await genAI.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: GEMINI_MODEL,
         contents,
         config: {
           systemInstruction: STUDY_AI_SYSTEM_INSTRUCTION,

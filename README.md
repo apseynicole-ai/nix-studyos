@@ -60,6 +60,11 @@ A React + Vite + Firebase study system customised for a Stellenbosch University 
 - Cloud-backed:
   - Optional Firebase Auth sign-in
   - Optional future Firestore sync for tasks, timer sessions, AI summaries, and dashboard stats when a database exists
+- Implemented:
+  - PWA support (vite-plugin-pwa, Workbox, offline-first for app shell)
+  - Route-level lazy loading (all pages via React.lazy + Suspense)
+  - JSON backup import/export/reset (src/lib/localData.ts)
+  - Server-side Gemini AI via /api/study-ai (key never bundled in client)
 - Planned:
   - Firestore marks sync
 
@@ -80,15 +85,14 @@ npm install
 npm run dev
 ```
 
-Set `GEMINI_API_KEY` in `.env.local` for AI features.
-
-Example:
+Set server-side environment variables for AI features. These must never be exposed through Vite, `import.meta.env`, or client-bundled config.
 
 ```bash
 GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash   # optional, defaults to gemini-2.5-flash
 ```
 
-Use `.env.local` for local development or deployment environment variables in production. Gemini keys must stay server-side and must not be exposed through Vite variables, `import.meta.env`, or client-bundled config.
+Use `.env.local` for local development. In production, set these as deployment environment variables (never commit them).
 
 ## Validate
 
