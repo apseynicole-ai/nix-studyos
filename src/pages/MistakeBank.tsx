@@ -78,6 +78,14 @@ const MistakeBank: React.FC = () => {
   const resolvedProgress = calculateMistakeResolutionProgress(records);
   const dueSoonProgress = records.length ? clampProgress((dueSoon.length / records.length) * 100) : 0;
   const finalBossCleanupProgress = records.length ? clampProgress(((records.length - finalBossRetestList.length) / records.length) * 100) : 0;
+  const emptyState = getMistakeEmptyState({
+    hasRecords: records.length > 0,
+    statusFilter,
+    dueSoonOnly,
+    correctionRuleIncompleteOnly,
+    moduleFilter,
+    search,
+  });
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
@@ -141,7 +149,7 @@ const MistakeBank: React.FC = () => {
         </button>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <SummaryCard icon={<AlertTriangle size={20} />} label="Unresolved mistakes" value={unresolved.length} />
         <SummaryCard icon={<RotateCcw size={20} />} label="Retests due soon" value={dueSoon.length} />
         <SummaryCard icon={<ClipboardList size={20} />} label="Final Boss retest list" value={finalBossRetestList.length} />
@@ -348,8 +356,8 @@ const MistakeBank: React.FC = () => {
 
           {filteredRecords.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 px-6 py-14 text-center">
-              <p className="font-display text-3xl text-stellenbosch-maroon mb-3">No mistakes logged yet.</p>
-              <p className="text-slate-500 max-w-2xl mx-auto">Add mistakes from tests, tutorials, past papers, or self-study. Mistakes are saved locally on this device.</p>
+              <p className="font-display text-3xl text-stellenbosch-maroon mb-3">{emptyState.title}</p>
+              <p className="text-slate-500 max-w-2xl mx-auto">{emptyState.body}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -465,6 +473,52 @@ const InfoBlock: React.FC<{ title: string; text: string; highlight?: boolean }> 
 
 function labelise(value: string) {
   return value.replace(/-/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function getMistakeEmptyState({
+  hasRecords,
+  statusFilter,
+  dueSoonOnly,
+  correctionRuleIncompleteOnly,
+  moduleFilter,
+  search,
+}: {
+  hasRecords: boolean;
+  statusFilter: 'all' | 'unresolved' | 'resolved';
+  dueSoonOnly: boolean;
+  correctionRuleIncompleteOnly: boolean;
+  moduleFilter: string;
+  search: string;
+}) {
+  if (!hasRecords) {
+    return {
+      title: 'No mistakes logged yet.',
+      body: 'Add mistakes from tests, tutorials, past papers, or self-study. Mistakes are saved locally on this device.',
+    };
+  }
+
+  if (statusFilter === 'resolved' && correctionRuleIncompleteOnly) {
+    return {
+      title: 'Correction-rule reminders apply to unresolved mistakes.',
+      body: 'Switch to unresolved or all mistakes to review them.',
+    };
+  }
+
+  if (statusFilter === 'resolved' && dueSoonOnly) {
+    return {
+      title: 'Retest reminders apply to unresolved mistakes.',
+      body: 'Switch to unresolved or all mistakes to review them.',
+    };
+  }
+
+  const filtersActive = moduleFilter !== 'all' || statusFilter !== 'all' || dueSoonOnly || correctionRuleIncompleteOnly || search.trim().length > 0;
+
+  return {
+    title: filtersActive ? 'No mistakes match the current filters.' : 'No mistakes to show.',
+    body: filtersActive
+      ? 'Adjust the filters or search to review more mistakes.'
+      : 'Try switching to all mistakes or add a new correction loop.',
+  };
 }
 
 export default MistakeBank;
