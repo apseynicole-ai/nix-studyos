@@ -298,6 +298,7 @@ function calculateModuleOutput(moduleId: SupportedModuleId, moduleState: ModuleD
       return calcDLA112({ af: pick('AF'), a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
     case 'dla122':
       return calcDLA122({
+        // DLA122 AF is entered as the already-computed best-4-of-6 tutorial average.
         af: pick('AF'),
         a1: pick('A1'),
         a1Valid: moduleState.assessments.A1?.validSubmission ?? true,

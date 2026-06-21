@@ -1,6 +1,6 @@
-import { getModuleAssessmentModel, calcConLaw178, calcDLA112, calcDLA122, calcEcon114, calcFinAcc178, calcLegalSkills114, calcSDS188, type MarksOutput } from './marksEngine';
+import { getModuleAssessmentModel } from './marksEngine';
 import { modules, type ModuleInfo } from '../data/baccllb';
-import { readLocalJson } from './localData';
+import { getModuleMarksOutput } from './marksOutput';
 import { getEffectiveModuleConfidence } from './moduleConfidence';
 import { hasMissingCurrentMark, hasSourceWarning, isHighRiskModule } from './studyMetrics';
 import { readMistakeBank, type MistakeRecord } from './mistakeBank';
@@ -62,29 +62,11 @@ interface NextBestActionOptions {
   limit?: number;
 }
 
-interface AssessmentDraftState {
-  completed?: boolean;
-  status?: 'pending' | 'completed' | 'missed';
-  mark?: string;
-  validSubmission?: boolean;
-  hoursLate?: string;
-}
-
-interface ModuleDraftState {
-  assessments?: Record<string, AssessmentDraftState>;
-}
-
-interface MarkEngineState {
-  modules?: Record<string, ModuleDraftState>;
-}
-
 interface ModuleMarkSnapshot {
   currentFinal: number | null;
   warnings: string[];
   isValidFM: boolean;
 }
-
-const MARK_ENGINE_STORAGE_KEY = 'baccllb-mark-engine-state';
 
 export function getNextBestActions(options: NextBestActionOptions = {}): NextBestAction[] {
   const topicRecords = readTopicMastery();
@@ -463,11 +445,7 @@ function compareDateStrings(a?: string, b?: string) {
 }
 
 function getModuleMarkSnapshot(moduleId: string): ModuleMarkSnapshot | null {
-  const state = readLocalJson<MarkEngineState | null>(MARK_ENGINE_STORAGE_KEY, null);
-  const moduleState = state?.modules?.[moduleId];
-  if (!moduleState?.assessments) return null;
-
-  const output = calculateModuleOutput(moduleId, moduleState);
+  const output = getModuleMarksOutput(moduleId);
   if (!output) return null;
 
   return {
@@ -475,92 +453,6 @@ function getModuleMarkSnapshot(moduleId: string): ModuleMarkSnapshot | null {
     warnings: output.warnings,
     isValidFM: output.isValidFM,
   };
-}
-
-function calculateModuleOutput(moduleId: string, moduleState: ModuleDraftState): MarksOutput | null {
-  const pick = (assessmentId: string) => getAssessmentMark(moduleState.assessments?.[assessmentId]);
-
-  switch (moduleId) {
-    case 'econ114':
-      return calcEcon114({ a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
-    case 'dla112':
-      return calcDLA112({ af: pick('AF'), a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
-    case 'dla122':
-      return calcDLA122({
-        af: pick('AF'),
-        a1: pick('A1'),
-        a1Valid: moduleState.assessments?.A1?.validSubmission ?? true,
-        a2: pick('A2'),
-        a2Valid: moduleState.assessments?.A2?.validSubmission ?? true,
-        a3: pick('A3'),
-        hoursLateA1: parseNumber(moduleState.assessments?.A1?.hoursLate ?? '') ?? 0,
-        hoursLateA2: parseNumber(moduleState.assessments?.A2?.hoursLate ?? '') ?? 0,
-      });
-    case 'finacc178':
-      return calcFinAcc178({
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        afs2: pick('AFS2'),
-        a3: pick('A3'),
-      });
-    case 'foundations178':
-      return calcConLaw178({
-        afs1: pick('AFS1'),
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        afs2: pick('AFS2'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        a3: pick('A3'),
-      });
-    case 'sds188':
-      return calcSDS188({
-        afs1: pick('AFS1'),
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        afs2: pick('AFS2'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        a3: pick('A3'),
-      });
-    case 'legalskills114':
-      return calcLegalSkills114({
-        rt: pick('RT'),
-        lw: pick('LW'),
-        ao: pick('AO'),
-        t1: pick('T1'),
-        t2: pick('T2'),
-        ae: pick('AE'),
-        mq: pick('MQ'),
-      });
-    case 'conlaw178':
-      return calcConLaw178({
-        afs1: pick('AFS1'),
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        afs2: pick('AFS2'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        a3: pick('A3'),
-      });
-    default:
-      return null;
-  }
-}
-
-function getAssessmentMark(assessment?: AssessmentDraftState): number | null {
-  if (!assessment || assessment.status !== 'completed' || !assessment.completed) return null;
-  const parsed = parseNumber(assessment.mark ?? '');
-  if (parsed === null) return null;
-  return Math.max(0, Math.min(100, parsed));
-}
-
-function parseNumber(value: string): number | null {
-  if (value.trim() === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function getMarkPressureScore(module: ModuleInfo, snapshot: ModuleMarkSnapshot | null) {
