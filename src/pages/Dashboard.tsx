@@ -169,7 +169,7 @@ const Dashboard: React.FC = () => {
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
-  const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional');
+  const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional' && !isPastDate(e.date));
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
   const dueSoonTasks = openLocalTasks.filter((task) => withinDays(task.dueDate || undefined, 7));
@@ -263,7 +263,7 @@ const Dashboard: React.FC = () => {
 
     if (provisionalCalendarEntries.length > 0) {
       actions.push({
-        title: 'Verify provisional assessment details',
+        title: 'Verify provisional assessment details before the assessment',
         detail: provisionalCalendarEntries.map((entry) => `${entry.moduleCode} ${entry.assessmentId}`).join(', '),
         to: '/modules',
         tone: 'blue',
