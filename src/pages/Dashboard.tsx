@@ -42,6 +42,7 @@ import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopi
 import { mistakeRetestsDueThisWeek, mistakesNeedingCorrectionRule, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
+import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type WeeklyReviewAction, type WeeklyReviewTone } from '../lib/weeklyReview';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import ProgressRing from '../components/ui/ProgressRing';
@@ -78,12 +79,6 @@ interface DashboardTaskRecord {
   dueDate?: string | null;
 }
 
-interface WeeklyReviewAction {
-  title: string;
-  detail: string;
-  to: string;
-  tone: 'red' | 'amber' | 'blue' | 'emerald' | 'slate';
-}
 
 const Dashboard: React.FC = () => {
   const { user, localFirstMode, profile } = useAuth();
@@ -215,81 +210,16 @@ const Dashboard: React.FC = () => {
   const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
   const latestAcademicSnapshot = useMemo(() => getLatestAcademicSnapshot(), []);
   const latestAcademicSummary = useMemo(() => summarizeAcademicSnapshot(latestAcademicSnapshot), [latestAcademicSnapshot]);
-  const weeklyReviewActions = useMemo<WeeklyReviewAction[]>(() => {
-    const actions: WeeklyReviewAction[] = [];
-
-    if (overdueTasks.length > 0) {
-      actions.push({
-        title: 'Complete overdue tasks',
-        detail: `${overdueTasks.length} open task${overdueTasks.length === 1 ? '' : 's'} past due.`,
-        to: '/tasks',
-        tone: 'red',
-      });
-    }
-
-    if (missingMarks.length > 0 || !marksPressure.hasAnyMarkData) {
-      actions.push({
-        title: 'Add missing marks to activate pressure tracking',
-        detail: missingMarks.length > 0 ? `${missingMarks.length} module${missingMarks.length === 1 ? '' : 's'} still need current marks.` : 'No marks snapshot has been entered yet.',
-        to: '/marks',
-        tone: 'amber',
-      });
-    } else if (marksPressure.mostAtRisk) {
-      actions.push({
-        title: `Review ${marksPressure.mostAtRisk.moduleCode} marks pressure`,
-        detail: marksPressure.mostAtRisk.warnings[0] || 'This module is the strongest current marks-pressure signal.',
-        to: '/marks',
-        tone: marksPressure.mostAtRisk.needsHighRecovery ? 'red' : 'amber',
-      });
-    }
-
-    if (mistakeRetests > 0) {
-      actions.push({
-        title: 'Review mistakes due soon',
-        detail: `${mistakeRetests} mistake retest${mistakeRetests === 1 ? '' : 's'} due this week.`,
-        to: '/mistakes',
-        tone: 'amber',
-      });
-    }
-
-    if (incompleteRuleCount > 0) {
-      actions.push({
-        title: 'Add correction rules to repeated mistakes',
-        detail: `${incompleteRuleCount} unresolved mistake${incompleteRuleCount === 1 ? '' : 's'} need clear correction rules.`,
-        to: '/mistakes',
-        tone: 'blue',
-      });
-    }
-
-    if (provisionalCalendarEntries.length > 0) {
-      actions.push({
-        title: 'Verify provisional assessment details before the assessment',
-        detail: provisionalCalendarEntries.map((entry) => `${entry.moduleCode} ${entry.assessmentId}`).join(', '),
-        to: '/modules',
-        tone: 'blue',
-      });
-    }
-
-    if (backupAgeDays === null || backupAgeDays > 7) {
-      actions.push({
-        title: 'Back up your StudyOS data',
-        detail: backupAgeDays === null ? 'No local backup is recorded yet.' : `Last backup was ${backupAgeDays} day${backupAgeDays === 1 ? '' : 's'} ago.`,
-        to: '/settings',
-        tone: 'slate',
-      });
-    }
-
-    if (actions.length === 0 && dueSoonTasks.length > 0) {
-      actions.push({
-        title: 'Finish due-soon tasks steadily',
-        detail: `${dueSoonTasks.length} open task${dueSoonTasks.length === 1 ? '' : 's'} due within 7 days.`,
-        to: '/tasks',
-        tone: 'emerald',
-      });
-    }
-
-    return actions.slice(0, 6);
-  }, [backupAgeDays, dueSoonTasks.length, incompleteRuleCount, marksPressure, missingMarks.length, mistakeRetests, overdueTasks.length, provisionalCalendarEntries]);
+  const weeklyReviewActions = useMemo<WeeklyReviewAction[]>(() => buildWeeklyReviewActions({
+    overdueCount: overdueTasks.length,
+    dueSoonCount: dueSoonTasks.length,
+    missingMarksCount: missingMarks.length,
+    marksPressure,
+    mistakeRetests,
+    incompleteRuleCount,
+    provisionalCalendarEntries,
+    backupAgeDays,
+  }), [backupAgeDays, dueSoonTasks.length, incompleteRuleCount, marksPressure, missingMarks.length, mistakeRetests, overdueTasks.length, provisionalCalendarEntries]);
 
   return (
     <div className="page-shell">
@@ -1168,7 +1098,7 @@ const WeeklyReviewMetric: React.FC<{
   label: string;
   value: number | string;
   detail: string;
-  tone: WeeklyReviewAction['tone'];
+  tone: WeeklyReviewTone;
 }> = ({ icon, label, value, detail, tone }) => (
   <div className={`rounded-[2rem] border p-5 ${weeklyReviewTone(tone)}`}>
     <div className="mb-4 flex items-center justify-between gap-3">
@@ -1316,35 +1246,6 @@ function isPastDate(dateValue: string | null | undefined) {
   return target.getTime() < today.getTime();
 }
 
-function weeklyReviewTone(tone: WeeklyReviewAction['tone']) {
-  switch (tone) {
-    case 'red':
-      return 'border-red-100 bg-red-50 text-red-800';
-    case 'amber':
-      return 'border-amber-100 bg-amber-50 text-amber-800';
-    case 'blue':
-      return 'border-blue-100 bg-blue-50 text-blue-800';
-    case 'emerald':
-      return 'border-emerald-100 bg-emerald-50 text-emerald-800';
-    default:
-      return 'border-slate-100 bg-slate-50 text-slate-700';
-  }
-}
-
-function weeklyReviewDotTone(tone: WeeklyReviewAction['tone']) {
-  switch (tone) {
-    case 'red':
-      return 'bg-red-500';
-    case 'amber':
-      return 'bg-amber-500';
-    case 'blue':
-      return 'bg-blue-500';
-    case 'emerald':
-      return 'bg-emerald-500';
-    default:
-      return 'bg-slate-400';
-  }
-}
 
 function priorityTone(priority: NextBestAction['priority']) {
   switch (priority) {
