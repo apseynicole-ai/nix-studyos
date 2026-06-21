@@ -22,6 +22,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
+import { finalAssessmentCalendarEntries } from '../data/assessmentCalendar';
 import {
   averageConfidence,
   getDashboardMarksPressureSummary,
@@ -34,11 +35,11 @@ import {
   riskTone,
   upcomingAssessments,
 } from '../lib/studyMetrics';
-import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, readLocalJson } from '../lib/localData';
+import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, getBackupAgeDays, readLocalJson } from '../lib/localData';
 import { getEffectiveModuleConfidence } from '../lib/moduleConfidence';
 import { getStudyMomentumSummary } from '../lib/studyMomentum';
 import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
-import { mistakeRetestsDueThisWeek, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
+import { mistakeRetestsDueThisWeek, mistakesNeedingCorrectionRule, moduleWithMostUnresolvedMistakes, readMistakeBank, unresolvedMistakes } from '../lib/mistakeBank';
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import ProgressBar from '../components/ui/ProgressBar';
@@ -129,6 +130,7 @@ const Dashboard: React.FC = () => {
   const retestsThisWeek = topicsDueThisWeek(topicRecords).length;
   const mistakeRecords = readMistakeBank();
   const unresolvedMistakeCount = unresolvedMistakes(mistakeRecords).length;
+  const incompleteRuleCount = mistakesNeedingCorrectionRule(mistakeRecords).length;
   const mistakeRetests = mistakeRetestsDueThisWeek(mistakeRecords).length;
   const topMistakeModule = moduleWithMostUnresolvedMistakes(mistakeRecords);
   const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
@@ -150,6 +152,8 @@ const Dashboard: React.FC = () => {
   const missingMarks = modulesMissingCurrentMarks().slice(0, 4);
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
+  const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
+  const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional');
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
   const battlePlan = nextBestActions.slice(0, 5);
   const filteredActions = useMemo(
@@ -244,8 +248,23 @@ const Dashboard: React.FC = () => {
         <MetricCard icon={<CalendarClock />} label="Upcoming checks" value={quickStats.semesterOneAssessments} note="Assessments + evidence" />
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
         <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
-        <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
+        <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}${incompleteRuleCount > 0 ? ` • ${incompleteRuleCount} need rules` : ''}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
       </section>
+
+      {(backupAgeDays === null || backupAgeDays > 7) && (
+        <div className="mb-10 rounded-2xl border border-amber-100 bg-amber-50 px-5 py-4 flex items-start gap-3">
+          <AlertTriangle size={18} className="text-amber-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-amber-900">
+              {backupAgeDays === null ? 'No backup on record.' : `Last backup was ${backupAgeDays} day${backupAgeDays === 1 ? '' : 's'} ago.`}
+            </p>
+            <p className="text-sm text-amber-800 mt-1">
+              Your StudyOS data is stored locally.{' '}
+              <Link to="/settings" className="underline font-medium">Create a backup</Link> before clearing browser data or switching devices.
+            </p>
+          </div>
+        </div>
+      )}
 
       <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -626,7 +645,19 @@ const Dashboard: React.FC = () => {
                 {assessment.notes && <p className="text-xs text-slate-500 mt-2">{assessment.notes}</p>}
               </div>
             ))}
+            {nextAssessments.length === 0 && (
+              <p className="text-sm text-slate-500">No upcoming assessments found in module data.</p>
+            )}
           </div>
+          {provisionalCalendarEntries.length > 0 && (
+            <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 flex items-start gap-3">
+              <AlertTriangle size={16} className="text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-800">
+                <span className="font-bold">Verify provisional details:</span>{' '}
+                {provisionalCalendarEntries.map((e) => `${e.moduleCode} ${e.assessmentId}`).join(', ')} — venue or time was inferred from the timetable. Confirm against the official SU timetable before the assessment.
+              </p>
+            </div>
+          )}
         </section>
       </div>
 
@@ -657,6 +688,9 @@ const Dashboard: React.FC = () => {
           <div className="mt-5 rounded-3xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8">
             <p className="font-bold text-slate-800">No mark data yet — visit Marks to enter results.</p>
             <p className="text-sm text-slate-500 mt-2">The Dashboard will surface below-target pressure and recovery warnings once a live marks snapshot exists.</p>
+            <Link to="/marks" className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-stellenbosch-maroon px-4 py-3 text-sm font-bold text-white hover:-translate-y-0.5 transition-transform">
+              Open Marks <ArrowRight size={16} />
+            </Link>
           </div>
         ) : marksPressure.mostAtRisk ? (
           <div className="mt-5 grid grid-cols-1 xl:grid-cols-[0.85fr_1.15fr] gap-5">

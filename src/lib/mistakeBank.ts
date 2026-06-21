@@ -85,6 +85,16 @@ export function unresolvedMistakes(records: MistakeRecord[]) {
   return records.filter((item) => !item.resolved);
 }
 
+const PLACEHOLDER_CORRECTION_RULES = new Set(['', 'tbd', 'todo', 'fix', 'n/a', 'na', 'placeholder', 'none', '-', 'unknown']);
+
+export function mistakesNeedingCorrectionRule(records: MistakeRecord[]): MistakeRecord[] {
+  return records.filter((item) => {
+    if (item.resolved) return false;
+    const rule = item.correctionRule.trim().toLowerCase();
+    return !rule || PLACEHOLDER_CORRECTION_RULES.has(rule);
+  });
+}
+
 export function mistakeRetestsDueThisWeek(records: MistakeRecord[]) {
   const today = stripTime(new Date());
   const weekFromNow = new Date(today);

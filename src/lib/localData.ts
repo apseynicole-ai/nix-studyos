@@ -202,6 +202,14 @@ export function getLastBackupMeta(): BackupMeta | null {
   return readLocalJson<BackupMeta | null>(LOCAL_BACKUP_META_KEY, null);
 }
 
+export function getBackupAgeDays(): number | null {
+  const meta = getLastBackupMeta();
+  if (!meta) return null;
+  const date = new Date(meta.exportedAt);
+  if (isNaN(date.getTime())) return null;
+  return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function isValidBackupShape(value: unknown): value is StudyOSBackupFile {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
 
