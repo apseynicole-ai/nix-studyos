@@ -69,6 +69,22 @@ interface TimerSessionRecord {
   createdAt: string;
 }
 
+interface DashboardTaskRecord {
+  userId?: string;
+  done?: boolean;
+  completedAt?: string | null;
+  moduleId?: string;
+  text?: string;
+  dueDate?: string | null;
+}
+
+interface WeeklyReviewAction {
+  title: string;
+  detail: string;
+  to: string;
+  tone: 'red' | 'amber' | 'blue' | 'emerald' | 'slate';
+}
+
 const Dashboard: React.FC = () => {
   const { user, localFirstMode, profile } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, sessions: 0, summaries: 0, completedTasks: 0 });
@@ -135,7 +151,7 @@ const Dashboard: React.FC = () => {
   const topMistakeModule = moduleWithMostUnresolvedMistakes(mistakeRecords);
   const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
   const localTasks = useMemo(
-    () => readLocalJson<Array<{ userId?: string; done?: boolean; completedAt?: string | null; moduleId?: string }>>(LOCAL_TASKS_KEY, [])
+    () => readLocalJson<DashboardTaskRecord[]>(LOCAL_TASKS_KEY, [])
       .filter((task) => !user || task.userId === user.uid),
     [user],
   );
@@ -154,6 +170,9 @@ const Dashboard: React.FC = () => {
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
   const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional');
+  const openLocalTasks = localTasks.filter((task) => !task.done);
+  const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
+  const dueSoonTasks = openLocalTasks.filter((task) => withinDays(task.dueDate || undefined, 7));
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
   const battlePlan = nextBestActions.slice(0, 5);
   const filteredActions = useMemo(
@@ -196,6 +215,81 @@ const Dashboard: React.FC = () => {
   const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
   const latestAcademicSnapshot = useMemo(() => getLatestAcademicSnapshot(), []);
   const latestAcademicSummary = useMemo(() => summarizeAcademicSnapshot(latestAcademicSnapshot), [latestAcademicSnapshot]);
+  const weeklyReviewActions = useMemo<WeeklyReviewAction[]>(() => {
+    const actions: WeeklyReviewAction[] = [];
+
+    if (overdueTasks.length > 0) {
+      actions.push({
+        title: 'Complete overdue tasks',
+        detail: `${overdueTasks.length} open task${overdueTasks.length === 1 ? '' : 's'} past due.`,
+        to: '/tasks',
+        tone: 'red',
+      });
+    }
+
+    if (missingMarks.length > 0 || !marksPressure.hasAnyMarkData) {
+      actions.push({
+        title: 'Add missing marks to activate pressure tracking',
+        detail: missingMarks.length > 0 ? `${missingMarks.length} module${missingMarks.length === 1 ? '' : 's'} still need current marks.` : 'No marks snapshot has been entered yet.',
+        to: '/marks',
+        tone: 'amber',
+      });
+    } else if (marksPressure.mostAtRisk) {
+      actions.push({
+        title: `Review ${marksPressure.mostAtRisk.moduleCode} marks pressure`,
+        detail: marksPressure.mostAtRisk.warnings[0] || 'This module is the strongest current marks-pressure signal.',
+        to: '/marks',
+        tone: marksPressure.mostAtRisk.needsHighRecovery ? 'red' : 'amber',
+      });
+    }
+
+    if (mistakeRetests > 0) {
+      actions.push({
+        title: 'Review mistakes due soon',
+        detail: `${mistakeRetests} mistake retest${mistakeRetests === 1 ? '' : 's'} due this week.`,
+        to: '/mistakes',
+        tone: 'amber',
+      });
+    }
+
+    if (incompleteRuleCount > 0) {
+      actions.push({
+        title: 'Add correction rules to repeated mistakes',
+        detail: `${incompleteRuleCount} unresolved mistake${incompleteRuleCount === 1 ? '' : 's'} need clear correction rules.`,
+        to: '/mistakes',
+        tone: 'blue',
+      });
+    }
+
+    if (provisionalCalendarEntries.length > 0) {
+      actions.push({
+        title: 'Verify provisional assessment details',
+        detail: provisionalCalendarEntries.map((entry) => `${entry.moduleCode} ${entry.assessmentId}`).join(', '),
+        to: '/modules',
+        tone: 'blue',
+      });
+    }
+
+    if (backupAgeDays === null || backupAgeDays > 7) {
+      actions.push({
+        title: 'Back up your StudyOS data',
+        detail: backupAgeDays === null ? 'No local backup is recorded yet.' : `Last backup was ${backupAgeDays} day${backupAgeDays === 1 ? '' : 's'} ago.`,
+        to: '/settings',
+        tone: 'slate',
+      });
+    }
+
+    if (actions.length === 0 && dueSoonTasks.length > 0) {
+      actions.push({
+        title: 'Finish due-soon tasks steadily',
+        detail: `${dueSoonTasks.length} open task${dueSoonTasks.length === 1 ? '' : 's'} due within 7 days.`,
+        to: '/tasks',
+        tone: 'emerald',
+      });
+    }
+
+    return actions.slice(0, 6);
+  }, [backupAgeDays, dueSoonTasks.length, incompleteRuleCount, marksPressure, missingMarks.length, mistakeRetests, overdueTasks.length, provisionalCalendarEntries]);
 
   return (
     <div className="page-shell">
@@ -265,6 +359,89 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      <section className="editorial-panel mb-10 p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="mb-3 text-xs font-bold uppercase tracking-[0.35em] text-slate-400">semester control room</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Weekly Review</h2>
+            <p className="mt-2 max-w-2xl text-sm text-slate-500">
+              Your next recovery and setup priorities from tasks, marks, mistakes, deadlines, and backups.
+            </p>
+          </div>
+          <Link to="/tasks" className="inline-flex items-center gap-2 self-start rounded-2xl border border-stellenbosch-maroon/15 bg-white px-4 py-3 text-sm font-bold text-stellenbosch-maroon transition-all hover:-translate-y-0.5 hover:shadow">
+            Open tasks <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <WeeklyReviewMetric
+            icon={<CalendarClock size={18} />}
+            label="Urgent academic items"
+            value={overdueTasks.length + dueSoonTasks.length + provisionalCalendarEntries.length}
+            detail={`${overdueTasks.length} overdue • ${dueSoonTasks.length} due soon • ${provisionalCalendarEntries.length} provisional`}
+            tone={overdueTasks.length > 0 ? 'red' : dueSoonTasks.length > 0 || provisionalCalendarEntries.length > 0 ? 'amber' : 'emerald'}
+          />
+          <WeeklyReviewMetric
+            icon={<LineChart size={18} />}
+            label="Marks pressure"
+            value={missingMarks.length + (marksPressure.modulesBelowTarget || 0)}
+            detail={`${missingMarks.length} missing marks • ${marksPressure.modulesBelowTarget} below target`}
+            tone={marksPressure.modulesBelowTarget > 0 ? 'red' : missingMarks.length > 0 ? 'amber' : 'emerald'}
+          />
+          <WeeklyReviewMetric
+            icon={<ListChecks size={18} />}
+            label="Mistake recovery"
+            value={unresolvedMistakeCount}
+            detail={`${mistakeRetests} due soon • ${incompleteRuleCount} need rules`}
+            tone={mistakeRetests > 0 || incompleteRuleCount > 0 ? 'amber' : unresolvedMistakeCount > 0 ? 'blue' : 'emerald'}
+          />
+          <WeeklyReviewMetric
+            icon={<ShieldAlert size={18} />}
+            label="Local-first safety"
+            value={backupAgeDays === null ? 'No backup' : `${backupAgeDays}d`}
+            detail={backupAgeDays === null || backupAgeDays > 7 ? 'Create a backup before clearing data' : 'Backup is recent'}
+            tone={backupAgeDays === null || backupAgeDays > 7 ? 'amber' : 'emerald'}
+          />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div className="rounded-[2rem] border border-slate-100 bg-gradient-to-br from-slate-50 via-white to-stellenbosch-maroon/5 p-5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">Rule-based checklist</p>
+                <h3 className="font-display text-2xl text-slate-800">Suggested next actions</h3>
+              </div>
+              <span className="rounded-full bg-white px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500 shadow-sm">
+                {weeklyReviewActions.length || 'clear'}
+              </span>
+            </div>
+            {weeklyReviewActions.length === 0 ? (
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-4">
+                <p className="font-bold text-emerald-900">No urgent weekly setup flags right now.</p>
+                <p className="mt-1 text-sm text-emerald-700">Keep the rhythm gentle: one task, one review loop, one backup habit.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {weeklyReviewActions.map((action) => (
+                  <WeeklyReviewActionCard key={`${action.title}-${action.to}`} action={action} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-[2rem] border border-slate-100 bg-white p-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">What this checks</p>
+            <h3 className="mt-2 font-display text-2xl text-slate-800">Local-first signals only</h3>
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <p className="flex gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />Tasks due soon and overdue from your local task bank.</p>
+              <p className="flex gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />Marks pressure and verification flags from existing marks/module helpers.</p>
+              <p className="flex gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />Mistake recovery from unresolved mistakes, retests, and correction-rule gaps.</p>
+              <p className="flex gap-2"><CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />Backup age from the existing local backup metadata.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -986,6 +1163,42 @@ const MetricCard: React.FC<{ icon: React.ReactNode; label: string; value: number
   </motion.div>
 );
 
+const WeeklyReviewMetric: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  detail: string;
+  tone: WeeklyReviewAction['tone'];
+}> = ({ icon, label, value, detail, tone }) => (
+  <div className={`rounded-[2rem] border p-5 ${weeklyReviewTone(tone)}`}>
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/75 shadow-sm">
+        {icon}
+      </div>
+      <span className="rounded-full bg-white/70 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+        review
+      </span>
+    </div>
+    <p className="text-[10px] font-bold uppercase tracking-[0.22em] opacity-70">{label}</p>
+    <p className="my-1 font-display text-3xl text-slate-900">{value}</p>
+    <p className="text-sm text-slate-600">{detail}</p>
+  </div>
+);
+
+const WeeklyReviewActionCard: React.FC<{ action: WeeklyReviewAction }> = ({ action }) => (
+  <Link
+    to={action.to}
+    className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-4 transition-all hover:-translate-y-0.5 hover:border-stellenbosch-maroon/20 hover:shadow-sm"
+  >
+    <span className={`mt-0.5 h-3 w-3 shrink-0 rounded-full ${weeklyReviewDotTone(action.tone)}`} />
+    <span className="min-w-0 flex-1">
+      <span className="block font-bold text-slate-800">{action.title}</span>
+      <span className="mt-1 block text-sm text-slate-500">{action.detail}</span>
+    </span>
+    <ArrowRight size={16} className="mt-1 shrink-0 text-slate-300" />
+  </Link>
+);
+
 const BattlePlanItem: React.FC<{ action: NextBestAction }> = ({ action }) => (
   <div className="flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/60 px-5 py-3.5">
     <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${battlePlanIconTone(action.actionType)}`}>
@@ -1092,6 +1305,45 @@ function withinDays(dateValue: string | undefined, days: number) {
   const target = new Date(`${match[0]}T00:00:00`);
   const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
   return diff >= 0 && diff <= days;
+}
+
+function isPastDate(dateValue: string | null | undefined) {
+  if (!dateValue) return false;
+  const match = dateValue.match(/\d{4}-\d{2}-\d{2}/);
+  if (!match) return false;
+  const today = new Date(`${todayIso()}T00:00:00`);
+  const target = new Date(`${match[0]}T00:00:00`);
+  return target.getTime() < today.getTime();
+}
+
+function weeklyReviewTone(tone: WeeklyReviewAction['tone']) {
+  switch (tone) {
+    case 'red':
+      return 'border-red-100 bg-red-50 text-red-800';
+    case 'amber':
+      return 'border-amber-100 bg-amber-50 text-amber-800';
+    case 'blue':
+      return 'border-blue-100 bg-blue-50 text-blue-800';
+    case 'emerald':
+      return 'border-emerald-100 bg-emerald-50 text-emerald-800';
+    default:
+      return 'border-slate-100 bg-slate-50 text-slate-700';
+  }
+}
+
+function weeklyReviewDotTone(tone: WeeklyReviewAction['tone']) {
+  switch (tone) {
+    case 'red':
+      return 'bg-red-500';
+    case 'amber':
+      return 'bg-amber-500';
+    case 'blue':
+      return 'bg-blue-500';
+    case 'emerald':
+      return 'bg-emerald-500';
+    default:
+      return 'bg-slate-400';
+  }
 }
 
 function priorityTone(priority: NextBestAction['priority']) {

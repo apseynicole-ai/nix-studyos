@@ -87,12 +87,14 @@ export function unresolvedMistakes(records: MistakeRecord[]) {
 
 const PLACEHOLDER_CORRECTION_RULES = new Set(['', 'tbd', 'todo', 'fix', 'n/a', 'na', 'placeholder', 'none', '-', 'unknown']);
 
+export function needsCorrectionRule(item: MistakeRecord): boolean {
+  if (item.resolved) return false;
+  const rule = (item.correctionRule ?? '').trim().toLowerCase();
+  return !rule || PLACEHOLDER_CORRECTION_RULES.has(rule);
+}
+
 export function mistakesNeedingCorrectionRule(records: MistakeRecord[]): MistakeRecord[] {
-  return records.filter((item) => {
-    if (item.resolved) return false;
-    const rule = item.correctionRule.trim().toLowerCase();
-    return !rule || PLACEHOLDER_CORRECTION_RULES.has(rule);
-  });
+  return records.filter(needsCorrectionRule);
 }
 
 export function mistakeRetestsDueThisWeek(records: MistakeRecord[]) {
