@@ -1,16 +1,7 @@
 import { modules, type ModuleInfo } from '../data/baccllb';
 import { readLocalJson } from './localData';
+import { calculateModuleMarksOutput, hasAnyCompletedNumericMark, type ModuleDraftState } from './marksOutput';
 import { getEffectiveModuleConfidence } from './moduleConfidence';
-import {
-  calcConLaw178,
-  calcDLA112,
-  calcDLA122,
-  calcEcon114,
-  calcFinAcc178,
-  calcLegalSkills114,
-  calcSDS188,
-  type MarksOutput,
-} from './marksEngine';
 
 export interface MarkScenario {
   currentMark: number;
@@ -119,22 +110,6 @@ export function priorityScore(confidence: number, target = 80) {
   return clamp(Math.round((target - confidence) * 1.25 + 35));
 }
 
-interface AssessmentDraftState {
-  status?: 'pending' | 'completed' | 'missed';
-  completed?: boolean;
-  mark?: string;
-  validSubmission?: boolean;
-  hoursLate?: string;
-}
-
-interface ModuleDraftState {
-  assessments?: Record<string, AssessmentDraftState>;
-}
-
-interface MarkEngineState {
-  modules?: Record<string, ModuleDraftState>;
-}
-
 export interface DashboardMarksPressureItem {
   moduleId: string;
   moduleCode: string;
@@ -159,7 +134,7 @@ const MARK_ENGINE_STORAGE_KEY = 'baccllb-mark-engine-state';
 const MODULE_TARGETS_KEY = 'baccllb-module-targets';
 
 export function getDashboardMarksPressureSummary(): DashboardMarksPressureSummary {
-  const state = readLocalJson<MarkEngineState | null>(MARK_ENGINE_STORAGE_KEY, null);
+  const state = readLocalJson<{ modules?: Record<string, ModuleDraftState> } | null>(MARK_ENGINE_STORAGE_KEY, null);
   const moduleTargets = readLocalJson<Record<string, number> | null>(MODULE_TARGETS_KEY, null) || {};
 
   const items = modules
@@ -184,7 +159,7 @@ function buildMarksPressureItem(
   if (!moduleState?.assessments) return null;
   if (!hasAnyCompletedNumericMark(moduleState)) return null;
 
-  const output = calculateModuleOutput(module.id, moduleState);
+  const output = calculateModuleMarksOutput(module.id, moduleState);
   if (!output) return null;
 
   // MTD before FM1: MTD normalises over completed assessments only; FM1 uses a fixed
@@ -214,88 +189,4 @@ function normaliseTarget(override: number | undefined, fallback: number) {
     return clamp(Math.round(override), 0, 100);
   }
   return fallback;
-}
-
-function calculateModuleOutput(moduleId: string, moduleState: ModuleDraftState): MarksOutput | null {
-  const pick = (assessmentId: string) => getAssessmentMark(moduleState.assessments?.[assessmentId]);
-
-  switch (moduleId) {
-    case 'econ114':
-      return calcEcon114({ a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
-    case 'dla112':
-      return calcDLA112({ af: pick('AF'), a1: pick('A1'), a2: pick('A2'), a3: pick('A3') });
-    case 'dla122':
-      return calcDLA122({
-        af: pick('AF'),
-        a1: pick('A1'),
-        a1Valid: moduleState.assessments?.A1?.validSubmission ?? true,
-        a2: pick('A2'),
-        a2Valid: moduleState.assessments?.A2?.validSubmission ?? true,
-        a3: pick('A3'),
-        hoursLateA1: parseNumber(moduleState.assessments?.A1?.hoursLate ?? '') ?? 0,
-        hoursLateA2: parseNumber(moduleState.assessments?.A2?.hoursLate ?? '') ?? 0,
-      });
-    case 'finacc178':
-      return calcFinAcc178({
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        afs2: pick('AFS2'),
-        a3: pick('A3'),
-      });
-    case 'foundations178':
-    case 'conlaw178':
-      return calcConLaw178({
-        afs1: pick('AFS1'),
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        afs2: pick('AFS2'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        a3: pick('A3'),
-      });
-    case 'sds188':
-      return calcSDS188({
-        afs1: pick('AFS1'),
-        a1s1: pick('A1S1'),
-        a2s1: pick('A2S1'),
-        afs2: pick('AFS2'),
-        a1s2: pick('A1S2'),
-        a2s2: pick('A2S2'),
-        a3: pick('A3'),
-      });
-    case 'legalskills114':
-      return calcLegalSkills114({
-        rt: pick('RT'),
-        lw: pick('LW'),
-        ao: pick('AO'),
-        t1: pick('T1'),
-        t2: pick('T2'),
-        ae: pick('AE'),
-        mq: pick('MQ'),
-      });
-    default:
-      return null;
-  }
-}
-
-function getAssessmentMark(assessment?: AssessmentDraftState): number | null {
-  if (!assessment || assessment.status !== 'completed' || !assessment.completed) return null;
-  const parsed = parseNumber(assessment.mark ?? '');
-  if (parsed === null) return null;
-  return clamp(parsed, 0, 100);
-}
-
-function hasAnyCompletedNumericMark(moduleState: ModuleDraftState) {
-  return Object.values(moduleState.assessments || {}).some((assessment) => {
-    if (!assessment || assessment.status !== 'completed' || !assessment.completed) return false;
-    return parseNumber(assessment.mark ?? '') !== null;
-  });
-}
-
-function parseNumber(value: string): number | null {
-  if (value.trim() === '') return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
 }

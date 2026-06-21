@@ -95,7 +95,12 @@ Use `.env.local` for local development or deployment environment variables in pr
 ```bash
 npm run lint
 npm run build
+npm test
 ```
+
+The module-specific marks engine has automated reliability tests in `src/lib/marksEngine.test.ts`. These tests protect the current planning formulas, A3/subminimum edge cases, and verification-sensitive shared models.
+
+Marks outputs remain unofficial planning estimates. Always verify marks, assessment weights, A3 rules, and pass/subminimum requirements against the official module frameworks before relying on them for final academic decisions.
 
 ## Firebase security
 
