@@ -205,9 +205,12 @@ export function getLastBackupMeta(): BackupMeta | null {
 export function getBackupAgeDays(): number | null {
   const meta = getLastBackupMeta();
   if (!meta) return null;
-  const date = new Date(meta.exportedAt);
+  const timestamp = meta.action === 'import' && meta.importedAt
+    ? meta.importedAt
+    : meta.exportedAt;
+  const date = new Date(timestamp);
   if (isNaN(date.getTime())) return null;
-  return Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
+  return Math.max(0, Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
 function isValidBackupShape(value: unknown): value is StudyOSBackupFile {
