@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, CheckCircle2, ClipboardList, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardList, PenLine, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { modules } from '../data/baccllb';
 import {
   deleteMistake,
   emptyMistakeDraft,
   mistakeRetestsDueSoon,
+  mistakesNeedingCorrectionRule,
   moduleLabel,
   readMistakeBank,
   readTopicOptionsForModule,
@@ -25,6 +26,7 @@ const MistakeBank: React.FC = () => {
   const [moduleFilter, setModuleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'unresolved' | 'resolved'>('unresolved');
   const [dueSoonOnly, setDueSoonOnly] = useState(false);
+  const [correctionRuleIncompleteOnly, setCorrectionRuleIncompleteOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<MistakeRecord>(() => emptyMistakeDraft(modules[0].id));
@@ -41,6 +43,7 @@ const MistakeBank: React.FC = () => {
       .filter((item) => moduleFilter === 'all' || item.moduleId === moduleFilter)
       .filter((item) => statusFilter === 'all' || (statusFilter === 'resolved' ? item.resolved : !item.resolved))
       .filter((item) => !dueSoonOnly || mistakeRetestsDueSoon([item]).length > 0)
+      .filter((item) => !correctionRuleIncompleteOnly || mistakesNeedingCorrectionRule([item]).length > 0)
       .filter((item) => {
         const query = search.trim().toLowerCase();
         if (!query) return true;
@@ -61,10 +64,11 @@ const MistakeBank: React.FC = () => {
         if (Number(a.resolved) !== Number(b.resolved)) return Number(a.resolved) - Number(b.resolved);
         return b.updatedAt.localeCompare(a.updatedAt);
       });
-  }, [records, moduleFilter, statusFilter, dueSoonOnly, search]);
+  }, [records, moduleFilter, statusFilter, dueSoonOnly, correctionRuleIncompleteOnly, search]);
 
   const dueSoon = useMemo(() => mistakeRetestsDueSoon(records), [records]);
   const unresolved = useMemo(() => unresolvedMistakes(records), [records]);
+  const needsRuleCount = useMemo(() => mistakesNeedingCorrectionRule(records).length, [records]);
   const finalBossRetestList = useMemo(
     () =>
       records.filter((item) => !item.resolved || (item.retestDate && mistakeRetestsDueSoon([item]).length > 0)),
@@ -136,10 +140,11 @@ const MistakeBank: React.FC = () => {
         </button>
       </header>
 
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <SummaryCard icon={<AlertTriangle size={20} />} label="Unresolved mistakes" value={unresolved.length} />
         <SummaryCard icon={<RotateCcw size={20} />} label="Retests due soon" value={dueSoon.length} />
         <SummaryCard icon={<ClipboardList size={20} />} label="Final Boss retest list" value={finalBossRetestList.length} />
+        <SummaryCard icon={<PenLine size={20} />} label="Need correction rules" value={needsRuleCount} />
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-8">
@@ -303,7 +308,7 @@ const MistakeBank: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-[1fr_0.9fr_0.7fr] gap-3 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_0.9fr_0.7fr_0.7fr] gap-3 mb-6">
             <SelectField
               label="Module filter"
               value={moduleFilter}
@@ -327,6 +332,15 @@ const MistakeBank: React.FC = () => {
                 className={`w-full rounded-2xl border px-4 py-3 text-sm font-bold ${dueSoonOnly ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}
               >
                 {dueSoonOnly ? 'Showing due soon' : 'Filter due soon'}
+              </button>
+            </label>
+            <label className="flex items-end">
+              <button
+                type="button"
+                onClick={() => setCorrectionRuleIncompleteOnly((current) => !current)}
+                className={`w-full rounded-2xl border px-4 py-3 text-sm font-bold ${correctionRuleIncompleteOnly ? 'bg-red-50 text-red-700 border-red-100' : 'bg-slate-50 text-slate-500 border-slate-100'}`}
+              >
+                {correctionRuleIncompleteOnly ? 'Needs rules only' : 'Filter no rule'}
               </button>
             </label>
           </div>

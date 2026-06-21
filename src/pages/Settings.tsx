@@ -46,6 +46,11 @@ const Settings: React.FC = () => {
     () => latestSnapshotActions.filter((action) => !isSnapshotActionAlreadyTasked(action, snapshotTasks)),
     [latestSnapshotActions, snapshotTasks],
   );
+  const backupIsStale = useMemo(() => {
+    if (!lastBackupMeta) return true;
+    const d = new Date(lastBackupMeta.exportedAt);
+    return isNaN(d.getTime()) || (Date.now() - d.getTime()) > 7 * 24 * 60 * 60 * 1000;
+  }, [lastBackupMeta]);
 
   const handleExport = () => {
     const { fileName, includedKeys } = exportBackup();
@@ -556,6 +561,15 @@ const Settings: React.FC = () => {
               {lastBackupMeta.warning && (
                 <p className="mt-3 text-sm text-amber-800">{lastBackupMeta.warning}</p>
               )}
+            </div>
+          )}
+          {backupIsStale && (
+            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 flex gap-3">
+              <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-600" />
+              <p>
+                <span className="font-semibold">{!lastBackupMeta ? 'No backup on record.' : 'Your last backup is over 7 days old.'}</span>{' '}
+                Export a new backup now before clearing browser data, switching devices, or making risky changes.
+              </p>
             </div>
           )}
         </section>
