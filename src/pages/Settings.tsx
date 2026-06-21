@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Download, LogIn, LogOut, NotebookTabs, PlusCircle, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { exportBackup, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
+import { exportBackup, getBackupAgeDays, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 import {
@@ -47,9 +47,8 @@ const Settings: React.FC = () => {
     [latestSnapshotActions, snapshotTasks],
   );
   const backupIsStale = useMemo(() => {
-    if (!lastBackupMeta) return true;
-    const d = new Date(lastBackupMeta.exportedAt);
-    return isNaN(d.getTime()) || (Date.now() - d.getTime()) > 7 * 24 * 60 * 60 * 1000;
+    const days = getBackupAgeDays();
+    return days === null || days > 7;
   }, [lastBackupMeta]);
 
   const handleExport = () => {

@@ -8,6 +8,7 @@ import {
   mistakeRetestsDueSoon,
   mistakesNeedingCorrectionRule,
   moduleLabel,
+  needsCorrectionRule,
   readMistakeBank,
   readTopicOptionsForModule,
   unresolvedMistakes,
@@ -43,7 +44,7 @@ const MistakeBank: React.FC = () => {
       .filter((item) => moduleFilter === 'all' || item.moduleId === moduleFilter)
       .filter((item) => statusFilter === 'all' || (statusFilter === 'resolved' ? item.resolved : !item.resolved))
       .filter((item) => !dueSoonOnly || mistakeRetestsDueSoon([item]).length > 0)
-      .filter((item) => !correctionRuleIncompleteOnly || mistakesNeedingCorrectionRule([item]).length > 0)
+      .filter((item) => !correctionRuleIncompleteOnly || needsCorrectionRule(item))
       .filter((item) => {
         const query = search.trim().toLowerCase();
         if (!query) return true;
