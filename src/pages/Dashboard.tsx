@@ -21,7 +21,7 @@ import {
   TimerReset,
   Zap,
 } from 'lucide-react';
-import { modules, nightlyChecklist, quickStats, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
+import { modules, nightlyChecklist, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
 import { finalAssessmentCalendarEntries } from '../data/assessmentCalendar';
 import {
   averageConfidence,
@@ -43,6 +43,7 @@ import { mistakeRetestsDueThisWeek, mistakesNeedingCorrectionRule, moduleWithMos
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type WeeklyReviewAction, type WeeklyReviewTone } from '../lib/weeklyReview';
+import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import ProgressRing from '../components/ui/ProgressRing';
@@ -164,10 +165,10 @@ const Dashboard: React.FC = () => {
   const sourceWarnings = modulesWithSourceWarnings().slice(0, 4);
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
-  const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional' && !isPastDate(e.date));
+  const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional' && isRelevantAssessmentDate(e.date));
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
-  const dueSoonTasks = openLocalTasks.filter((task) => withinDays(task.dueDate || undefined, 7));
+  const dueSoonTasks = openLocalTasks.filter((task) => isWithinNextDays(task.dueDate || undefined, 7));
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
   const battlePlan = nextBestActions.slice(0, 5);
   const filteredActions = useMemo(
@@ -270,7 +271,7 @@ const Dashboard: React.FC = () => {
       <section className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
         <MetricCard icon={<BookOpen />} label="Active modules" value={modules.length} note="S1 + S2 shells" />
         <MetricCard icon={<LineChart />} label="Avg confidence" value={`${avgConfidence}%`} note={readinessLabel(avgConfidence)} tone={riskTone(avgConfidence)} />
-        <MetricCard icon={<CalendarClock />} label="Upcoming checks" value={quickStats.semesterOneAssessments} note="Assessments + evidence" />
+        <MetricCard icon={<CalendarClock />} label="Upcoming checks" value={nextAssessments.length} note="Current assessment signals" />
         <MetricCard icon={<BrainCircuit />} label="AI outputs saved" value={stats.summaries} note={`${stats.sessions * 25} study mins logged`} />
         <MetricCard icon={<Target />} label="Topic tracker" value={urgentTopics} note={`${topicConfidence}% avg • ${retestsThisWeek} due`} tone={urgentTopics > 0 ? 'bg-amber-50 text-amber-800 border-amber-100' : undefined} />
         <MetricCard icon={<ListChecks />} label="Mistake bank" value={unresolvedMistakeCount} note={`${mistakeRetests} due • ${topMistakeModule?.moduleName || 'No hotspot'}${incompleteRuleCount > 0 ? ` • ${incompleteRuleCount} need rules` : ''}`} tone={unresolvedMistakeCount > 0 ? 'bg-red-50 text-red-800 border-red-100' : undefined} />
@@ -1206,9 +1207,9 @@ function matchesFilter(action: NextBestAction, filter: ActionFilter) {
     case 'Urgent':
       return action.priority === 'urgent';
     case 'Today':
-      return action.dueDate === todayIso() || action.suggestedDate === todayIso();
+      return action.dueDate === todayIsoLocal() || action.suggestedDate === todayIsoLocal();
     case 'This week':
-      return withinDays(action.dueDate || action.suggestedDate, 7);
+      return isWithinNextDays(action.dueDate || action.suggestedDate, 7);
     case 'Marks risk':
       return action.actionType === 'assessment-prep' || action.actionType === 'data-entry' || action.actionType === 'marks-review';
     case 'Mistakes':
@@ -1224,33 +1225,10 @@ function labeliseFactor(kind: NextBestAction['evidence'][number]['kind']) {
   return kind.replace(/-/g, ' ');
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function meaningfulProfileName(value: string | null | undefined) {
   const trimmed = value?.trim();
   if (!trimmed || trimmed.toLowerCase() === 'guest') return null;
   return trimmed;
-}
-
-function withinDays(dateValue: string | undefined, days: number) {
-  if (!dateValue) return false;
-  const match = dateValue.match(/\d{4}-\d{2}-\d{2}/);
-  if (!match) return false;
-  const today = new Date(`${todayIso()}T00:00:00`);
-  const target = new Date(`${match[0]}T00:00:00`);
-  const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
-  return diff >= 0 && diff <= days;
-}
-
-function isPastDate(dateValue: string | null | undefined) {
-  if (!dateValue) return false;
-  const match = dateValue.match(/\d{4}-\d{2}-\d{2}/);
-  if (!match) return false;
-  const today = new Date(`${todayIso()}T00:00:00`);
-  const target = new Date(`${match[0]}T00:00:00`);
-  return target.getTime() < today.getTime();
 }
 
 
