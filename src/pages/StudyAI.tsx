@@ -10,6 +10,7 @@ import { LOCAL_SUMMARIES_KEY, readLocalJson, writeLocalJson } from '../lib/local
 import { readTopicMastery, topicsNeedingRetestSoon } from '../lib/topicMastery';
 import { readMistakeBank } from '../lib/mistakeBank';
 import { getAssessmentCalendarEntry } from '../data/assessmentCalendar';
+import { getModuleMarksOutput } from '../lib/marksOutput';
 
 interface StudyAISummary {
   id: string;
@@ -20,6 +21,27 @@ interface StudyAISummary {
   moduleId: string;
   moduleName: string;
   createdAt: string;
+}
+
+function buildLiveMarksContext(output: ReturnType<typeof getModuleMarksOutput>): string {
+  if (output === null) {
+    return 'No completed marks entered yet for this module.';
+  }
+  const lines: string[] = [];
+  if (output.mtd !== null) {
+    lines.push(`Mark-to-date (completed assessments only): ${output.mtd}%`);
+  }
+  const fm = output.fm ?? output.fm2 ?? output.fm1;
+  if (fm !== null) {
+    lines.push(`${output.isValidFM ? 'Current FM path' : 'Projected path (FM not yet valid)'}: ${fm}%`);
+  } else if (!output.isValidFM && output.mtd !== null) {
+    lines.push('FM not yet valid — pass requirements pending or more assessments needed.');
+  }
+  const warnings = output.warnings.slice(0, 3);
+  if (warnings.length > 0) {
+    lines.push(`Engine warnings: ${warnings.join(' | ')}`);
+  }
+  return lines.length > 0 ? lines.join('\n') : 'Marks data on record — no computed values yet.';
 }
 
 function buildLiveContext(moduleId: string): string {
@@ -51,11 +73,8 @@ function buildLiveContext(moduleId: string): string {
     parts.push(`Upcoming final assessment:\n- ${dateStr} at ${calEntry.time}, ${calEntry.durationMinutes} min\n- Venue: ${calEntry.venue} (${calEntry.confidence === 'high' ? 'confirmed' : 'provisional'})`);
   }
 
-  const markState = readLocalJson<{ modules?: Record<string, { assessments?: Record<string, { status?: string; completed?: boolean; mark?: string }> }> } | null>('baccllb-mark-engine-state', null);
-  const completedMarks = Object.entries(markState?.modules?.[moduleId]?.assessments ?? {})
-    .filter(([, a]) => a.status === 'completed' && a.completed && Number.isFinite(Number(a.mark?.trim())) && a.mark?.trim() !== '')
-    .map(([id, a]) => `${id}: ${Number(a.mark?.trim())}%`);
-  if (completedMarks.length) parts.push(`Marks entered:\n${completedMarks.map((l) => `- ${l}`).join('\n')}`);
+  const marksOutput = getModuleMarksOutput(moduleId);
+  parts.push(`Live marks engine output:\n${buildLiveMarksContext(marksOutput)}`);
 
   if (parts.length === 0) return '';
   return `\nLive study state for this module:\n${parts.join('\n\n')}`;
