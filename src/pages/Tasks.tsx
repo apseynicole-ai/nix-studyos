@@ -187,7 +187,7 @@ const Tasks: React.FC = () => {
 
   const toggleTask = async (id: string, done: boolean) => {
     try {
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         const nextTasks = readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).map((task) =>
           task.id === id ? { ...task, done: !done, completedAt: !done ? new Date().toISOString() : null } : task,
         );
@@ -209,7 +209,7 @@ const Tasks: React.FC = () => {
 
   const deleteTask = async (id: string) => {
     try {
-      if (localFirstMode) {
+      if (localFirstMode || !user) {
         saveLocalTasks(readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).filter((task) => task.id !== id));
         return;
       }
@@ -356,7 +356,7 @@ const Tasks: React.FC = () => {
                           <span>{task.points || 0} pts</span>
                           {task.dueDate && <span>Due {task.dueDate}</span>}
                         </div>
-                        {(task as any).why && <p className="text-xs text-slate-500 mt-2">{(task as any).why}</p>}
+                        {task.why && <p className="text-xs text-slate-500 mt-2">{task.why}</p>}
                       </div>
                       <button onClick={() => deleteTask(task.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all p-2">
                         <Trash2 size={18} />

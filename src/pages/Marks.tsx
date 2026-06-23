@@ -156,8 +156,7 @@ const MODULE_META: Record<SupportedModuleId, ModuleMeta> = {
   },
 };
 
-function createAssessmentDraft(moduleId: SupportedModuleId, assessmentId: string): AssessmentDraftState {
-  const assessment = getModuleAssessmentModel(moduleId)?.assessments.find((item) => item.id === assessmentId);
+function createAssessmentDraft(_moduleId: SupportedModuleId, _assessmentId: string): AssessmentDraftState {
   return {
     completed: false,
     status: 'pending',

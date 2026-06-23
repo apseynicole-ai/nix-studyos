@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser } from 'firebase/auth';
 import { auth, db, doc, getDoc, type UserProfileRecord } from '../../lib/firebase';
 import { LOCAL_PROFILE_KEY, readLocalJson, writeLocalJson } from '../../lib/localData';
+import { USER_ACADEMIC_PROFILE } from '../../data/baccllb';
 
 interface AuthContextType {
   user: FirebaseUser | null;
@@ -115,7 +116,7 @@ export const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children })
 function buildGuestProfile(): UserProfileRecord {
   const storedProfile = readLocalJson<Partial<UserProfileRecord> | null>(LOCAL_PROFILE_KEY, null);
   const username = storedProfile?.username || storedProfile?.usernameLowercase || 'guest';
-  const displayName = storedProfile?.displayName || 'Guest';
+  const displayName = meaningfulName(storedProfile?.displayName) || USER_ACADEMIC_PROFILE.preferredName || 'Nix';
   const now = new Date().toISOString();
 
   const guestProfile: UserProfileRecord = {
@@ -143,11 +144,17 @@ function buildSignedInLocalProfile(user: FirebaseUser): UserProfileRecord {
   return {
     uid: user.uid,
     email,
-    displayName: user.displayName || storedProfile?.displayName || emailPrefix,
+    displayName: meaningfulName(user.displayName) || meaningfulName(storedProfile?.displayName) || emailPrefix,
     username,
     usernameLowercase: username.toLowerCase(),
     authProvider: 'password',
     createdAt: storedProfile?.createdAt || now,
     updatedAt: now,
   };
+}
+
+function meaningfulName(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.toLowerCase() === 'guest') return null;
+  return trimmed;
 }

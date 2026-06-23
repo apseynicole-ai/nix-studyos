@@ -11,6 +11,17 @@ import { readTopicMastery, topicsNeedingRetestSoon } from '../lib/topicMastery';
 import { readMistakeBank } from '../lib/mistakeBank';
 import { getAssessmentCalendarEntry } from '../data/assessmentCalendar';
 
+interface StudyAISummary {
+  id: string;
+  userId?: string;
+  title: string;
+  content: string;
+  originalText: string;
+  moduleId: string;
+  moduleName: string;
+  createdAt: string;
+}
+
 function buildLiveContext(moduleId: string): string {
   const parts: string[] = [];
 
@@ -55,7 +66,7 @@ const StudyAI: React.FC = () => {
   const [input, setInput] = useState('');
   const [moduleId, setModuleId] = useState(modules[0].id);
   const [loading, setLoading] = useState(false);
-  const [summaries, setSummaries] = useState<any[]>([]);
+  const [summaries, setSummaries] = useState<StudyAISummary[]>([]);
   const [currentSummary, setCurrentSummary] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -64,7 +75,7 @@ const StudyAI: React.FC = () => {
 
   useEffect(() => {
     const loadLocalSummaries = () => {
-      setSummaries(readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => !user || summary.userId === user.uid || !summary.userId));
+      setSummaries(readLocalJson<StudyAISummary[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => !user || summary.userId === user.uid || !summary.userId));
     };
 
     if (localFirstMode || !user) {
@@ -74,7 +85,7 @@ const StudyAI: React.FC = () => {
 
     const q = query(collection(db, 'summaries'), where('userId', '==', user.uid));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setSummaries(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+      setSummaries(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as StudyAISummary)));
     }, (error) => {
       if (isFirestoreUnavailableError(error)) {
         loadLocalSummaries();
@@ -147,7 +158,7 @@ ${buildLiveContext(moduleId)}`;
         },
       });
       setCurrentSummary(response);
-      const newSummary = {
+      const newSummary: StudyAISummary = {
         id: crypto.randomUUID(),
         userId: user?.uid || profile?.uid || 'local-guest',
         title: input.slice(0, 70) + (input.length > 70 ? '...' : ''),
@@ -158,14 +169,14 @@ ${buildLiveContext(moduleId)}`;
         createdAt: new Date().toISOString(),
       };
       if (localFirstMode || !user) {
-        writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
+        writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<StudyAISummary[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
         setSummaries((current) => [...current, newSummary]);
       } else {
         try {
           await addDoc(collection(db, 'summaries'), newSummary);
         } catch (error) {
           if (isFirestoreUnavailableError(error)) {
-            writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
+            writeLocalJson(LOCAL_SUMMARIES_KEY, [...readLocalJson<StudyAISummary[]>(LOCAL_SUMMARIES_KEY, []), newSummary]);
             setSummaries((current) => [...current, newSummary]);
           } else {
             throw error;
@@ -184,7 +195,7 @@ ${buildLiveContext(moduleId)}`;
   const deleteSummary = async (id: string) => {
     try {
       if (localFirstMode || !user) {
-        const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
+        const nextSummaries = readLocalJson<StudyAISummary[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
         writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
         setSummaries(nextSummaries.filter((summary) => !user || summary.userId === user.uid || !summary.userId));
         return;
@@ -192,7 +203,7 @@ ${buildLiveContext(moduleId)}`;
       await deleteDoc(doc(db, 'summaries', id));
     } catch (error) {
       if (isFirestoreUnavailableError(error)) {
-        const nextSummaries = readLocalJson<any[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
+        const nextSummaries = readLocalJson<StudyAISummary[]>(LOCAL_SUMMARIES_KEY, []).filter((summary) => summary.id !== id);
         writeLocalJson(LOCAL_SUMMARIES_KEY, nextSummaries);
         setSummaries(nextSummaries.filter((summary) => !user || summary.userId === user.uid || !summary.userId));
         return;
@@ -323,7 +334,7 @@ ${buildLiveContext(moduleId)}`;
             Recent Inquiries
           </h2>
           <div className="space-y-4 max-h-[58vh] overflow-y-auto pr-2 custom-scrollbar">
-            {summaries.sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map((summary) => (
+            {[...summaries].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map((summary) => (
               <div key={summary.id} className="bg-white/70 p-4 rounded-2xl border border-slate-100 group relative">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
