@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertTriangle, CheckCircle2, ClipboardList, PenLine, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardList, PenLine, Pencil, Plus, RotateCcw, Search, Trash2 } from 'lucide-react';
 import { modules } from '../data/baccllb';
 import {
   deleteMistake,
   emptyMistakeDraft,
   mistakeRetestsDueSoon,
+  mistakeRetestsInWindow,
   mistakesNeedingCorrectionRule,
   moduleLabel,
   needsCorrectionRule,
@@ -16,6 +17,7 @@ import {
   type MistakeRecord,
   type MistakeSourceType,
 } from '../lib/mistakeBank';
+import { todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import { clampProgress, calculateMistakeResolutionProgress } from '../lib/progressMetrics';
@@ -69,6 +71,12 @@ const MistakeBank: React.FC = () => {
 
   const dueSoon = useMemo(() => mistakeRetestsDueSoon(records), [records]);
   const unresolved = useMemo(() => unresolvedMistakes(records), [records]);
+  const todayStr = useMemo(() => todayIsoLocal(), []);
+  const sevenDaysStr = useMemo(() => { const d = new Date(); d.setDate(d.getDate() + 7); return todayIsoLocal(d); }, []);
+  const upcomingRetests = useMemo(() => mistakeRetestsInWindow(records, 30), [records]);
+  const overdueGroup = useMemo(() => upcomingRetests.filter((r) => r.retestDate <= todayStr), [upcomingRetests, todayStr]);
+  const nextSevenGroup = useMemo(() => upcomingRetests.filter((r) => r.retestDate > todayStr && r.retestDate <= sevenDaysStr), [upcomingRetests, todayStr, sevenDaysStr]);
+  const laterGroup = useMemo(() => upcomingRetests.filter((r) => r.retestDate > sevenDaysStr), [upcomingRetests, sevenDaysStr]);
   const needsRuleCount = useMemo(() => mistakesNeedingCorrectionRule(records).length, [records]);
   const finalBossRetestList = useMemo(
     () =>
@@ -176,6 +184,31 @@ const MistakeBank: React.FC = () => {
           <ProgressBar value={dueSoonProgress} label="Retest due progress" helper={records.length ? `${dueSoon.length} mistakes need near-term retest attention` : 'No retest dates yet'} tone="amber" />
           <ProgressBar value={finalBossCleanupProgress} label="Final Boss cleanup" helper={records.length ? `${finalBossRetestList.length} items still on the retest list` : 'Nothing in the Final Boss cleanup list yet'} tone="maroon" />
         </div>
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <CalendarDays size={22} className="text-stellenbosch-maroon/70" />
+          <h2 className="font-display text-3xl text-stellenbosch-maroon">30-day Retest Planner</h2>
+        </div>
+        <p className="text-slate-500 mb-6">Unresolved mistakes with retests due in the next 30 days, oldest first. Overdue retests appear at the top.</p>
+        {upcomingRetests.length === 0 ? (
+          <div className="rounded-[2rem] border border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center">
+            <p className="text-slate-500">No retests scheduled in the next 30 days.</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {overdueGroup.length > 0 && (
+              <PlannerGroup label="Due today / overdue" tone="red" items={overdueGroup} onEdit={handleEdit} />
+            )}
+            {nextSevenGroup.length > 0 && (
+              <PlannerGroup label="Next 7 days" tone="amber" items={nextSevenGroup} onEdit={handleEdit} />
+            )}
+            {laterGroup.length > 0 && (
+              <PlannerGroup label="Next 30 days" tone="blue" items={laterGroup} onEdit={handleEdit} />
+            )}
+          </div>
+        )}
       </section>
 
       <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.08fr] gap-8">
@@ -418,6 +451,54 @@ const MistakeBank: React.FC = () => {
             </div>
           )}
         </section>
+      </div>
+    </div>
+  );
+};
+
+const PLANNER_TONE = {
+  red: { row: 'border-red-100 bg-red-50', badge: 'text-red-700 bg-red-50 border-red-100', dot: 'bg-red-400' },
+  amber: { row: 'border-amber-100 bg-amber-50/60', badge: 'text-amber-700 bg-amber-50 border-amber-100', dot: 'bg-amber-400' },
+  blue: { row: 'border-blue-100 bg-blue-50/50', badge: 'text-blue-700 bg-blue-50 border-blue-100', dot: 'bg-blue-400' },
+} as const;
+
+const PlannerGroup: React.FC<{
+  label: string;
+  tone: keyof typeof PLANNER_TONE;
+  items: MistakeRecord[];
+  onEdit: (record: MistakeRecord) => void;
+}> = ({ label, tone, items, onEdit }) => {
+  const t = PLANNER_TONE[tone];
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <span className={`w-2 h-2 rounded-full ${t.dot}`} />
+        <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full border ${t.badge}`}>{label}</span>
+        <span className="text-xs text-slate-400 font-mono">{items.length} item{items.length === 1 ? '' : 's'}</span>
+      </div>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className={`rounded-2xl border p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 ${t.row}`}>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="font-mono text-xs font-bold text-slate-500">{item.retestDate}</span>
+                <span className="text-[10px] uppercase tracking-wider font-bold bg-white/80 text-stellenbosch-maroon rounded-full px-2 py-0.5 border border-white">{moduleLabel(item.moduleId)}</span>
+                {item.topicName && <span className="text-[10px] text-slate-500 font-medium">{item.topicName}</span>}
+              </div>
+              <p className="font-bold text-slate-800 text-sm mb-1">{item.mistakeTitle}</p>
+              {!needsCorrectionRule(item) && item.correctionRule && (
+                <p className="text-xs text-slate-600 line-clamp-2">{item.correctionRule}</p>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              className="shrink-0 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-600 hover:text-stellenbosch-maroon hover:border-stellenbosch-maroon/20 transition-colors"
+            >
+              Review
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );
