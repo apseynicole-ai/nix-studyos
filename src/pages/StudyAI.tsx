@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, BrainCircuit, Sparkles, Scale, BookOpen, Calculator, History, Trash2, Copy, Wand2, FileText, Target } from 'lucide-react';
+import { Send, BrainCircuit, Sparkles, Scale, BookOpen, Calculator, History, Trash2, Copy, Wand2, FileText, Target, BookmarkPlus } from 'lucide-react';
 import { askGemini } from '../lib/gemini';
 import { useAuth } from '../components/auth/AuthGuard';
 import { db, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, isFirestoreUnavailableError } from '../lib/firebase';
@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown';
 import { modules, promptPacks, USER_ACADEMIC_PROFILE } from '../data/baccllb';
 import { LOCAL_SUMMARIES_KEY, readLocalJson, writeLocalJson } from '../lib/localData';
 import { readTopicMastery, topicsNeedingRetestSoon } from '../lib/topicMastery';
-import { readMistakeBank } from '../lib/mistakeBank';
+import { readMistakeBank, upsertMistake } from '../lib/mistakeBank';
 import { getAssessmentCalendarEntry } from '../data/assessmentCalendar';
 import { getModuleMarksOutput } from '../lib/marksOutput';
 
@@ -76,7 +76,6 @@ function buildLiveContext(moduleId: string): string {
   const marksOutput = getModuleMarksOutput(moduleId);
   parts.push(`Live marks engine output:\n${buildLiveMarksContext(marksOutput)}`);
 
-  if (parts.length === 0) return '';
   return `\nLive study state for this module:\n${parts.join('\n\n')}`;
 }
 
@@ -89,6 +88,8 @@ const StudyAI: React.FC = () => {
   const [currentSummary, setCurrentSummary] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [loggedAsMistake, setLoggedAsMistake] = useState(false);
+  const lastPromptRef = useRef('');
 
   const selectedModule = useMemo(() => modules.find((module) => module.id === moduleId) || modules[0], [moduleId]);
 
@@ -176,7 +177,9 @@ ${buildLiveContext(moduleId)}`;
           confidence: selectedModule.confidence,
         },
       });
+      lastPromptRef.current = input;
       setCurrentSummary(response);
+      setLoggedAsMistake(false);
       const newSummary: StudyAISummary = {
         id: crypto.randomUUID(),
         userId: user?.uid || profile?.uid || 'local-guest',
@@ -242,6 +245,33 @@ ${buildLiveContext(moduleId)}`;
     await navigator.clipboard.writeText(currentSummary);
     setCopied(true);
     setTimeout(() => setCopied(false), 1200);
+  };
+
+  const handleLogAsMistake = () => {
+    if (!currentSummary || loggedAsMistake) return;
+    const now = new Date();
+    const retestDate = new Date(now);
+    retestDate.setDate(now.getDate() + 7);
+    const mistakeTitle = lastPromptRef.current.trim().slice(0, 100) || 'StudyAI insight';
+    upsertMistake({
+      id: '',
+      moduleId,
+      mistakeCategory: '',
+      topicId: '',
+      topicName: '',
+      mistakeTitle,
+      mistakeDescription: '',
+      whyItHappened: '',
+      correctionRule: `From StudyAI:\n${currentSummary.slice(0, 2000)}`,
+      sourceType: 'other',
+      sourceReference: 'StudyAI',
+      markLost: undefined,
+      resolved: false,
+      retestDate: retestDate.toISOString().slice(0, 10),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+    });
+    setLoggedAsMistake(true);
   };
 
   return (
@@ -331,9 +361,14 @@ ${buildLiveContext(moduleId)}`;
                   <p className="text-xs uppercase tracking-[0.25em] text-slate-400 font-bold">Generated output</p>
                   <h2 className="font-display text-3xl text-stellenbosch-maroon">{selectedModule.shortName} response</h2>
                 </div>
-                <button onClick={copyOutput} className="rounded-2xl bg-slate-50 text-slate-500 hover:text-stellenbosch-maroon px-4 py-3 flex items-center gap-2 text-sm font-bold">
-                  <Copy size={16} /> {copied ? 'Copied' : 'Copy'}
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={copyOutput} className="rounded-2xl bg-slate-50 text-slate-500 hover:text-stellenbosch-maroon px-4 py-3 flex items-center gap-2 text-sm font-bold">
+                    <Copy size={16} /> {copied ? 'Copied' : 'Copy'}
+                  </button>
+                  <button onClick={handleLogAsMistake} disabled={loggedAsMistake} className="rounded-2xl bg-slate-50 text-slate-500 hover:text-stellenbosch-maroon px-4 py-3 flex items-center gap-2 text-sm font-bold disabled:opacity-50">
+                    <BookmarkPlus size={16} /> {loggedAsMistake ? 'Logged' : 'Log as mistake'}
+                  </button>
+                </div>
               </div>
               <ReactMarkdown>{currentSummary}</ReactMarkdown>
             </motion.div>
