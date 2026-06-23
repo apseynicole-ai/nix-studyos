@@ -89,7 +89,8 @@ const MistakeBank: React.FC = () => {
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft.mistakeTitle.trim() || !draft.correctionRule.trim()) return;
+    const correctionRule = (draft.correctionRule ?? '').trim();
+    if (!draft.mistakeTitle.trim() || !correctionRule) return;
 
     const next = upsertMistake({
       ...draft,
@@ -97,7 +98,7 @@ const MistakeBank: React.FC = () => {
       mistakeTitle: draft.mistakeTitle.trim(),
       mistakeDescription: draft.mistakeDescription.trim(),
       whyItHappened: draft.whyItHappened.trim(),
-      correctionRule: draft.correctionRule.trim(),
+      correctionRule,
       topicName: draft.topicName?.trim() || '',
     });
     setRecords(next);
@@ -107,7 +108,15 @@ const MistakeBank: React.FC = () => {
 
   const handleEdit = (record: MistakeRecord) => {
     setEditingId(record.id);
-    setDraft(record);
+    setDraft({
+      ...emptyMistakeDraft(record.moduleId),
+      ...record,
+      mistakeDescription: record.mistakeDescription ?? '',
+      whyItHappened: record.whyItHappened ?? '',
+      correctionRule: record.correctionRule ?? '',
+      sourceReference: record.sourceReference ?? '',
+      retestDate: record.retestDate ?? '',
+    });
   };
 
   const handleDelete = (id: string) => {
@@ -274,7 +283,7 @@ const MistakeBank: React.FC = () => {
             />
             <TextAreaField
               label="Correction rule"
-              value={draft.correctionRule}
+              value={draft.correctionRule ?? ''}
               onChange={(value) => setDraft((current) => ({ ...current, correctionRule: value }))}
               placeholder="What rule, process, or trigger should you use next time?"
             />
@@ -384,7 +393,7 @@ const MistakeBank: React.FC = () => {
                       <p className="text-sm text-slate-600 mb-3">{record.mistakeDescription}</p>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                         <InfoBlock title="Why it happened" text={record.whyItHappened || 'Not captured yet.'} />
-                        <InfoBlock title="Correction rule" text={record.correctionRule} highlight />
+                        <InfoBlock title="Correction rule" text={record.correctionRule || 'Not captured yet.'} highlight />
                       </div>
                       <div className="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
                         {record.sourceReference && <span className="px-2 py-1 rounded-full bg-white border border-slate-100">{record.sourceReference}</span>}

@@ -210,6 +210,7 @@ const Dashboard: React.FC = () => {
   const maxMomentumMinutes = Math.max(...studyMomentum.last7Days.map((day) => day.minutes), 1);
   const latestAcademicSnapshot = useMemo(() => getLatestAcademicSnapshot(), []);
   const latestAcademicSummary = useMemo(() => summarizeAcademicSnapshot(latestAcademicSnapshot), [latestAcademicSnapshot]);
+  const greetingName = meaningfulProfileName(profile?.displayName) || USER_ACADEMIC_PROFILE.preferredName || 'Nix';
   const weeklyReviewActions = useMemo<WeeklyReviewAction[]>(() => buildWeeklyReviewActions({
     overdueCount: overdueTasks.length,
     dueSoonCount: dueSoonTasks.length,
@@ -232,7 +233,7 @@ const Dashboard: React.FC = () => {
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_30%)]" />
           <div className="relative z-10">
             <p className="uppercase tracking-[0.35em] text-xs text-white/70 font-bold mb-4">{USER_ACADEMIC_PROFILE.institution}</p>
-            <h1 className="font-display text-4xl md:text-6xl mb-3">Goeiedag, {profile?.displayName || USER_ACADEMIC_PROFILE.preferredName}</h1>
+            <h1 className="font-display text-4xl md:text-6xl mb-3">Goeiedag, {greetingName}</h1>
             <p className="text-white/80 text-lg max-w-2xl">
               Your personalised {USER_ACADEMIC_PROFILE.programme} command centre: modules, marks, tasks, A2 pressure prep, mistake loops and AI study systems in one place.
             </p>
@@ -1225,6 +1226,12 @@ function labeliseFactor(kind: NextBestAction['evidence'][number]['kind']) {
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function meaningfulProfileName(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed || trimmed.toLowerCase() === 'guest') return null;
+  return trimmed;
 }
 
 function withinDays(dateValue: string | undefined, days: number) {
