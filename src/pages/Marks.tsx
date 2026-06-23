@@ -15,6 +15,7 @@ import {
   getModuleAssessmentModel,
 } from '../lib/marksEngine';
 import type { MarksOutput } from '../lib/marksEngine';
+import { calculateModuleMarksOutput, hasAnyCompletedNumericMark } from '../lib/marksOutput';
 import { clampProgress } from '../lib/progressMetrics';
 
 type SupportedModuleId =
@@ -61,6 +62,22 @@ interface NeededMarkRow {
   feasible: boolean;
   focusLabel: string;
   status: string;
+}
+
+interface ModuleSummaryRow {
+  moduleId: SupportedModuleId;
+  label: string;
+  shortName: string;
+  code: string;
+  colour: string;
+  currentLabel: string;
+  currentValue: number | null;
+  riskLabel: string;
+  riskTone: string;
+  dataStatus: string;
+  dataTone: string;
+  nextAction: string;
+  needsVerification: boolean;
 }
 
 const STORAGE_KEY = 'baccllb-mark-engine-state';
@@ -366,6 +383,15 @@ function getCurrentFinal(output: MarksOutput): number | null {
   return output.fm ?? output.fm2 ?? output.mtd ?? output.fm1 ?? output.my ?? null;
 }
 
+function getCurrentFinalLabel(output: MarksOutput): string {
+  if (output.fm !== null) return 'FM';
+  if (output.fm2 !== null) return 'FM2';
+  if (output.mtd !== null) return 'MTD';
+  if (output.fm1 !== null) return 'FM1';
+  if (output.my !== null) return 'MY';
+  return 'No mark yet';
+}
+
 function getRiskLevel(output: MarksOutput): { label: string; tone: string } {
   const current = getCurrentFinal(output);
   const hasInvalidWarning = output.warnings.some((warning) => warning.includes('INVALID') || warning.includes('fail'));
@@ -526,6 +552,75 @@ function formatMetric(value: number | null | undefined): string {
   return value === null || value === undefined ? 'n/a' : `${value}%`;
 }
 
+function getModuleSummaryRow(moduleId: SupportedModuleId, moduleState: ModuleDraftState): ModuleSummaryRow {
+  const module = MODULE_META[moduleId];
+  const model = getModuleAssessmentModel(moduleId);
+  const output = calculateModuleMarksOutput(moduleId, moduleState);
+  const hasMarks = hasAnyCompletedNumericMark(moduleState);
+  const focus = getFocusAssessment(moduleId, moduleState);
+
+  if (!output) {
+    return {
+      moduleId,
+      label: module.label,
+      shortName: module.shortName,
+      code: module.code,
+      colour: module.colour,
+      currentLabel: 'No mark yet',
+      currentValue: null,
+      riskLabel: 'No data',
+      riskTone: 'bg-slate-50 text-slate-600 border-slate-100',
+      dataStatus: 'Model unavailable',
+      dataTone: 'bg-slate-50 text-slate-600 border-slate-100',
+      nextAction: 'Open module model',
+      needsVerification: model?.needsVerification ?? false,
+    };
+  }
+
+  const currentValue = getCurrentFinal(output);
+  const risk = hasMarks ? getRiskLevel(output) : { label: 'No data', tone: 'bg-slate-50 text-slate-600 border-slate-100' };
+  const hasWarnings = output.warnings.length > 0;
+  const dataStatus = !hasMarks
+    ? 'No marks entered'
+    : !output.isValidFM
+      ? 'Invalid FM path'
+      : hasWarnings
+        ? `${output.warnings.length} warning${output.warnings.length === 1 ? '' : 's'}`
+        : 'Tracked';
+  const dataTone = !hasMarks
+    ? 'bg-slate-50 text-slate-600 border-slate-100'
+    : !output.isValidFM
+      ? 'bg-red-50 text-red-700 border-red-100'
+      : hasWarnings
+        ? 'bg-amber-50 text-amber-700 border-amber-100'
+        : 'bg-emerald-50 text-emerald-700 border-emerald-100';
+  const nextAction = !hasMarks
+    ? 'Enter confirmed marks'
+    : !output.isValidFM
+      ? 'Fix missing or invalid required inputs'
+      : hasWarnings
+        ? 'Review engine warnings'
+        : focus
+          ? `Capture ${focus.label}`
+          : 'Monitor final path';
+
+  return {
+    moduleId,
+    label: module.label,
+    shortName: module.shortName,
+    code: module.code,
+    colour: module.colour,
+    currentLabel: getCurrentFinalLabel(output),
+    currentValue,
+    riskLabel: risk.label,
+    riskTone: risk.tone,
+    dataStatus,
+    dataTone,
+    nextAction,
+    needsVerification: model?.needsVerification ?? false,
+  };
+}
+
 const Kpi: React.FC<{ icon: React.ReactNode; label: string; value: string | number; note: string; tone?: string }> = ({ icon, label, value, note, tone }) => (
   <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm">
     <div className="w-12 h-12 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center mb-5">{icon}</div>
@@ -583,6 +678,10 @@ const Marks: React.FC = () => {
     () => calculateModuleOutput(state.selectedModuleId, selectedModuleState),
     [state.selectedModuleId, selectedModuleState],
   );
+  const moduleSummaryRows = useMemo(
+    () => SUPPORTED_MODULES.map((moduleId) => getModuleSummaryRow(moduleId, state.modules[moduleId])),
+    [state.modules],
+  );
 
   const risk = useMemo(() => getRiskLevel(output), [output]);
   const targetChoices = useMemo(() => getTargetChoices(selectedOverallGoal), [selectedOverallGoal]);
@@ -638,6 +737,15 @@ const Marks: React.FC = () => {
     setTimeout(() => setSavedPulse(false), 1200);
   };
 
+  const selectModule = (moduleId: SupportedModuleId, scrollToDetail = false) => {
+    setState((current) => ({ ...current, selectedModuleId: moduleId }));
+    if (scrollToDetail) {
+      window.requestAnimationFrame(() => {
+        document.getElementById('marks-module-detail')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  };
+
   return (
     <div className="page-shell">
       <header className="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
@@ -664,7 +772,7 @@ const Marks: React.FC = () => {
               <button
                 key={moduleId}
                 type="button"
-                onClick={() => setState((current) => ({ ...current, selectedModuleId: moduleId }))}
+                onClick={() => selectModule(moduleId)}
                 className={`rounded-[2rem] border p-5 text-left transition-all ${
                   active
                     ? 'border-stellenbosch-maroon bg-white shadow-lg shadow-stellenbosch-maroon/10'
@@ -679,6 +787,66 @@ const Marks: React.FC = () => {
               </button>
             );
           })}
+        </div>
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-6 mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 mb-5">
+          <div>
+            <p className="page-kicker">cross-module pressure scan</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">All modules at a glance</h2>
+            <p className="text-sm text-slate-500 mt-2 max-w-3xl">
+              A compact marks-engine view across every supported module. These cards reuse the same module calculators as the detailed tabs and stay local-first on this device.
+            </p>
+          </div>
+          <span className="inline-flex rounded-full border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold uppercase tracking-wider text-slate-500">
+            {moduleSummaryRows.filter((row) => row.currentValue !== null).length}/{moduleSummaryRows.length} with marks
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+          {moduleSummaryRows.map((row) => (
+            <div key={row.moduleId} className="rounded-3xl border border-slate-100 bg-slate-50/60 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`h-3 w-3 rounded-full bg-gradient-to-br ${row.colour}`} />
+                    <p className="font-bold text-slate-900">{row.shortName}</p>
+                    <span className="text-xs font-bold text-slate-400">{row.code}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-500">{row.nextAction}</p>
+                </div>
+
+                <div className="flex items-center gap-3 sm:text-right">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{row.currentLabel}</p>
+                    <p className="font-display text-3xl text-slate-900">{formatMetric(row.currentValue)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => selectModule(row.moduleId, true)}
+                    className="rounded-2xl border border-stellenbosch-maroon/15 bg-white px-3 py-2 text-xs font-bold text-stellenbosch-maroon hover:bg-stellenbosch-maroon hover:text-white transition-colors"
+                  >
+                    Open module
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${row.riskTone}`}>
+                  Risk: {row.riskLabel}
+                </span>
+                <span className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${row.dataTone}`}>
+                  {row.dataStatus}
+                </span>
+                {row.needsVerification && (
+                  <span className="inline-flex rounded-full border border-amber-100 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                    Needs verification
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -703,7 +871,7 @@ const Marks: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
+      <section id="marks-module-detail" className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
         <div className="px-6 py-5 border-b border-slate-100">
           <h2 className="font-display text-3xl text-stellenbosch-maroon">{selectedModule.label}</h2>
           <p className="text-sm text-slate-500 mt-2">Capture each assessment exactly as the module model expects. Use Pending for future opportunities, Completed for submitted work, and Missed when an opportunity is lost.</p>
