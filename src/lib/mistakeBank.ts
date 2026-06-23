@@ -109,6 +109,21 @@ export function mistakeRetestsDueThisWeek(records: MistakeRecord[]) {
   });
 }
 
+export function mistakeRetestsInWindow(records: MistakeRecord[], days: number): MistakeRecord[] {
+  const today = stripTime(new Date());
+  const cutoff = new Date(today);
+  cutoff.setDate(today.getDate() + days);
+
+  return records
+    .filter((item) => {
+      if (item.resolved || !item.retestDate) return false;
+      const parsed = new Date(item.retestDate);
+      if (isNaN(parsed.getTime())) return false;
+      return stripTime(parsed) <= cutoff;
+    })
+    .sort((a, b) => a.retestDate.localeCompare(b.retestDate));
+}
+
 export function mistakeRetestsDueSoon(records: MistakeRecord[]) {
   const today = stripTime(new Date());
   const threeDays = new Date(today);
