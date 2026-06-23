@@ -2,6 +2,7 @@ import { modules, type ModuleInfo } from '../data/baccllb';
 import { readLocalJson } from './localData';
 import { calculateModuleMarksOutput, hasAnyCompletedNumericMark, type ModuleDraftState } from './marksOutput';
 import { getEffectiveModuleConfidence } from './moduleConfidence';
+import { isRelevantAssessmentDate } from './dateUtils';
 
 export interface MarkScenario {
   currentMark: number;
@@ -103,6 +104,7 @@ export function upcomingAssessments() {
   return modules
     .flatMap((module) => module.assessments.map((assessment) => ({ ...assessment, module })))
     .filter((item) => item.status === 'upcoming' || item.status === 'draft')
+    .filter((item) => isRelevantAssessmentDate(item.date))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 

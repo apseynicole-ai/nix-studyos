@@ -5,6 +5,7 @@ import { getEffectiveModuleConfidence } from './moduleConfidence';
 import { hasMissingCurrentMark, hasSourceWarning, isHighRiskModule } from './studyMetrics';
 import { readMistakeBank, type MistakeRecord } from './mistakeBank';
 import { readTopicMastery, type TopicMasteryRecord, type TopicStatus } from './topicMastery';
+import { isRelevantAssessmentDate } from './dateUtils';
 
 export type NextBestActionPriority = 'low' | 'medium' | 'high' | 'urgent';
 export type NextBestActionType =
@@ -100,6 +101,7 @@ export function scoreTopicPriority(record: TopicMasteryRecord) {
 export function getAssessmentUrgency(module: ModuleInfo) {
   const nextAssessment = module.assessmentStructure
     .filter((assessment) => assessment.status === 'upcoming' || assessment.status === 'draft')
+    .filter((assessment) => isRelevantAssessmentDate(assessment.date))
     .sort((a, b) => compareDateStrings(a.date, b.date))[0];
 
   if (!nextAssessment) {
@@ -256,6 +258,7 @@ function buildModuleActions(module: ModuleInfo, topicRecords: TopicMasteryRecord
 function getAssessmentAction(module: ModuleInfo, snapshot: ModuleMarkSnapshot | null, topicRecords: TopicMasteryRecord[]) {
   const nextAssessment = module.assessmentStructure
     .filter((assessment) => assessment.status === 'upcoming' || assessment.status === 'draft')
+    .filter((assessment) => isRelevantAssessmentDate(assessment.date))
     .sort((a, b) => compareDateStrings(a.date, b.date))[0];
 
   if (!nextAssessment) return null;
