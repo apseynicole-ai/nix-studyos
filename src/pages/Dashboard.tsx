@@ -9,6 +9,7 @@ import {
   BookOpen,
   BrainCircuit,
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   Flame,
   GraduationCap,
@@ -44,6 +45,7 @@ import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type WeeklyReviewAction, type WeeklyReviewTone } from '../lib/weeklyReview';
 import { getNextAssessment } from '../lib/assessmentCountdown';
+import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -86,6 +88,13 @@ const Dashboard: React.FC = () => {
   const { user, localFirstMode, profile } = useAuth();
   const [stats, setStats] = useState({ tasks: 0, sessions: 0, summaries: 0, completedTasks: 0 });
   const [actionFilter, setActionFilter] = useState<ActionFilter>('All');
+  const [manualEntries, setManualEntries] = useState(() => readManualAssessments());
+  const [newTitle, setNewTitle] = useState('');
+  const [newModuleId, setNewModuleId] = useState(modules[0].id);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newVenue, setNewVenue] = useState('');
+  const [newConfidence, setNewConfidence] = useState<'high' | 'provisional'>('high');
 
   useEffect(() => {
     const loadLocalStats = () => {
@@ -167,7 +176,11 @@ const Dashboard: React.FC = () => {
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
   const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional' && isRelevantAssessmentDate(e.date));
-  const nextAssessment = getNextAssessment(finalAssessmentCalendarEntries, todayIsoLocal());
+  const allCalendarEntries = useMemo(
+    () => [...finalAssessmentCalendarEntries, ...manualEntries.map(toAssessmentCalendarEntry)],
+    [manualEntries],
+  );
+  const nextAssessment = getNextAssessment(allCalendarEntries, todayIsoLocal());
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
   const dueSoonTasks = openLocalTasks.filter((task) => isWithinNextDays(task.dueDate || undefined, 7));
@@ -224,6 +237,28 @@ const Dashboard: React.FC = () => {
     provisionalCalendarEntries,
     backupAgeDays,
   }), [backupAgeDays, dueSoonTasks.length, incompleteRuleCount, marksPressure, missingMarks.length, mistakeRetests, overdueTasks.length, provisionalCalendarEntries]);
+
+  const handleAddManual = () => {
+    if (!newTitle.trim() || !isValidIsoDateString(newDate)) return;
+    const module = modules.find((m) => m.id === newModuleId);
+    setManualEntries(addManualAssessment({
+      moduleId: newModuleId,
+      moduleCode: module?.code || '',
+      title: newTitle.trim(),
+      date: newDate,
+      time: newTime.trim(),
+      venue: newVenue.trim(),
+      durationMinutes: 0,
+      confidence: newConfidence,
+      createdAt: new Date().toISOString(),
+    }));
+    setNewTitle('');
+    setNewDate('');
+    setNewTime('');
+    setNewVenue('');
+  };
+
+  const handleDeleteManual = (id: string) => setManualEntries(deleteManualAssessment(id));
 
   return (
     <div className="page-shell">
@@ -339,6 +374,133 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <p className="text-sm text-slate-500">No upcoming assessments found in the saved calendar.</p>
+        )}
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+            <CalendarDays size={22} />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">local-first</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Semester Assessment Calendar</h2>
+          </div>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 mb-3">Add a Semester 2 assessment</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Module</span>
+              <select
+                value={newModuleId}
+                onChange={(e) => setNewModuleId(e.target.value)}
+                className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              >
+                {modules.map((m) => (
+                  <option key={m.id} value={m.id}>{m.code} — {m.shortName}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Confidence</span>
+              <select
+                value={newConfidence}
+                onChange={(e) => setNewConfidence(e.target.value as 'high' | 'provisional')}
+                className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              >
+                <option value="high">Confirmed</option>
+                <option value="provisional">Provisional</option>
+              </select>
+            </label>
+          </div>
+          <input
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Assessment title *"
+            className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Date *</span>
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Time (optional)</span>
+              <input
+                type="time"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Venue (optional)</span>
+              <input
+                value={newVenue}
+                onChange={(e) => setNewVenue(e.target.value)}
+                placeholder="e.g. Edu 1003"
+                className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddManual}
+            disabled={!newTitle.trim() || !isValidIsoDateString(newDate)}
+            className="px-4 py-2 rounded-xl maroon-gradient text-white text-xs font-bold disabled:opacity-40 hover:scale-[1.01] transition-transform"
+          >
+            Add assessment
+          </button>
+        </div>
+
+        {manualEntries.length === 0 ? (
+          <p className="text-sm text-slate-500">No manual assessments added yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {manualEntries.map((entry) => {
+              const entryModule = modules.find((m) => m.id === entry.moduleId);
+              return (
+                <div key={entry.id} className="flex items-start justify-between gap-3 rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-0.5">
+                        {entry.moduleCode || entryModule?.code}
+                      </span>
+                      {entry.confidence === 'provisional' ? (
+                        <span className="text-[10px] uppercase font-bold tracking-wider bg-amber-50 text-amber-800 border border-amber-100 rounded-full px-2 py-0.5">
+                          Provisional
+                        </span>
+                      ) : (
+                        <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-full px-2 py-0.5">
+                          Confirmed
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-bold text-sm text-slate-800">{entry.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {entry.date}
+                      {entry.time ? ` • ${entry.time}` : ''}
+                      {entry.venue ? ` • ${entry.venue}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteManual(entry.id)}
+                    className="text-slate-400 hover:text-red-500 transition-colors text-xs font-bold shrink-0 mt-0.5"
+                  >
+                    Remove
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 
