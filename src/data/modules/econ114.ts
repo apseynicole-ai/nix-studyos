@@ -309,7 +309,7 @@ export const econ114Module: ModuleInfo = {
   code: 'ECO114',
   name: 'Economics 114',
   shortName: 'Econ 114',
-  aliases: ['Economics 114', 'ECO114'],
+  aliases: ['Economics 114', 'ECO114', 'ECO144'],
   area: 'Economics',
   semester: 'S1',
   target: 80,

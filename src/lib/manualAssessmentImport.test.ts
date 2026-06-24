@@ -27,6 +27,8 @@ afterEach(() => {
 
 const conlaw = modules.find((m) => m.id === 'conlaw178')!;
 const finacc = modules.find((m) => m.id === 'finacc178')!;
+const econ = modules.find((m) => m.id === 'econ114')!;
+const foundations = modules.find((m) => m.id === 'foundations178')!;
 
 function existing(overrides: Partial<ManualAssessmentEntry> = {}): ManualAssessmentEntry {
   return {
@@ -65,6 +67,28 @@ describe('normaliseModuleToken', () => {
 
   it('matches finacc by code FA178', () => {
     expect(normaliseModuleToken('FA178', modules)?.id).toBe('finacc178');
+  });
+
+  it('matches finacc by id token FINACC178 (case-insensitive id match)', () => {
+    expect(normaliseModuleToken('FINACC178', modules)?.id).toBe('finacc178');
+  });
+
+  it('matches econ by original code ECO114', () => {
+    expect(normaliseModuleToken('ECO114', modules)?.id).toBe('econ114');
+    expect(normaliseModuleToken('eco114', modules)?.id).toBe('econ114');
+  });
+
+  it('matches econ by alternate Semester 2 code ECO144', () => {
+    expect(normaliseModuleToken('ECO144', modules)?.id).toBe('econ114');
+    expect(normaliseModuleToken('eco144', modules)?.id).toBe('econ114');
+  });
+
+  it('matches foundations by code FOL178', () => {
+    expect(normaliseModuleToken('FOL178', modules)?.id).toBe('foundations178');
+  });
+
+  it('matches foundations by alternate token FOUNDATIONS178 (case-insensitive id match)', () => {
+    expect(normaliseModuleToken('FOUNDATIONS178', modules)?.id).toBe('foundations178');
   });
 
   it('returns null for unknown token', () => {
@@ -161,6 +185,29 @@ describe('parseManualAssessmentImport', () => {
     const result = parseManualAssessmentImport(text, modules, []);
     expect(result.rows[0].status).toBe('valid');
     expect(result.rows[0].moduleId).toBe('finacc178');
+  });
+
+  it('ECO144 resolves to the econ module and produces a valid row', () => {
+    const text = 'ECO144 | A1 | 2026-09-01 | 17:40 | TBC | confirmed';
+    const result = parseManualAssessmentImport(text, modules, []);
+    expect(result.rows[0].status).toBe('valid');
+    expect(result.rows[0].moduleId).toBe('econ114');
+    expect(result.rows[0].moduleCode).toBe(econ.code);
+  });
+
+  it('ECO114 continues to resolve to the econ module', () => {
+    const text = 'ECO114 | A1 | 2026-09-01 | | |';
+    const result = parseManualAssessmentImport(text, modules, []);
+    expect(result.rows[0].status).toBe('valid');
+    expect(result.rows[0].moduleId).toBe('econ114');
+  });
+
+  it('FOUNDATIONS178 resolves to the foundations module', () => {
+    const text = 'FOUNDATIONS178 | A1S2 | 2026-10-05 | | |';
+    const result = parseManualAssessmentImport(text, modules, []);
+    expect(result.rows[0].status).toBe('valid');
+    expect(result.rows[0].moduleId).toBe('foundations178');
+    expect(result.rows[0].moduleCode).toBe(foundations.code);
   });
 
   it('rejects unknown module', () => {
