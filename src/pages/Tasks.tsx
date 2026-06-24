@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckSquare, Clock, Filter, Plus, Sparkles, Tag, Trash2, Wand2 } from 'lucide-react';
+import { CheckSquare, Clock, Filter, Pencil, Plus, Sparkles, Tag, Trash2, Wand2 } from 'lucide-react';
 import { db, collection, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, doc, OperationType, isFirestoreUnavailableError } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 import { modules, taskTemplates } from '../data/baccllb';
@@ -43,6 +43,17 @@ const Tasks: React.FC = () => {
   const [points, setPoints] = useState(10);
   const [dueDate, setDueDate] = useState('');
   const [filter, setFilter] = useState<'All' | 'Open' | 'Done'>('Open');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<{
+    text: string;
+    moduleId: string;
+    priority: Priority;
+    type: TaskType;
+    minutes: number;
+    points: number;
+    dueDate: string;
+    why: string;
+  }>({ text: '', moduleId: modules[0].id, priority: 'High', type: 'Study', minutes: 0, points: 0, dueDate: '', why: '' });
 
   useEffect(() => {
     const loadLocalTasks = () => {
@@ -223,6 +234,73 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const startEdit = (task: StoredStudyTask) => {
+    setEditingId(task.id);
+    setEditDraft({
+      text: task.text,
+      moduleId: task.moduleId,
+      priority: task.priority,
+      type: task.type,
+      minutes: task.minutes ?? 0,
+      points: task.points ?? 0,
+      dueDate: task.dueDate ?? '',
+      why: task.why ?? '',
+    });
+  };
+
+  const cancelEdit = () => setEditingId(null);
+
+  const updateTask = async (updated: StoredStudyTask) => {
+    try {
+      if (localFirstMode || !user) {
+        const nextTasks = readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).map((task) =>
+          task.id === updated.id ? updated : task,
+        );
+        saveLocalTasks(nextTasks);
+        return;
+      }
+      await updateDoc(doc(db, 'tasks', updated.id), {
+        text: updated.text,
+        moduleId: updated.moduleId,
+        category: updated.category,
+        priority: updated.priority,
+        type: updated.type,
+        minutes: updated.minutes,
+        points: updated.points,
+        dueDate: updated.dueDate ?? null,
+        why: updated.why ?? '',
+      });
+    } catch (error) {
+      if (isFirestoreUnavailableError(error)) {
+        const nextTasks = readLocalJson<StoredStudyTask[]>(LOCAL_TASKS_KEY, []).map((task) =>
+          task.id === updated.id ? updated : task,
+        );
+        saveLocalTasks(nextTasks);
+        return;
+      }
+      console.error('Task update failed:', error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editDraft.text.trim()) return;
+    const task = tasks.find((t) => t.id === editingId);
+    if (!task) return;
+    await updateTask({
+      ...task,
+      text: editDraft.text.trim(),
+      moduleId: editDraft.moduleId,
+      priority: editDraft.priority,
+      type: editDraft.type,
+      minutes: editDraft.minutes,
+      points: editDraft.points,
+      dueDate: editDraft.dueDate || null,
+      why: editDraft.why,
+      category: modules.find((m) => m.id === editDraft.moduleId)?.area || task.category,
+    });
+    setEditingId(null);
+  };
+
   const visibleTasks = useMemo(() => {
     return tasks
       .filter((task) => filter === 'All' || (filter === 'Open' ? !task.done : task.done))
@@ -340,28 +418,76 @@ const Tasks: React.FC = () => {
                     layout
                     className={`rounded-3xl border p-5 group transition-all ${task.done ? 'bg-slate-50 opacity-65 border-slate-100' : 'bg-white border-slate-100 hover:border-stellenbosch-maroon/20 hover:shadow-sm'}`}
                   >
-                    <div className="flex items-start gap-4">
-                      <button onClick={() => toggleTask(task.id, task.done)} className={`w-8 h-8 rounded-full border-2 transition-colors flex items-center justify-center shrink-0 ${task.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200 hover:border-stellenbosch-maroon'}`}>
-                        {task.done && <CheckSquare className="text-white" size={17} />}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-1 flex items-center gap-1"><Icon size={12} /> {module?.shortName || task.category}</span>
-                          <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 ${priorityClass(task.priority)}`}>{task.priority}</span>
-                          <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{task.type}</span>
+                    {editingId === task.id ? (
+                      <div className="space-y-3">
+                        <div>
+                          <input
+                            value={editDraft.text}
+                            onChange={(event) => setEditDraft((d) => ({ ...d, text: event.target.value }))}
+                            placeholder="Task title"
+                            className={`w-full rounded-xl border px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20 ${!editDraft.text.trim() ? 'border-red-200 bg-red-50/50' : 'border-slate-200 bg-white'}`}
+                          />
+                          {!editDraft.text.trim() && <p className="text-[10px] text-red-500 font-bold mt-1">Title is required</p>}
                         </div>
-                        <p className={`font-bold ${task.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.text}</p>
-                        <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-400 font-bold">
-                          <span className="flex items-center gap-1"><Clock size={14} /> {task.minutes || 0} min</span>
-                          <span>{task.points || 0} pts</span>
-                          {task.dueDate && <span>Due {task.dueDate}</span>}
+                        <div className="grid grid-cols-2 gap-2">
+                          <InlineSelect label="Module" value={editDraft.moduleId} onChange={(v) => setEditDraft((d) => ({ ...d, moduleId: v }))} options={modules.map((m) => ({ label: m.shortName, value: m.id }))} />
+                          <InlineSelect label="Priority" value={editDraft.priority} onChange={(v) => setEditDraft((d) => ({ ...d, priority: v as Priority }))} options={(['Low', 'Medium', 'High', 'Critical'] as const).map((p) => ({ label: p, value: p }))} />
+                          <InlineSelect label="Type" value={editDraft.type} onChange={(v) => setEditDraft((d) => ({ ...d, type: v as TaskType }))} options={(['Study', 'Practice', 'Admin', 'Submission', 'Revision', 'Health'] as const).map((t) => ({ label: t, value: t }))} />
+                          <label className="block">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Due date</span>
+                            <input type="date" value={editDraft.dueDate} onChange={(event) => setEditDraft((d) => ({ ...d, dueDate: event.target.value }))} className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20" />
+                          </label>
+                          <label className="block">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Minutes</span>
+                            <input type="number" min={0} value={editDraft.minutes} onChange={(event) => setEditDraft((d) => ({ ...d, minutes: Number(event.target.value) }))} className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20" />
+                          </label>
+                          <label className="block">
+                            <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Points</span>
+                            <input type="number" min={0} value={editDraft.points} onChange={(event) => setEditDraft((d) => ({ ...d, points: Number(event.target.value) }))} className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20" />
+                          </label>
                         </div>
-                        {task.why && <p className="text-xs text-slate-500 mt-2">{task.why}</p>}
+                        <label className="block">
+                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">Notes (optional)</span>
+                          <input value={editDraft.why} onChange={(event) => setEditDraft((d) => ({ ...d, why: event.target.value }))} placeholder="Why this task matters..." className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20" />
+                        </label>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleSaveEdit} disabled={!editDraft.text.trim()} className="px-4 py-2 rounded-xl maroon-gradient text-white text-xs font-bold disabled:opacity-40 hover:scale-[1.01] transition-transform">
+                            Save
+                          </button>
+                          <button type="button" onClick={cancelEdit} className="px-4 py-2 rounded-xl bg-white border border-slate-100 text-slate-500 text-xs font-bold hover:border-stellenbosch-maroon/20">
+                            Cancel
+                          </button>
+                        </div>
                       </div>
-                      <button onClick={() => deleteTask(task.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-red-500 transition-all p-2">
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
+                    ) : (
+                      <div className="flex items-start gap-4">
+                        <button onClick={() => toggleTask(task.id, task.done)} className={`w-8 h-8 rounded-full border-2 transition-colors flex items-center justify-center shrink-0 ${task.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200 hover:border-stellenbosch-maroon'}`}>
+                          {task.done && <CheckSquare className="text-white" size={17} />}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-1 flex items-center gap-1"><Icon size={12} /> {module?.shortName || task.category}</span>
+                            <span className={`text-[10px] uppercase font-bold tracking-wider rounded-full px-2 py-1 ${priorityClass(task.priority)}`}>{task.priority}</span>
+                            <span className="text-[10px] uppercase font-bold tracking-wider bg-slate-100 text-slate-500 rounded-full px-2 py-1">{task.type}</span>
+                          </div>
+                          <p className={`font-bold ${task.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.text}</p>
+                          <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-400 font-bold">
+                            <span className="flex items-center gap-1"><Clock size={14} /> {task.minutes || 0} min</span>
+                            <span>{task.points || 0} pts</span>
+                            {task.dueDate && <span>Due {task.dueDate}</span>}
+                          </div>
+                          {task.why && <p className="text-xs text-slate-500 mt-2">{task.why}</p>}
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                          <button onClick={() => startEdit(task)} className="text-slate-300 hover:text-stellenbosch-maroon transition-all p-2">
+                            <Pencil size={18} />
+                          </button>
+                          <button onClick={() => deleteTask(task.id)} className="text-slate-300 hover:text-red-500 transition-all p-2">
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                 );
               })}
@@ -386,6 +512,15 @@ const Select: React.FC<{ label: string; value: string; onChange: (value: string)
   <label className="block">
     <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">{label}</span>
     <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-2xl bg-white border border-slate-100 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20">
+      {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+    </select>
+  </label>
+);
+
+const InlineSelect: React.FC<{ label: string; value: string; onChange: (value: string) => void; options: { label: string; value: string }[] }> = ({ label, value, onChange, options }) => (
+  <label className="block">
+    <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1 block">{label}</span>
+    <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20">
       {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
     </select>
   </label>
