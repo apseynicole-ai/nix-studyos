@@ -43,6 +43,7 @@ import { mistakeRetestsDueThisWeek, mistakesNeedingCorrectionRule, moduleWithMos
 import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type WeeklyReviewAction, type WeeklyReviewTone } from '../lib/weeklyReview';
+import { getNextAssessment } from '../lib/assessmentCountdown';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -166,6 +167,7 @@ const Dashboard: React.FC = () => {
   const marksPressure = useMemo(() => getDashboardMarksPressureSummary(), []);
   const backupAgeDays = useMemo(() => getBackupAgeDays(), []);
   const provisionalCalendarEntries = finalAssessmentCalendarEntries.filter((e) => e.confidence === 'provisional' && isRelevantAssessmentDate(e.date));
+  const nextAssessment = getNextAssessment(finalAssessmentCalendarEntries, todayIsoLocal());
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
   const dueSoonTasks = openLocalTasks.filter((task) => isWithinNextDays(task.dueDate || undefined, 7));
@@ -291,6 +293,54 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+            <CalendarClock size={22} />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">upcoming</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Next Assessment</h2>
+          </div>
+        </div>
+        {nextAssessment ? (
+          <div className="rounded-2xl border border-slate-100 bg-slate-50/60 p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-1">
+                    {nextAssessment.entry.moduleCode}
+                  </span>
+                  {nextAssessment.entry.confidence === 'provisional' && (
+                    <span className="text-[10px] uppercase font-bold tracking-wider bg-amber-50 text-amber-800 border border-amber-100 rounded-full px-2 py-1">
+                      Provisional
+                    </span>
+                  )}
+                </div>
+                <p className="font-bold text-slate-800">{nextAssessment.entry.title}</p>
+                <p className="text-sm text-slate-500 mt-1">
+                  {new Date(`${nextAssessment.entry.date}T00:00:00`).toLocaleDateString('en-ZA', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+                  })}
+                  {nextAssessment.entry.time ? ` • ${nextAssessment.entry.time}` : ''}
+                </p>
+                {nextAssessment.entry.venue && (
+                  <p className="text-xs text-slate-400 mt-1">{nextAssessment.entry.venue}</p>
+                )}
+                {nextAssessment.entry.confidence === 'provisional' && (
+                  <p className="text-xs text-amber-700 font-medium mt-2">Provisional — verify on official timetable.</p>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <p className="font-display text-4xl text-stellenbosch-maroon">{countdownLabel(nextAssessment.daysFromNow)}</p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">No upcoming assessments found in the saved calendar.</p>
+        )}
+      </section>
 
       <section className="editorial-panel mb-10 p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -1223,6 +1273,12 @@ function matchesFilter(action: NextBestAction, filter: ActionFilter) {
 
 function labeliseFactor(kind: NextBestAction['evidence'][number]['kind']) {
   return kind.replace(/-/g, ' ');
+}
+
+function countdownLabel(daysFromNow: number): string {
+  if (daysFromNow === 0) return 'Today';
+  if (daysFromNow === 1) return 'Tomorrow';
+  return `${daysFromNow} days away`;
 }
 
 function meaningfulProfileName(value: string | null | undefined) {
