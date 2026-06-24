@@ -1,4 +1,4 @@
-import { todayIsoLocal } from './dateUtils';
+import { isValidIsoDateString, todayIsoLocal } from './dateUtils';
 
 export type StudyQueuePriority = 'Low' | 'Medium' | 'High' | 'Critical';
 
@@ -28,7 +28,6 @@ export interface StudyQueue {
 }
 
 const DEFAULT_LIMIT = 10;
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export function buildStudyQueue(
   tasks: StudyQueueTaskInput[],
@@ -44,7 +43,7 @@ export function buildStudyQueue(
 
   for (const task of tasks) {
     if (task.done || task.completedAt) continue;
-    if (!task.dueDate || !isValidIsoDate(task.dueDate)) continue;
+    if (!task.dueDate || !isValidIsoDateString(task.dueDate)) continue;
 
     const queueTask: StudyQueueTask = { ...task, dueDate: task.dueDate };
     if (queueTask.dueDate < todayStr) {
@@ -80,14 +79,6 @@ function compareQueueTasks(a: StudyQueueTask, b: StudyQueueTask) {
 
 function priorityValue(priority?: string) {
   return { Critical: 4, High: 3, Medium: 2, Low: 1 }[priority || 'Low'] || 0;
-}
-
-function isValidIsoDate(value: string) {
-  if (!ISO_DATE_RE.test(value)) return false;
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  return date.getFullYear() === year && date.getMonth() + 1 === month && date.getDate() === day;
 }
 
 function addDays(isoDate: string, days: number) {
