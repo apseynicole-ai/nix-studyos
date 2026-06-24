@@ -160,11 +160,11 @@ const Dashboard: React.FC = () => {
     .slice(0, 4);
   const nextBestTasks = taskTemplates.slice(0, 5);
   const today = new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' });
-  const topicRecords = readTopicMastery();
+  const topicRecords = useMemo(() => readTopicMastery(), []);
   const urgentTopics = urgentTopicsCount(topicRecords);
   const topicConfidence = averageTopicConfidence(topicRecords);
   const retestsThisWeek = topicsDueThisWeek(topicRecords).length;
-  const mistakeRecords = readMistakeBank();
+  const mistakeRecords = useMemo(() => readMistakeBank(), []);
   const unresolvedMistakeCount = unresolvedMistakes(mistakeRecords).length;
   const incompleteRuleCount = mistakesNeedingCorrectionRule(mistakeRecords).length;
   const mistakeRetests = mistakeRetestsDueThisWeek(mistakeRecords).length;
