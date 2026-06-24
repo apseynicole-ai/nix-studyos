@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   assessmentPrepTaskId,
   buildAssessmentPrepTasks,
+  getAssessmentPrepProgress,
   mergeAssessmentPrepTasks,
   savePrepTasksToLocal,
 } from './assessmentPrepTasks';
@@ -187,5 +188,104 @@ describe('savePrepTasksToLocal', () => {
     const snapshot = localStorage.getItem('baccllb-tasks');
     savePrepTasksToLocal(generated);
     expect(localStorage.getItem('baccllb-tasks')).toBe(snapshot);
+  });
+});
+
+describe('getAssessmentPrepProgress', () => {
+  const TODAY = '2026-07-01';
+
+  function prepIds(entry = makeEntry()): string[] {
+    return [
+      assessmentPrepTaskId(entry.moduleId, entry.assessmentId, entry.date, 'start-revision'),
+      assessmentPrepTaskId(entry.moduleId, entry.assessmentId, entry.date, 'practice-questions'),
+      assessmentPrepTaskId(entry.moduleId, entry.assessmentId, entry.date, 'final-review'),
+    ];
+  }
+
+  it('returns 0 existing, 0 completed, missingCount=3 when no tasks exist', () => {
+    const result = getAssessmentPrepProgress(makeEntry(), []);
+    expect(result.totalExpected).toBe(3);
+    expect(result.existingCount).toBe(0);
+    expect(result.completedCount).toBe(0);
+    expect(result.missingCount).toBe(3);
+    expect(result.allExist).toBe(false);
+    expect(result.allComplete).toBe(false);
+  });
+
+  it('counts 1 existing when only the first task is present', () => {
+    const ids = prepIds();
+    const tasks = [{ id: ids[0], done: false }];
+    const result = getAssessmentPrepProgress(makeEntry(), tasks);
+    expect(result.existingCount).toBe(1);
+    expect(result.missingCount).toBe(2);
+    expect(result.allExist).toBe(false);
+  });
+
+  it('returns allExist=true and allComplete=false when all 3 exist but none done', () => {
+    const tasks = prepIds().map((id) => ({ id, done: false }));
+    const result = getAssessmentPrepProgress(makeEntry(), tasks);
+    expect(result.existingCount).toBe(3);
+    expect(result.allExist).toBe(true);
+    expect(result.completedCount).toBe(0);
+    expect(result.allComplete).toBe(false);
+  });
+
+  it('counts completed tasks correctly when some are done', () => {
+    const ids = prepIds();
+    const tasks = [
+      { id: ids[0], done: true },
+      { id: ids[1], done: false },
+      { id: ids[2], done: true },
+    ];
+    const result = getAssessmentPrepProgress(makeEntry(), tasks);
+    expect(result.completedCount).toBe(2);
+    expect(result.allComplete).toBe(false);
+  });
+
+  it('returns allComplete=true when all 3 tasks are done', () => {
+    const tasks = prepIds().map((id) => ({ id, done: true }));
+    const result = getAssessmentPrepProgress(makeEntry(), tasks);
+    expect(result.allComplete).toBe(true);
+    expect(result.completedCount).toBe(3);
+  });
+
+  it('ignores unrelated tasks entirely', () => {
+    const unrelated = [
+      { id: 'some-other-task', done: true },
+      { id: 'prep-differentmodule-A2-2026-10-01-start-revision', done: true },
+    ];
+    const result = getAssessmentPrepProgress(makeEntry(), unrelated);
+    expect(result.existingCount).toBe(0);
+    expect(result.completedCount).toBe(0);
+  });
+
+  it('taskIds match the generated prep task IDs exactly', () => {
+    const generated = buildAssessmentPrepTasks(makeEntry(), TODAY);
+    const result = getAssessmentPrepProgress(makeEntry(), generated);
+    expect(result.taskIds).toEqual(generated.map((t) => t.id));
+    expect(result.existingCount).toBe(3);
+  });
+
+  it('returns safe defaults for an invalid assessment date without crashing', () => {
+    const result = getAssessmentPrepProgress(makeEntry({ date: 'bad-date' }), []);
+    expect(result.existingCount).toBe(0);
+    expect(result.taskIds).toHaveLength(0);
+    expect(result.allExist).toBe(false);
+    expect(result.allComplete).toBe(false);
+  });
+
+  it('missing tasks can be generated without duplicating the existing one', () => {
+    const entry = makeEntry();
+    const firstOnly = buildAssessmentPrepTasks(entry, TODAY).slice(0, 1);
+    localStorage.setItem('baccllb-tasks', JSON.stringify(firstOnly));
+
+    const progress = getAssessmentPrepProgress(entry, firstOnly);
+    expect(progress.existingCount).toBe(1);
+    expect(progress.missingCount).toBe(2);
+
+    const allTasks = buildAssessmentPrepTasks(entry, TODAY);
+    const saveResult = savePrepTasksToLocal(allTasks);
+    expect(saveResult.added).toBe(2);
+    expect(saveResult.skipped).toBe(1);
   });
 });
