@@ -57,4 +57,23 @@ describe('getNextAssessment', () => {
   it('ignores entries with empty or missing dates', () => {
     expect(getNextAssessment([entry({ date: '' })], TODAY)).toBeNull();
   });
+
+  it('ignores malformed date strings that would pass lexicographic comparison', () => {
+    const bad = entry({ date: 'not-a-date' });
+    expect(getNextAssessment([bad], TODAY)).toBeNull();
+  });
+
+  it('ignores impossible dates that JS would roll over (e.g. 2026-02-30)', () => {
+    const impossible = entry({ date: '2026-02-30' });
+    expect(getNextAssessment([impossible], TODAY)).toBeNull();
+  });
+
+  it('does not produce NaN daysFromNow for invalid entries mixed with valid ones', () => {
+    const bad = entry({ assessmentId: 'BAD', date: 'not-a-date' });
+    const good = entry({ assessmentId: 'GOOD', date: '2026-07-01' });
+    const result = getNextAssessment([bad, good], TODAY);
+    expect(result).not.toBeNull();
+    expect(result!.entry.assessmentId).toBe('GOOD');
+    expect(Number.isFinite(result!.daysFromNow)).toBe(true);
+  });
 });
