@@ -27,6 +27,24 @@ export const LOCAL_BACKUP_META_KEY = 'baccllb-last-backup-meta';
 export const BACKUP_SCHEMA_VERSION = 1;
 export const BACKUP_APP_NAME = 'Nix StudyOS';
 
+const ADDITIONAL_RECOGNISED_BACKUP_KEYS = [
+  LOCAL_BACKUP_META_KEY,
+  'baccllb-manual-assessments',
+  'baccllb-active-timer',
+];
+
+export const RECOGNISED_BACKUP_KEYS = [...BACKUP_KEYS, ...ADDITIONAL_RECOGNISED_BACKUP_KEYS].sort();
+
+const HIGH_RISK_BACKUP_KEYS = new Set([
+  'baccllb-mark-rows',
+  'baccllb-mark-engine-state',
+  'baccllb-tasks',
+  'baccllb-manual-assessments',
+  'baccllb-mistake-bank',
+  'baccllb-studyai-summaries',
+  'baccllb-academic-snapshots',
+]);
+
 interface BackupMeta {
   action: 'export' | 'import';
   exportedAt: string;
@@ -48,8 +66,29 @@ export interface StudyOSBackupFile {
   };
 }
 
+export interface BackupImportPreview {
+  valid: boolean;
+  appName?: string;
+  version?: string;
+  exportedAt?: string;
+  importedAt?: string;
+  includedKeys: string[];
+  recognisedKeys: string[];
+  unknownKeys: string[];
+  missingKnownKeys: string[];
+  overwriteKeys: string[];
+  highRiskKeys: string[];
+  warnings: string[];
+  error?: string;
+  backup?: StudyOSBackupFile;
+}
+
 function isStudyOSStorageKey(key: string) {
   return key.startsWith('baccllb-') || key.startsWith('nix-');
+}
+
+function isRecognisedBackupKey(key: string) {
+  return RECOGNISED_BACKUP_KEYS.includes(key);
 }
 
 function appKeys(): string[] {
@@ -116,60 +155,123 @@ export function exportBackup(): { fileName: string; includedKeys: string[] } {
   return { fileName, includedKeys };
 }
 
+export function parseBackupForPreview(rawJson: string): BackupImportPreview {
+  try {
+    return buildBackupImportPreview(JSON.parse(rawJson));
+  } catch {
+    return invalidBackupPreview('Could not parse file. Make sure it is a valid JSON backup.');
+  }
+}
+
+export function buildBackupImportPreview(candidate: unknown): BackupImportPreview {
+  if (!isValidBackupShape(candidate)) {
+    return invalidBackupPreview('Invalid backup: this does not appear to be a Nix StudyOS backup file.', candidate as Partial<StudyOSBackupFile>);
+  }
+
+  const version = readBackupVersion(candidate);
+  if (version === null) {
+    return invalidBackupPreview('Invalid backup: backup version metadata is missing.', candidate);
+  }
+
+  const includedKeys = Object.keys(candidate.data).sort();
+  const recognisedDataKeys = includedKeys.filter(isRecognisedBackupKey);
+  const unknownKeys = includedKeys.filter((key) => !isRecognisedBackupKey(key));
+  const placeholderKeys = getPlaceholderRestoreKeys(candidate);
+  const recognisedKeys = uniqueSorted([...recognisedDataKeys, ...placeholderKeys]);
+  const warnings: string[] = [];
+
+  if (version > BACKUP_SCHEMA_VERSION) {
+    return {
+      ...previewBase(candidate, includedKeys, recognisedKeys, unknownKeys),
+      version: String(version),
+      error: `This backup uses a newer version (${version}) than this app currently supports.`,
+    };
+  }
+
+  if (version < BACKUP_SCHEMA_VERSION) {
+    warnings.push(`Imported an older backup version (${version}). Review your data after reload in case some newer features were not present yet.`);
+  }
+
+  if (unknownKeys.length > 0) {
+    warnings.push(`${unknownKeys.length} unknown backup key${unknownKeys.length === 1 ? '' : 's'} will be ignored.`);
+  }
+
+  if (recognisedKeys.length === 0) {
+    return {
+      ...previewBase(candidate, includedKeys, recognisedKeys, unknownKeys),
+      version: String(version),
+      warnings,
+      error: 'Invalid backup: no recognised StudyOS local data keys were found in this file.',
+    };
+  }
+
+  return {
+    ...previewBase(candidate, includedKeys, recognisedKeys, unknownKeys),
+    valid: true,
+    version: String(version),
+    missingKnownKeys: RECOGNISED_BACKUP_KEYS.filter((key) => !recognisedKeys.includes(key)),
+    overwriteKeys: recognisedKeys.filter((key) => localStorage.getItem(key) !== null),
+    highRiskKeys: recognisedKeys.filter((key) => HIGH_RISK_BACKUP_KEYS.has(key)),
+    warnings,
+    backup: candidate,
+  };
+}
+
+export function readBackupFileForPreview(file: File): Promise<BackupImportPreview> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(parseBackupForPreview(String(e.target?.result ?? '')));
+    reader.onerror = () => reject(new Error('Could not read file.'));
+    reader.readAsText(file);
+  });
+}
+
+export function applyBackupImport(preview: BackupImportPreview, fileName = 'selected-backup.json'): { keys: string[]; warning?: string } {
+  if (!preview.valid || !preview.backup) {
+    throw new Error(preview.error || 'Invalid backup: preview is not ready to import.');
+  }
+
+  const keys: string[] = [];
+  for (const key of preview.recognisedKeys) {
+    let value: unknown;
+    if (Object.prototype.hasOwnProperty.call(preview.backup.data, key)) {
+      value = preview.backup.data[key];
+    } else if (key === LOCAL_TOPIC_MASTERY_KEY) {
+      value = preview.backup.placeholders?.topicMastery ?? [];
+    } else if (key === 'baccllb-mistake-bank') {
+      value = preview.backup.placeholders?.mistakeBank ?? [];
+    } else {
+      continue;
+    }
+
+    localStorage.setItem(key, JSON.stringify(value));
+    keys.push(key);
+  }
+
+  const olderVersionWarning = preview.warnings.find((warning) => warning.startsWith('Imported an older backup version'));
+  writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, {
+    action: 'import',
+    exportedAt: preview.backup.exportedAt,
+    fileName,
+    includedKeys: keys,
+    importedAt: new Date().toISOString(),
+    warning: olderVersionWarning,
+  });
+
+  return { keys, warning: olderVersionWarning };
+}
+
 export function importBackup(file: File): Promise<{ keys: string[]; warning?: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-
-        if (!isValidBackupShape(data)) {
-          reject(new Error('Invalid backup: this does not appear to be a Nix StudyOS backup file.'));
+        const preview = parseBackupForPreview(String(e.target?.result ?? ''));
+        if (!preview.valid) {
+          reject(new Error(preview.error || 'Invalid backup.'));
           return;
         }
-
-        const version = readBackupVersion(data);
-        if (version === null) {
-          reject(new Error('Invalid backup: backup version metadata is missing.'));
-          return;
-        }
-
-        let warning: string | undefined;
-        if (version > BACKUP_SCHEMA_VERSION) {
-          reject(new Error(`This backup uses a newer version (${version}) than this app currently supports.`));
-          return;
-        }
-        if (version < BACKUP_SCHEMA_VERSION) {
-          warning = `Imported an older backup version (${version}). Review your data after reload in case some newer features were not present yet.`;
-        }
-
-        const keys: string[] = [];
-        for (const [key, value] of Object.entries(data.data)) {
-          if (!isStudyOSStorageKey(key)) continue;
-          localStorage.setItem(key, JSON.stringify(value));
-          keys.push(key);
-        }
-        if (keys.length === 0 && !data.placeholders?.topicMastery && !data.placeholders?.mistakeBank) {
-          reject(new Error('Invalid backup: no StudyOS local data keys were found in this file.'));
-          return;
-        }
-        if (!('baccllb-topic-mastery' in data.data)) {
-          localStorage.setItem('baccllb-topic-mastery', JSON.stringify(data.placeholders?.topicMastery ?? []));
-          keys.push('baccllb-topic-mastery');
-        }
-        if (!('baccllb-mistake-bank' in data.data)) {
-          localStorage.setItem('baccllb-mistake-bank', JSON.stringify(data.placeholders?.mistakeBank ?? []));
-          keys.push('baccllb-mistake-bank');
-        }
-        writeLocalJson<BackupMeta>(LOCAL_BACKUP_META_KEY, {
-          action: 'import',
-          exportedAt: data.exportedAt,
-          fileName: file.name,
-          includedKeys: keys,
-          importedAt: new Date().toISOString(),
-          warning,
-        });
-        resolve({ keys, warning });
+        resolve(applyBackupImport(preview, file.name));
       } catch {
         reject(new Error('Could not parse file. Make sure it is a valid JSON backup.'));
       }
@@ -230,4 +332,56 @@ function readBackupVersion(candidate: Partial<StudyOSBackupFile> & { schemaVersi
   if (typeof candidate.backupVersion === 'number') return candidate.backupVersion;
   if (typeof candidate.schemaVersion === 'number') return candidate.schemaVersion;
   return null;
+}
+
+function invalidBackupPreview(error: string, candidate?: Partial<StudyOSBackupFile>): BackupImportPreview {
+  return {
+    valid: false,
+    appName: typeof candidate?.appName === 'string' ? candidate.appName : undefined,
+    exportedAt: typeof candidate?.exportedAt === 'string' ? candidate.exportedAt : undefined,
+    version: typeof candidate?.backupVersion === 'number' ? String(candidate.backupVersion) : undefined,
+    includedKeys: [],
+    recognisedKeys: [],
+    unknownKeys: [],
+    missingKnownKeys: RECOGNISED_BACKUP_KEYS,
+    overwriteKeys: [],
+    highRiskKeys: [],
+    warnings: [],
+    error,
+  };
+}
+
+function previewBase(
+  backup: StudyOSBackupFile,
+  includedKeys: string[],
+  recognisedKeys: string[],
+  unknownKeys: string[],
+): BackupImportPreview {
+  return {
+    valid: false,
+    appName: backup.appName,
+    exportedAt: backup.exportedAt,
+    includedKeys,
+    recognisedKeys,
+    unknownKeys,
+    missingKnownKeys: RECOGNISED_BACKUP_KEYS.filter((key) => !recognisedKeys.includes(key)),
+    overwriteKeys: recognisedKeys.filter((key) => localStorage.getItem(key) !== null),
+    highRiskKeys: recognisedKeys.filter((key) => HIGH_RISK_BACKUP_KEYS.has(key)),
+    warnings: [],
+  };
+}
+
+function getPlaceholderRestoreKeys(backup: StudyOSBackupFile) {
+  const keys: string[] = [];
+  if (!Object.prototype.hasOwnProperty.call(backup.data, LOCAL_TOPIC_MASTERY_KEY) && backup.placeholders?.topicMastery) {
+    keys.push(LOCAL_TOPIC_MASTERY_KEY);
+  }
+  if (!Object.prototype.hasOwnProperty.call(backup.data, 'baccllb-mistake-bank') && backup.placeholders?.mistakeBank) {
+    keys.push('baccllb-mistake-bank');
+  }
+  return keys;
+}
+
+function uniqueSorted(keys: string[]) {
+  return Array.from(new Set(keys)).sort();
 }

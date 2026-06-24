@@ -1,7 +1,15 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { CheckCircle2, Download, LogIn, LogOut, NotebookTabs, PlusCircle, Scale, ShieldAlert, Upload, Trash2, UserRound } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { exportBackup, getBackupAgeDays, getLastBackupMeta, importBackup, resetAppData } from '../lib/localData';
+import {
+  applyBackupImport,
+  exportBackup,
+  getBackupAgeDays,
+  getLastBackupMeta,
+  readBackupFileForPreview,
+  resetAppData,
+  type BackupImportPreview,
+} from '../lib/localData';
 import { signInWithEmail, signOutUser, signUpWithEmailAndUsername } from '../lib/firebase';
 import { useAuth } from '../components/auth/AuthGuard';
 import {
@@ -36,6 +44,8 @@ const Settings: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [lastBackupMeta, setLastBackupMeta] = useState(() => getLastBackupMeta());
+  const [backupPreview, setBackupPreview] = useState<BackupImportPreview | null>(null);
+  const [backupPreviewFileName, setBackupPreviewFileName] = useState('');
   const [snapshotInput, setSnapshotInput] = useState(() => academicSnapshotExampleJson());
   const [snapshots, setSnapshots] = useState<AcademicSnapshot[]>(() => readAcademicSnapshots());
   const [snapshotTasks, setSnapshotTasks] = useState(() => readSnapshotTasks());
@@ -60,17 +70,38 @@ const Settings: React.FC = () => {
     });
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePreviewImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = '';
+    try {
+      const preview = await readBackupFileForPreview(file);
+      setBackupPreview(preview);
+      setBackupPreviewFileName(file.name);
+      setStatus({
+        type: preview.valid ? 'ok' : 'err',
+        msg: preview.valid
+          ? `Valid backup ready to import. Review the preview before applying ${preview.recognisedKeys.length} StudyOS data area${preview.recognisedKeys.length === 1 ? '' : 's'}.`
+          : preview.error || 'Invalid backup.',
+      });
+    } catch (err) {
+      setBackupPreview(null);
+      setBackupPreviewFileName('');
+      setStatus({ type: 'err', msg: err instanceof Error ? err.message : 'Could not read backup file.' });
+    }
+  };
+
+  const handleApplyImport = () => {
+    if (!backupPreview) return;
     const confirmed = window.confirm(
-      'Import backup?\n\nThis may overwrite your current local StudyOS data for any matching keys in the backup. Continue?'
+      `Import selected backup?\n\nThis will overwrite matching local StudyOS data for ${backupPreview.overwriteKeys.length} existing key${backupPreview.overwriteKeys.length === 1 ? '' : 's'}. Continue?`
     );
     if (!confirmed) return;
     try {
-      const { keys, warning } = await importBackup(file);
+      const { keys, warning } = applyBackupImport(backupPreview, backupPreviewFileName || 'selected-backup.json');
       setLastBackupMeta(getLastBackupMeta());
+      setBackupPreview(null);
+      setBackupPreviewFileName('');
       setStatus({
         type: 'ok',
         msg: `${warning ? `${warning} ` : ''}Imported ${keys.length} key${keys.length === 1 ? '' : 's'}. Refresh the page if any views still show old data.`,
@@ -78,6 +109,12 @@ const Settings: React.FC = () => {
     } catch (err) {
       setStatus({ type: 'err', msg: err instanceof Error ? err.message : 'Import failed.' });
     }
+  };
+
+  const handleCancelImport = () => {
+    setBackupPreview(null);
+    setBackupPreviewFileName('');
+    setStatus(null);
   };
 
   const handleReset = () => {
@@ -590,7 +627,77 @@ const Settings: React.FC = () => {
           buttonClass="bg-slate-800 text-white"
           onClick={() => fileRef.current?.click()}
         />
-        <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handleImport} />
+        <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handlePreviewImport} />
+
+        {backupPreview && (
+          <section className={`bg-white rounded-[2rem] border shadow-sm p-6 ${backupPreview.valid ? 'border-emerald-100' : 'border-red-100'}`}>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                <p className={`text-xs uppercase tracking-[0.2em] font-bold ${backupPreview.valid ? 'text-emerald-700' : 'text-red-700'}`}>
+                  {backupPreview.valid ? 'Valid backup ready to import' : 'Invalid backup'}
+                </p>
+                <h3 className="mt-1 font-display text-2xl text-stellenbosch-maroon">Backup import preview</h3>
+                <p className="mt-2 text-sm text-slate-600">Importing will overwrite matching local StudyOS data.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelImport}
+                className="shrink-0 px-4 py-2 rounded-2xl bg-slate-100 text-slate-700 text-sm font-bold hover:bg-slate-200 transition-colors"
+              >
+                Cancel import
+              </button>
+            </div>
+
+            <div className="mt-4 grid sm:grid-cols-2 gap-3 text-sm">
+              <PreviewField label="File" value={backupPreviewFileName || 'Selected backup'} />
+              <PreviewField label="App" value={backupPreview.appName || 'Unknown'} />
+              <PreviewField label="Version" value={backupPreview.version || 'Unknown'} />
+              <PreviewField label="Exported" value={backupPreview.exportedAt ? new Date(backupPreview.exportedAt).toLocaleString() : 'Unknown'} />
+            </div>
+
+            {backupPreview.error && (
+              <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {backupPreview.error}
+              </div>
+            )}
+
+            {backupPreview.warnings.length > 0 && (
+              <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {backupPreview.warnings.map((warning) => <p key={warning}>{warning}</p>)}
+              </div>
+            )}
+
+            <div className="mt-4 grid sm:grid-cols-3 gap-3">
+              <PreviewCount label="Included keys" value={backupPreview.includedKeys.length} />
+              <PreviewCount label="Recognised areas" value={backupPreview.recognisedKeys.length} />
+              <PreviewCount label="Will overwrite" value={backupPreview.overwriteKeys.length} />
+            </div>
+
+            {backupPreview.highRiskKeys.length > 0 && (
+              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+                <p className="text-xs uppercase tracking-[0.2em] font-bold text-amber-700 mb-2">High-risk data areas</p>
+                <KeyList keys={backupPreview.highRiskKeys} tone="amber" />
+              </div>
+            )}
+
+            <div className="mt-4 space-y-4">
+              <KeySection title="Keys that will be restored" keys={backupPreview.recognisedKeys} empty="No recognised StudyOS keys found." />
+              <KeySection title="Existing keys that will be overwritten" keys={backupPreview.overwriteKeys} empty="No matching local keys currently exist." />
+              <KeySection title="Known keys not present in this backup" keys={backupPreview.missingKnownKeys} empty="All known StudyOS keys are represented." muted />
+              <KeySection title="Unknown keys ignored" keys={backupPreview.unknownKeys} empty="No unknown keys found." muted />
+            </div>
+
+            {backupPreview.valid && (
+              <button
+                type="button"
+                onClick={handleApplyImport}
+                className="mt-5 w-full sm:w-auto px-5 py-3 rounded-2xl bg-stellenbosch-maroon text-white text-sm font-bold hover:scale-[1.01] transition-transform"
+              >
+                Import selected backup
+              </button>
+            )}
+          </section>
+        )}
 
         <ActionCard
           icon={<Trash2 size={20} />}
@@ -625,6 +732,45 @@ const Settings: React.FC = () => {
           {status.msg}
         </div>
       )}
+    </div>
+  );
+};
+
+const PreviewField: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3">
+    <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">{label}</p>
+    <p className="mt-1 text-sm font-semibold text-slate-700 break-words">{value}</p>
+  </div>
+);
+
+const PreviewCount: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+  <div className="rounded-2xl bg-slate-50 border border-slate-100 px-4 py-3">
+    <p className="text-2xl font-display text-stellenbosch-maroon">{value}</p>
+    <p className="text-xs font-bold text-slate-500">{label}</p>
+  </div>
+);
+
+const KeySection: React.FC<{ title: string; keys: string[]; empty: string; muted?: boolean }> = ({ title, keys, empty, muted = false }) => (
+  <div>
+    <p className={`text-xs uppercase tracking-[0.2em] font-bold mb-2 ${muted ? 'text-slate-400' : 'text-slate-600'}`}>{title}</p>
+    {keys.length > 0 ? <KeyList keys={keys} tone={muted ? 'slate' : 'maroon'} /> : <p className="text-sm text-slate-500">{empty}</p>}
+  </div>
+);
+
+const KeyList: React.FC<{ keys: string[]; tone?: 'maroon' | 'amber' | 'slate' }> = ({ keys, tone = 'maroon' }) => {
+  const toneClass = tone === 'amber'
+    ? 'bg-amber-100 text-amber-900 border-amber-200'
+    : tone === 'slate'
+      ? 'bg-slate-50 text-slate-500 border-slate-100'
+      : 'bg-stellenbosch-maroon/5 text-stellenbosch-maroon border-stellenbosch-maroon/10';
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {keys.map((key) => (
+        <span key={key} className={`px-2.5 py-1 rounded-full border text-xs font-semibold break-all ${toneClass}`}>
+          {key}
+        </span>
+      ))}
     </div>
   );
 };
