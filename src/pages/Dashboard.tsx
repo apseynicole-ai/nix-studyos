@@ -23,7 +23,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { modules, nightlyChecklist, taskTemplates, USER_ACADEMIC_PROFILE, weeklyRhythm } from '../data/baccllb';
-import { finalAssessmentCalendarEntries } from '../data/assessmentCalendar';
+import { finalAssessmentCalendarEntries, type AssessmentCalendarEntry } from '../data/assessmentCalendar';
 import {
   averageConfidence,
   getDashboardMarksPressureSummary,
@@ -47,6 +47,7 @@ import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type W
 import { getNextAssessment } from '../lib/assessmentCountdown';
 import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, saveManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
 import { parseManualAssessmentImport, type ParsedImportRow } from '../lib/manualAssessmentImport';
+import { buildAssessmentPrepTasks, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -99,6 +100,7 @@ const Dashboard: React.FC = () => {
   const [bulkText, setBulkText] = useState('');
   const [importRows, setImportRows] = useState<ParsedImportRow[] | null>(null);
   const [importSaved, setImportSaved] = useState(false);
+  const [prepTaskStatus, setPrepTaskStatus] = useState<Record<string, { msg: string; ok: boolean }>>({});
 
   useEffect(() => {
     const loadLocalStats = () => {
@@ -299,6 +301,17 @@ const Dashboard: React.FC = () => {
     setImportSaved(false);
   };
 
+  const handleCreatePrepTasks = (entry: AssessmentCalendarEntry) => {
+    const userId = user?.uid || profile?.uid || 'local-guest';
+    const tasks = buildAssessmentPrepTasks(entry, todayIsoLocal(), userId);
+    const result = savePrepTasksToLocal(tasks);
+    const key = `${entry.moduleId}:${entry.assessmentId}`;
+    const msg = result.added > 0
+      ? `${result.added} prep task${result.added !== 1 ? 's' : ''} created`
+      : 'Prep tasks already exist';
+    setPrepTaskStatus((prev) => ({ ...prev, [key]: { msg, ok: result.added > 0 } }));
+  };
+
   return (
     <div className="page-shell">
       <header className="mb-10 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-stretch">
@@ -405,6 +418,20 @@ const Dashboard: React.FC = () => {
                 {nextAssessment.entry.confidence === 'provisional' && (
                   <p className="text-xs text-amber-700 font-medium mt-2">Provisional — verify on official timetable.</p>
                 )}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleCreatePrepTasks(nextAssessment.entry)}
+                    className="px-3 py-1.5 rounded-xl maroon-gradient text-white text-xs font-bold hover:scale-[1.01] transition-transform"
+                  >
+                    Create prep tasks
+                  </button>
+                  {prepTaskStatus[`${nextAssessment.entry.moduleId}:${nextAssessment.entry.assessmentId}`] && (
+                    <span className={`text-xs font-medium ${prepTaskStatus[`${nextAssessment.entry.moduleId}:${nextAssessment.entry.assessmentId}`].ok ? 'text-emerald-700' : 'text-slate-500'}`}>
+                      {prepTaskStatus[`${nextAssessment.entry.moduleId}:${nextAssessment.entry.assessmentId}`].msg}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="text-right shrink-0">
                 <p className="font-display text-4xl text-stellenbosch-maroon">{countdownLabel(nextAssessment.daysFromNow)}</p>
@@ -630,13 +657,27 @@ const Dashboard: React.FC = () => {
                       {entry.venue ? ` • ${entry.venue}` : ''}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteManual(entry.id)}
-                    className="text-slate-400 hover:text-red-500 transition-colors text-xs font-bold shrink-0 mt-0.5"
-                  >
-                    Remove
-                  </button>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleCreatePrepTasks(toAssessmentCalendarEntry(entry))}
+                      className="text-xs font-bold text-stellenbosch-maroon hover:opacity-75 transition-opacity"
+                    >
+                      Create prep tasks
+                    </button>
+                    {prepTaskStatus[`${entry.moduleId}:${entry.id}`] && (
+                      <span className={`text-[10px] font-medium ${prepTaskStatus[`${entry.moduleId}:${entry.id}`].ok ? 'text-emerald-700' : 'text-slate-400'}`}>
+                        {prepTaskStatus[`${entry.moduleId}:${entry.id}`].msg}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteManual(entry.id)}
+                      className="text-slate-400 hover:text-red-500 transition-colors text-xs font-bold"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 </div>
               );
             })}
