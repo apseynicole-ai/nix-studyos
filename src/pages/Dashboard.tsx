@@ -45,7 +45,8 @@ import { getNextBestActions, type NextBestAction } from '../lib/nextBestAction';
 import { getLatestAcademicSnapshot, summarizeAcademicSnapshot } from '../lib/academicSnapshots';
 import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type WeeklyReviewAction, type WeeklyReviewTone } from '../lib/weeklyReview';
 import { getNextAssessment } from '../lib/assessmentCountdown';
-import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
+import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, saveManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
+import { parseManualAssessmentImport, type ParsedImportRow } from '../lib/manualAssessmentImport';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -95,6 +96,9 @@ const Dashboard: React.FC = () => {
   const [newTime, setNewTime] = useState('');
   const [newVenue, setNewVenue] = useState('');
   const [newConfidence, setNewConfidence] = useState<'high' | 'provisional'>('high');
+  const [bulkText, setBulkText] = useState('');
+  const [importRows, setImportRows] = useState<ParsedImportRow[] | null>(null);
+  const [importSaved, setImportSaved] = useState(false);
 
   useEffect(() => {
     const loadLocalStats = () => {
@@ -259,6 +263,41 @@ const Dashboard: React.FC = () => {
   };
 
   const handleDeleteManual = (id: string) => setManualEntries(deleteManualAssessment(id));
+
+  const handlePreviewImport = () => {
+    setImportSaved(false);
+    setImportRows(parseManualAssessmentImport(bulkText, modules, manualEntries).rows);
+  };
+
+  const handleSaveImport = () => {
+    if (!importRows) return;
+    const validRows = importRows.filter((r) => r.status === 'valid');
+    if (validRows.length === 0) return;
+    const newEntries = validRows.map((row) => ({
+      id: crypto.randomUUID(),
+      moduleId: row.moduleId!,
+      moduleCode: row.moduleCode!,
+      title: row.title!,
+      date: row.date!,
+      time: row.time || '',
+      venue: row.venue || '',
+      durationMinutes: 0,
+      confidence: row.confidence!,
+      createdAt: new Date().toISOString(),
+    }));
+    const next = [...readManualAssessments(), ...newEntries];
+    saveManualAssessments(next);
+    setManualEntries(next);
+    setImportRows(null);
+    setBulkText('');
+    setImportSaved(true);
+  };
+
+  const handleClearImport = () => {
+    setBulkText('');
+    setImportRows(null);
+    setImportSaved(false);
+  };
 
   return (
     <div className="page-shell">
@@ -458,6 +497,107 @@ const Dashboard: React.FC = () => {
           >
             Add assessment
           </button>
+        </div>
+
+        <div className="mb-5 rounded-2xl border border-slate-100 bg-slate-50/60 p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400 mb-1">Bulk paste import</p>
+          <p className="text-[10px] text-slate-400 mb-3">
+            Format: <code className="bg-white border border-slate-200 rounded px-1">MODULE | TITLE | DATE | TIME | VENUE | CONFIDENCE</code> — one per line.
+            MODULE accepts code, id, or name. DATE must be YYYY-MM-DD. CONFIDENCE: confirmed / provisional (default: provisional). Lines starting with # are ignored.
+          </p>
+          <textarea
+            value={bulkText}
+            onChange={(e) => { setBulkText(e.target.value); setImportRows(null); setImportSaved(false); }}
+            placeholder={`CON178 | A1S2 | 2026-10-01 | 17:00 | TBC | confirmed\nFA178 | A1S2 | 2026-09-03 | 17:30 | TBC | provisional`}
+            rows={4}
+            className="w-full rounded-xl bg-white border border-slate-200 px-3 py-2 text-sm font-mono mb-3 focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20 resize-y"
+          />
+          <div className="flex flex-wrap gap-2 mb-3">
+            <button
+              type="button"
+              onClick={handlePreviewImport}
+              disabled={!bulkText.trim()}
+              className="px-4 py-2 rounded-xl maroon-gradient text-white text-xs font-bold disabled:opacity-40 hover:scale-[1.01] transition-transform"
+            >
+              Preview import
+            </button>
+            {(importRows !== null || bulkText || importSaved) && (
+              <button
+                type="button"
+                onClick={handleClearImport}
+                className="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-bold hover:scale-[1.01] transition-transform"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {importSaved && (
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
+              Entries saved to your assessment calendar.
+            </div>
+          )}
+
+          {importRows !== null && importRows.length === 0 && (
+            <p className="text-xs text-slate-500">No data lines found — paste assessment rows in the format above.</p>
+          )}
+
+          {importRows !== null && importRows.length > 0 && (
+            <div>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-slate-400">
+                  Preview — {importRows.filter((r) => r.status === 'valid').length} valid
+                  {importRows.filter((r) => r.status === 'error').length > 0 && ` • ${importRows.filter((r) => r.status === 'error').length} invalid`}
+                  {importRows.filter((r) => r.status === 'duplicate-existing' || r.status === 'duplicate-batch').length > 0 && ` • ${importRows.filter((r) => r.status === 'duplicate-existing' || r.status === 'duplicate-batch').length} duplicate`}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSaveImport}
+                  disabled={importRows.filter((r) => r.status === 'valid').length === 0}
+                  className="px-3 py-1.5 rounded-xl maroon-gradient text-white text-xs font-bold disabled:opacity-40 hover:scale-[1.01] transition-transform"
+                >
+                  Save valid entries
+                </button>
+              </div>
+              <div className="space-y-1.5">
+                {importRows.map((row, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl border px-3 py-2 text-xs ${
+                      row.status === 'valid'
+                        ? 'border-emerald-100 bg-emerald-50'
+                        : row.status === 'error'
+                          ? 'border-red-100 bg-red-50'
+                          : 'border-amber-100 bg-amber-50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className={`shrink-0 font-bold ${row.status === 'valid' ? 'text-emerald-700' : row.status === 'error' ? 'text-red-700' : 'text-amber-700'}`}>
+                        {row.status === 'valid' ? '✓' : row.status === 'error' ? '✗' : '⚠'}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        {row.status === 'valid' ? (
+                          <span className="text-emerald-800">
+                            <span className="font-bold">{row.moduleCode}</span>{' '}—{' '}{row.title}{' '}—{' '}{row.date}
+                            {row.time ? ` • ${row.time}` : ''}
+                            {row.venue ? ` • ${row.venue}` : ''}
+                            {' '}—{' '}<span className="capitalize">{row.confidence === 'high' ? 'confirmed' : 'provisional'}</span>
+                          </span>
+                        ) : (
+                          <div>
+                            <span className={row.status === 'error' ? 'text-red-700' : 'text-amber-700'}>
+                              {row.errors.join(' ')}
+                            </span>
+                            <p className="font-mono opacity-50 truncate mt-0.5">{row.raw}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {manualEntries.length === 0 ? (
