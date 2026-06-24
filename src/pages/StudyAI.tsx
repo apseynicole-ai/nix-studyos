@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, BrainCircuit, Sparkles, Scale, BookOpen, Calculator, History, Trash2, Copy, Wand2, FileText, Target, BookmarkPlus } from 'lucide-react';
+import { Send, BrainCircuit, Sparkles, Scale, BookOpen, Calculator, History, Trash2, Copy, Wand2, FileText, Target, BookmarkPlus, Search, X } from 'lucide-react';
 import { askGemini } from '../lib/gemini';
 import { useAuth } from '../components/auth/AuthGuard';
 import { db, collection, addDoc, query, where, onSnapshot, deleteDoc, doc, isFirestoreUnavailableError } from '../lib/firebase';
@@ -90,8 +90,23 @@ const StudyAI: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [loggedAsMistake, setLoggedAsMistake] = useState(false);
   const lastPromptRef = useRef('');
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyModuleFilter, setHistoryModuleFilter] = useState('all');
 
   const selectedModule = useMemo(() => modules.find((module) => module.id === moduleId) || modules[0], [moduleId]);
+
+  const filteredSummaries = useMemo(() => {
+    const sorted = [...summaries].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const q = historySearch.trim().toLowerCase();
+    return sorted.filter((summary) => {
+      if (historyModuleFilter !== 'all' && summary.moduleId !== historyModuleFilter) return false;
+      if (!q) return true;
+      return [summary.title, summary.originalText, summary.content, summary.moduleName]
+        .join(' ')
+        .toLowerCase()
+        .includes(q);
+    });
+  }, [summaries, historySearch, historyModuleFilter]);
 
   useEffect(() => {
     const loadLocalSummaries = () => {
@@ -383,12 +398,47 @@ ${buildLiveContext(moduleId)}`;
 
       <aside className="space-y-6">
         <section className="editorial-muted-panel p-6 sticky top-6 shadow-sm">
-          <h2 className="font-display text-2xl mb-6 flex items-center gap-2">
+          <h2 className="font-display text-2xl mb-4 flex items-center gap-2">
             <History size={20} className="text-stellenbosch-maroon" />
             Recent Inquiries
           </h2>
-          <div className="space-y-4 max-h-[58vh] overflow-y-auto pr-2 custom-scrollbar">
-            {[...summaries].sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map((summary) => (
+
+          <div className="space-y-2 mb-4">
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                value={historySearch}
+                onChange={(event) => setHistorySearch(event.target.value)}
+                placeholder="Search inquiries..."
+                className="w-full rounded-xl bg-white border border-slate-100 pl-8 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+              />
+              {historySearch && (
+                <button onClick={() => setHistorySearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            <select
+              value={historyModuleFilter}
+              onChange={(event) => setHistoryModuleFilter(event.target.value)}
+              className="w-full rounded-xl bg-white border border-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stellenbosch-maroon/20"
+            >
+              <option value="all">All modules</option>
+              {modules.map((module) => (
+                <option key={module.id} value={module.id}>{module.shortName} ({module.code})</option>
+              ))}
+            </select>
+            {summaries.length > 0 && (
+              <p className="text-[10px] text-slate-400 font-mono">
+                {historySearch || historyModuleFilter !== 'all'
+                  ? `Showing ${filteredSummaries.length} of ${summaries.length}`
+                  : `${summaries.length} saved`}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-4 max-h-[52vh] overflow-y-auto pr-2 custom-scrollbar">
+            {filteredSummaries.map((summary) => (
               <div key={summary.id} className="bg-white/70 p-4 rounded-2xl border border-slate-100 group relative">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -403,7 +453,11 @@ ${buildLiveContext(moduleId)}`;
                 </div>
               </div>
             ))}
-            {summaries.length === 0 && <p className="text-center text-slate-400 py-10 italic">No history yet</p>}
+            {filteredSummaries.length === 0 && (
+              <p className="text-center text-slate-400 py-10 italic">
+                {summaries.length === 0 ? 'No history yet' : 'No saved inquiries match your filters.'}
+              </p>
+            )}
           </div>
         </section>
       </aside>
