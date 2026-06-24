@@ -47,7 +47,7 @@ import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type W
 import { getNextAssessment } from '../lib/assessmentCountdown';
 import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, saveManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
 import { parseManualAssessmentImport, type ParsedImportRow } from '../lib/manualAssessmentImport';
-import { buildAssessmentPrepTasks, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
+import { buildAssessmentPrepTasks, getAssessmentPrepProgress, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -77,6 +77,7 @@ interface TimerSessionRecord {
 }
 
 interface DashboardTaskRecord {
+  id?: string;
   userId?: string;
   done?: boolean;
   completedAt?: string | null;
@@ -101,6 +102,7 @@ const Dashboard: React.FC = () => {
   const [importRows, setImportRows] = useState<ParsedImportRow[] | null>(null);
   const [importSaved, setImportSaved] = useState(false);
   const [prepTaskStatus, setPrepTaskStatus] = useState<Record<string, { msg: string; ok: boolean }>>({});
+  const [localTasksVersion, setLocalTasksVersion] = useState(0);
 
   useEffect(() => {
     const loadLocalStats = () => {
@@ -187,6 +189,18 @@ const Dashboard: React.FC = () => {
     [manualEntries],
   );
   const nextAssessment = getNextAssessment(allCalendarEntries, todayIsoLocal());
+  const prepProgressTasks = useMemo(
+    () => readLocalJson<{ id: string; done: boolean; userId?: string }[]>(LOCAL_TASKS_KEY, [])
+      .filter((t) => !user || t.userId === user.uid || !t.userId),
+    [user, localTasksVersion],
+  );
+  const upcomingAssessmentsForProgress = useMemo(() => {
+    const today = todayIsoLocal();
+    return allCalendarEntries
+      .filter((e) => isValidIsoDateString(e.date) && e.date >= today)
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 8);
+  }, [allCalendarEntries]);
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
   const dueSoonTasks = openLocalTasks.filter((task) => isWithinNextDays(task.dueDate || undefined, 7));
@@ -310,6 +324,7 @@ const Dashboard: React.FC = () => {
       ? `${result.added} prep task${result.added !== 1 ? 's' : ''} created`
       : 'Prep tasks already exist';
     setPrepTaskStatus((prev) => ({ ...prev, [key]: { msg, ok: result.added > 0 } }));
+    setLocalTasksVersion((v) => v + 1);
   };
 
   return (
@@ -440,6 +455,72 @@ const Dashboard: React.FC = () => {
           </div>
         ) : (
           <p className="text-sm text-slate-500">No upcoming assessments found in the saved calendar.</p>
+        )}
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+            <GraduationCap size={22} />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">exam readiness</p>
+            <h2 className="font-display text-3xl text-stellenbosch-maroon">Assessment Prep Progress</h2>
+          </div>
+        </div>
+        {upcomingAssessmentsForProgress.length === 0 ? (
+          <p className="text-sm text-slate-500">No upcoming assessments found. Add assessments in the Semester Assessment Calendar below.</p>
+        ) : (
+          <div className="space-y-2">
+            {upcomingAssessmentsForProgress.map((entry) => {
+              const progress = getAssessmentPrepProgress(entry, prepProgressTasks);
+              const daysFromNow = Math.round(
+                (new Date(`${entry.date}T00:00:00`).getTime() - new Date(`${todayIsoLocal()}T00:00:00`).getTime()) / 86400000,
+              );
+              return (
+                <div key={`${entry.moduleId}:${entry.assessmentId}:${entry.date}`} className="rounded-2xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="text-[10px] uppercase font-bold tracking-wider bg-stellenbosch-maroon/5 text-stellenbosch-maroon rounded-full px-2 py-0.5">
+                          {entry.moduleCode}
+                        </span>
+                        {entry.confidence === 'provisional' && (
+                          <span className="text-[10px] uppercase font-bold tracking-wider bg-amber-50 text-amber-800 border border-amber-100 rounded-full px-2 py-0.5">
+                            Provisional
+                          </span>
+                        )}
+                      </div>
+                      <p className="font-bold text-sm text-slate-800">{entry.title}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {entry.date}{entry.time ? ` • ${entry.time}` : ''} — {countdownLabel(daysFromNow)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className={`text-xs font-bold ${progress.allComplete ? 'text-emerald-700' : 'text-slate-600'}`}>
+                        {progress.completedCount}/{progress.totalExpected} complete
+                      </span>
+                      {progress.allComplete ? (
+                        <span className="text-[10px] uppercase font-bold tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-full px-2 py-0.5">
+                          Prepared
+                        </span>
+                      ) : progress.allExist ? (
+                        <span className="text-[10px] text-slate-400 font-medium">Prep tasks ready</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleCreatePrepTasks(entry)}
+                          className="text-xs font-bold text-stellenbosch-maroon hover:opacity-75 transition-opacity"
+                        >
+                          {progress.existingCount === 0 ? 'Create prep tasks' : 'Create missing'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
 

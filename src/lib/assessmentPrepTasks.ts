@@ -122,3 +122,42 @@ export function savePrepTasksToLocal(generatedTasks: PrepTask[]): MergeResult {
   }
   return { added: toAdd.length, skipped: generatedTasks.length - toAdd.length };
 }
+
+export interface AssessmentPrepProgress {
+  totalExpected: number;
+  existingCount: number;
+  completedCount: number;
+  missingCount: number;
+  allExist: boolean;
+  allComplete: boolean;
+  taskIds: string[];
+}
+
+export function getAssessmentPrepProgress(
+  entry: AssessmentCalendarEntry,
+  tasks: { id: string; done: boolean }[],
+): AssessmentPrepProgress {
+  const totalExpected = PREP_SPECS.length;
+
+  if (!isValidIsoDateString(entry.date)) {
+    return { totalExpected, existingCount: 0, completedCount: 0, missingCount: totalExpected, allExist: false, allComplete: false, taskIds: [] };
+  }
+
+  const taskIds = PREP_SPECS.map(({ prepType }) =>
+    assessmentPrepTaskId(entry.moduleId, entry.assessmentId, entry.date, prepType),
+  );
+
+  const taskMap = new Map(tasks.map((t) => [t.id, t]));
+  const existingCount = taskIds.filter((id) => taskMap.has(id)).length;
+  const completedCount = taskIds.filter((id) => taskMap.get(id)?.done === true).length;
+
+  return {
+    totalExpected,
+    existingCount,
+    completedCount,
+    missingCount: totalExpected - existingCount,
+    allExist: existingCount === totalExpected,
+    allComplete: completedCount === totalExpected,
+    taskIds,
+  };
+}
