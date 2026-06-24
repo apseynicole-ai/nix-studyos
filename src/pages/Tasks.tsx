@@ -429,7 +429,7 @@ const Tasks: React.FC = () => {
                           />
                           {!editDraft.text.trim() && <p className="text-[10px] text-red-500 font-bold mt-1">Title is required</p>}
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <InlineSelect label="Module" value={editDraft.moduleId} onChange={(v) => setEditDraft((d) => ({ ...d, moduleId: v }))} options={modules.map((m) => ({ label: m.shortName, value: m.id }))} />
                           <InlineSelect label="Priority" value={editDraft.priority} onChange={(v) => setEditDraft((d) => ({ ...d, priority: v as Priority }))} options={(['Low', 'Medium', 'High', 'Critical'] as const).map((p) => ({ label: p, value: p }))} />
                           <InlineSelect label="Type" value={editDraft.type} onChange={(v) => setEditDraft((d) => ({ ...d, type: v as TaskType }))} options={(['Study', 'Practice', 'Admin', 'Submission', 'Revision', 'Health'] as const).map((t) => ({ label: t, value: t }))} />
