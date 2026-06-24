@@ -1,7 +1,6 @@
 import type { AssessmentCalendarEntry } from '../data/assessmentCalendar';
 import { LOCAL_TASKS_KEY, readLocalJson, writeLocalJson } from './localData';
-import { isValidIsoDateString } from './manualAssessments';
-import { todayIsoLocal } from './dateUtils';
+import { isValidIsoDateString, todayIsoLocal } from './dateUtils';
 
 export type PrepTaskType = 'start-revision' | 'practice-questions' | 'final-review';
 

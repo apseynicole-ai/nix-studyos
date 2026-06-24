@@ -1,6 +1,7 @@
 import type { AssessmentCalendarEntry } from '../data/assessmentCalendar';
 import type { AssessmentConfidence } from '../data/modules/types';
 import { readLocalJson, writeLocalJson } from './localData';
+export { isValidIsoDateString } from './dateUtils';
 
 export const LOCAL_MANUAL_ASSESSMENTS_KEY = 'baccllb-manual-assessments';
 
@@ -15,16 +16,6 @@ export interface ManualAssessmentEntry {
   durationMinutes: number;
   confidence: AssessmentConfidence;
   createdAt: string;
-}
-
-const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-export function isValidIsoDateString(value: string): boolean {
-  if (!ISO_DATE_RE.test(value)) return false;
-  const d = new Date(`${value}T00:00:00`);
-  if (isNaN(d.getTime())) return false;
-  const [year, month, day] = value.split('-').map(Number);
-  return d.getFullYear() === year && d.getMonth() + 1 === month && d.getDate() === day;
 }
 
 export function readManualAssessments(): ManualAssessmentEntry[] {
