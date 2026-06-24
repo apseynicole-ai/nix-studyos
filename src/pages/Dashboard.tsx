@@ -49,6 +49,7 @@ import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, read
 import { parseManualAssessmentImport, type ParsedImportRow } from '../lib/manualAssessmentImport';
 import { buildAssessmentPrepTasks, buildPrepTasksForAssessments, getAssessmentPrepProgress, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
+import { buildStudyQueue, type StudyQueueTask } from '../lib/studyQueue';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
 import ProgressRing from '../components/ui/ProgressRing';
@@ -83,7 +84,11 @@ interface DashboardTaskRecord {
   completedAt?: string | null;
   moduleId?: string;
   text?: string;
+  title?: string;
   dueDate?: string | null;
+  category?: string;
+  priority?: string;
+  type?: string;
 }
 
 
@@ -167,8 +172,8 @@ const Dashboard: React.FC = () => {
   const plannerData = useMemo(() => readLocalJson<unknown>('baccllb-planner', null), []);
   const localTasks = useMemo(
     () => readLocalJson<DashboardTaskRecord[]>(LOCAL_TASKS_KEY, [])
-      .filter((task) => !user || task.userId === user.uid),
-    [user],
+      .filter((task) => !user || task.userId === user.uid || !task.userId),
+    [user, localTasksVersion],
   );
   const localTimerSessions = useMemo(
     () => readLocalJson<TimerSessionRecord[]>(LOCAL_TIMER_SESSIONS_KEY, [])
@@ -205,6 +210,7 @@ const Dashboard: React.FC = () => {
   const openLocalTasks = localTasks.filter((task) => !task.done);
   const overdueTasks = openLocalTasks.filter((task) => isPastDate(task.dueDate));
   const dueSoonTasks = openLocalTasks.filter((task) => isWithinNextDays(task.dueDate || undefined, 7));
+  const studyQueue = useMemo(() => buildStudyQueue(localTasks, todayIsoLocal(), 10), [localTasks]);
   const nextBestActions = useMemo(() => getNextBestActions({ limit: 12 }), [topicRecords, mistakeRecords]);
   const battlePlan = nextBestActions.slice(0, 5);
   const filteredActions = useMemo(
@@ -551,6 +557,35 @@ const Dashboard: React.FC = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+              <ListChecks size={22} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">task queue</p>
+              <h2 className="font-display text-3xl text-stellenbosch-maroon">Today / This Week Study Queue</h2>
+            </div>
+          </div>
+          <Link to="/tasks" className="inline-flex items-center gap-2 self-start rounded-2xl border border-stellenbosch-maroon/15 bg-white px-4 py-3 text-sm font-bold text-stellenbosch-maroon transition-all hover:-translate-y-0.5 hover:shadow">
+            Open Tasks <ArrowRight size={16} />
+          </Link>
+        </div>
+        {studyQueue.hasUrgentTasks ? (
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+            <StudyQueueGroup title="Overdue" tone="warning" tasks={studyQueue.overdue} />
+            <StudyQueueGroup title="Due today" tone="today" tasks={studyQueue.today} />
+            <StudyQueueGroup title="Due this week" tone="week" tasks={studyQueue.thisWeek} />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-5">
+            <p className="font-bold text-emerald-900">No urgent study tasks due today.</p>
+            <p className="mt-1 text-sm text-emerald-700">Your due-date queue is clear for now.</p>
           </div>
         )}
       </section>
@@ -1654,6 +1689,60 @@ const BattlePlanItem: React.FC<{ action: NextBestAction }> = ({ action }) => (
     )}
   </div>
 );
+
+const StudyQueueGroup: React.FC<{ title: string; tone: 'warning' | 'today' | 'week'; tasks: StudyQueueTask[] }> = ({ title, tone, tasks }) => (
+  <div className={`rounded-2xl border p-4 ${studyQueueGroupTone(tone)}`}>
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500">{title}</p>
+      <span className="rounded-full bg-white/80 px-2 py-1 text-[10px] font-bold text-slate-500">{tasks.length}</span>
+    </div>
+    {tasks.length === 0 ? (
+      <p className="text-sm text-slate-500">Nothing here.</p>
+    ) : (
+      <div className="space-y-2">
+        {tasks.map((task) => {
+          const module = modules.find((item) => item.id === task.moduleId);
+          return (
+            <div key={task.id || `${task.moduleId}:${task.dueDate}:${task.text || task.title}`} className="rounded-xl border border-white/70 bg-white/80 px-3 py-2">
+              <p className="text-sm font-bold text-slate-800">{task.text || task.title || 'Untitled task'}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="rounded-full bg-stellenbosch-maroon/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stellenbosch-maroon">
+                  {module?.shortName || task.category || 'General'}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Due {task.dueDate}
+                </span>
+                {task.priority && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${studyQueuePriorityTone(task.priority)}`}>
+                    {task.priority}
+                  </span>
+                )}
+                {(task.type || task.category) && (
+                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500 border border-slate-100">
+                    {task.type || task.category}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
+
+function studyQueueGroupTone(tone: 'warning' | 'today' | 'week') {
+  if (tone === 'warning') return 'border-amber-100 bg-amber-50/70';
+  if (tone === 'today') return 'border-stellenbosch-maroon/10 bg-stellenbosch-maroon/5';
+  return 'border-slate-100 bg-slate-50/70';
+}
+
+function studyQueuePriorityTone(priority: string) {
+  if (priority === 'Critical') return 'bg-red-50 text-red-700';
+  if (priority === 'High') return 'bg-amber-50 text-amber-700';
+  if (priority === 'Medium') return 'bg-blue-50 text-blue-700';
+  return 'bg-slate-100 text-slate-500';
+}
 
 function battlePlanReasonLabel(action: NextBestAction): string {
   switch (action.actionType) {
