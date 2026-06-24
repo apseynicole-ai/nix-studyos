@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   assessmentPrepTaskId,
   buildAssessmentPrepTasks,
+  buildPrepTasksForAssessments,
   getAssessmentPrepProgress,
   mergeAssessmentPrepTasks,
   savePrepTasksToLocal,
@@ -125,6 +126,59 @@ describe('buildAssessmentPrepTasks', () => {
   });
 });
 
+describe('buildPrepTasksForAssessments', () => {
+  const TODAY = '2026-07-01';
+
+  it('builds prep tasks for multiple assessments', () => {
+    const tasks = buildPrepTasksForAssessments([
+      makeEntry({ assessmentId: 'A2', moduleId: 'conlaw178', moduleCode: 'CON178' }),
+      makeEntry({ assessmentId: 'A1S2', moduleId: 'fa178', moduleCode: 'FA178', date: '2026-09-03' }),
+    ], TODAY);
+
+    expect(tasks).toHaveLength(6);
+    expect(tasks.map((task) => task.moduleId)).toEqual([
+      'conlaw178',
+      'conlaw178',
+      'conlaw178',
+      'fa178',
+      'fa178',
+      'fa178',
+    ]);
+  });
+
+  it('uses stable IDs for every generated assessment task', () => {
+    const tasks = buildPrepTasksForAssessments([
+      makeEntry({ assessmentId: 'A2', moduleId: 'conlaw178', moduleCode: 'CON178' }),
+      makeEntry({ assessmentId: 'A1S2', moduleId: 'fa178', moduleCode: 'FA178', date: '2026-09-03' }),
+    ], TODAY);
+
+    expect(tasks.map((task) => task.id)).toEqual([
+      'prep-conlaw178-A2-2026-10-01-start-revision',
+      'prep-conlaw178-A2-2026-10-01-practice-questions',
+      'prep-conlaw178-A2-2026-10-01-final-review',
+      'prep-fa178-A1S2-2026-09-03-start-revision',
+      'prep-fa178-A1S2-2026-09-03-practice-questions',
+      'prep-fa178-A1S2-2026-09-03-final-review',
+    ]);
+  });
+
+  it('ignores assessments with invalid dates', () => {
+    const tasks = buildPrepTasksForAssessments([
+      makeEntry({ assessmentId: 'A2', date: '2026-10-01' }),
+      makeEntry({ assessmentId: 'BAD', date: '2026-02-30' }),
+      makeEntry({ assessmentId: 'EMPTY', date: '' }),
+    ], TODAY);
+
+    expect(tasks).toHaveLength(3);
+    expect(tasks.every((task) => task.id.includes('BAD') || task.id.includes('EMPTY'))).toBe(false);
+    expect(tasks.map((task) => task.id)).toEqual([
+      'prep-conlaw178-A2-2026-10-01-start-revision',
+      'prep-conlaw178-A2-2026-10-01-practice-questions',
+      'prep-conlaw178-A2-2026-10-01-final-review',
+    ]);
+  });
+});
+
 describe('mergeAssessmentPrepTasks', () => {
   const TODAY = '2026-07-01';
 
@@ -188,6 +242,30 @@ describe('savePrepTasksToLocal', () => {
     const snapshot = localStorage.getItem('baccllb-tasks');
     savePrepTasksToLocal(generated);
     expect(localStorage.getItem('baccllb-tasks')).toBe(snapshot);
+  });
+
+  it('preserves unrelated tasks and only creates missing prep tasks across assessments', () => {
+    const assessmentA = makeEntry({ assessmentId: 'A2', moduleId: 'conlaw178', moduleCode: 'CON178' });
+    const assessmentB = makeEntry({ assessmentId: 'A1S2', moduleId: 'fa178', moduleCode: 'FA178', date: '2026-09-03' });
+    const generatedA = buildAssessmentPrepTasks(assessmentA, TODAY);
+    const generatedB = buildAssessmentPrepTasks(assessmentB, TODAY);
+    const unrelated = { id: 'task-existing', text: 'Keep me', done: false };
+
+    localStorage.setItem('baccllb-tasks', JSON.stringify([
+      unrelated,
+      generatedA[0],
+      generatedB[0],
+      generatedB[1],
+    ]));
+
+    const result = savePrepTasksToLocal([...generatedA, ...generatedB]);
+    const stored = JSON.parse(localStorage.getItem('baccllb-tasks') || '[]');
+
+    expect(result.added).toBe(3);
+    expect(result.skipped).toBe(3);
+    expect(stored).toHaveLength(7);
+    expect(stored[0]).toEqual(unrelated);
+    expect(new Set(stored.map((task: { id: string }) => task.id)).size).toBe(7);
   });
 });
 

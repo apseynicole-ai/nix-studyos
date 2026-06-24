@@ -47,7 +47,7 @@ import { buildWeeklyReviewActions, weeklyReviewTone, weeklyReviewDotTone, type W
 import { getNextAssessment } from '../lib/assessmentCountdown';
 import { addManualAssessment, deleteManualAssessment, isValidIsoDateString, readManualAssessments, saveManualAssessments, toAssessmentCalendarEntry } from '../lib/manualAssessments';
 import { parseManualAssessmentImport, type ParsedImportRow } from '../lib/manualAssessmentImport';
-import { buildAssessmentPrepTasks, getAssessmentPrepProgress, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
+import { buildAssessmentPrepTasks, buildPrepTasksForAssessments, getAssessmentPrepProgress, savePrepTasksToLocal } from '../lib/assessmentPrepTasks';
 import { isPastDate, isRelevantAssessmentDate, isWithinNextDays, todayIsoLocal } from '../lib/dateUtils';
 import ProgressBar from '../components/ui/ProgressBar';
 import ProgressBadge from '../components/ui/ProgressBadge';
@@ -102,6 +102,7 @@ const Dashboard: React.FC = () => {
   const [importRows, setImportRows] = useState<ParsedImportRow[] | null>(null);
   const [importSaved, setImportSaved] = useState(false);
   const [prepTaskStatus, setPrepTaskStatus] = useState<Record<string, { msg: string; ok: boolean }>>({});
+  const [bulkPrepTaskStatus, setBulkPrepTaskStatus] = useState<{ msg: string; ok: boolean } | null>(null);
   const [localTasksVersion, setLocalTasksVersion] = useState(0);
 
   useEffect(() => {
@@ -327,6 +328,19 @@ const Dashboard: React.FC = () => {
     setLocalTasksVersion((v) => v + 1);
   };
 
+  const handleBulkCreatePrepTasks = () => {
+    if (upcomingAssessmentsForProgress.length === 0) return;
+
+    const userId = user?.uid || profile?.uid || 'local-guest';
+    const tasks = buildPrepTasksForAssessments(upcomingAssessmentsForProgress, todayIsoLocal(), userId);
+    const result = savePrepTasksToLocal(tasks);
+    const msg = result.added > 0
+      ? `${result.added} prep task(s) created`
+      : 'All prep tasks already exist';
+    setBulkPrepTaskStatus({ msg, ok: result.added > 0 });
+    setLocalTasksVersion((v) => v + 1);
+  };
+
   return (
     <div className="page-shell">
       <header className="mb-10 grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-stretch">
@@ -459,13 +473,30 @@ const Dashboard: React.FC = () => {
       </section>
 
       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
-            <GraduationCap size={22} />
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+              <GraduationCap size={22} />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">exam readiness</p>
+              <h2 className="font-display text-3xl text-stellenbosch-maroon">Assessment Prep Progress</h2>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">exam readiness</p>
-            <h2 className="font-display text-3xl text-stellenbosch-maroon">Assessment Prep Progress</h2>
+          <div className="flex flex-col items-start gap-1.5 md:items-end">
+            <button
+              type="button"
+              onClick={handleBulkCreatePrepTasks}
+              disabled={upcomingAssessmentsForProgress.length === 0}
+              className="rounded-xl border border-stellenbosch-maroon/15 bg-stellenbosch-maroon px-3 py-2 text-left text-xs font-bold text-white transition-all hover:-translate-y-0.5 hover:shadow disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+            >
+              Create missing prep tasks for all upcoming assessments
+            </button>
+            {bulkPrepTaskStatus && (
+              <span className={`text-xs font-medium ${bulkPrepTaskStatus.ok ? 'text-emerald-700' : 'text-slate-500'}`}>
+                {bulkPrepTaskStatus.msg}
+              </span>
+            )}
           </div>
         </div>
         {upcomingAssessmentsForProgress.length === 0 ? (

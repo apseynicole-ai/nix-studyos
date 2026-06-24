@@ -104,6 +104,14 @@ export function buildAssessmentPrepTasks(
   });
 }
 
+export function buildPrepTasksForAssessments(
+  entries: AssessmentCalendarEntry[],
+  todayStr = todayIsoLocal(),
+  userId = 'local-guest',
+): PrepTask[] {
+  return entries.flatMap((entry) => buildAssessmentPrepTasks(entry, todayStr, userId));
+}
+
 export function mergeAssessmentPrepTasks(
   existingTasks: { id: string }[],
   generatedTasks: PrepTask[],
