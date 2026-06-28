@@ -24,6 +24,7 @@ export const LOCAL_TOPIC_MASTERY_KEY = 'baccllb-topic-mastery';
 export const LOCAL_MODULE_CONFIDENCE_KEY = 'baccllb-module-confidence';
 export const LOCAL_ACADEMIC_SNAPSHOTS_KEY = 'baccllb-academic-snapshots';
 export const LOCAL_BACKUP_META_KEY = 'baccllb-last-backup-meta';
+export const LOCAL_DASHBOARD_VIEW_MODE_KEY = 'baccllb-dashboard-view-mode';
 export const BACKUP_SCHEMA_VERSION = 1;
 export const BACKUP_APP_NAME = 'Nix StudyOS';
 
