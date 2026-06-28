@@ -1,0 +1,132 @@
+From 0bae382d75170b5f82c38c14897cd70fccd0eb0f Mon Sep 17 00:00:00 2001
+From: apseynicole-ai <apseynicole@gmail.com>
+Date: Sun, 28 Jun 2026 22:44:05 +0200
+Subject: [PATCH] feat: add dashboard today mode
+
+Adds a Today Mode / Full Dashboard toggle to the Dashboard. Today Mode
+surfaces only the sections needed for immediate daily study decisions:
+backup warning, Next Assessment, Assessment Prep Progress, Weekly Review,
+Today's Study Growth, Battle Plan, and Marks-at-Risk. Full Dashboard
+restores all sections. Preference persists via baccllb-dashboard-view-mode.
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+---
+ src/pages/Dashboard.tsx | 32 ++++++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+
+diff --git a/src/pages/Dashboard.tsx b/src/pages/Dashboard.tsx
+index a398b94..7d3e368 100644
+--- a/src/pages/Dashboard.tsx
++++ b/src/pages/Dashboard.tsx
+@@ -37,6 +37,7 @@ import {
+   upcomingAssessments,
+ } from '../lib/studyMetrics';
+ import { LOCAL_SUMMARIES_KEY, LOCAL_TASKS_KEY, LOCAL_TIMER_SESSIONS_KEY, getBackupAgeDays, readLocalJson } from '../lib/localData';
++import { readDashboardViewMode, writeDashboardViewMode } from '../lib/dashboardViewMode';
+ import { getEffectiveModuleConfidence } from '../lib/moduleConfidence';
+ import { getStudyMomentumSummary } from '../lib/studyMomentum';
+ import { averageTopicConfidence, readTopicMastery, topicsDueThisWeek, urgentTopicsCount } from '../lib/topicMastery';
+@@ -109,6 +110,7 @@ const Dashboard: React.FC = () => {
+   const [prepTaskStatus, setPrepTaskStatus] = useState<Record<string, { msg: string; ok: boolean }>>({});
+   const [bulkPrepTaskStatus, setBulkPrepTaskStatus] = useState<{ msg: string; ok: boolean } | null>(null);
+   const [localTasksVersion, setLocalTasksVersion] = useState(0);
++  const [isTodayMode, setIsTodayMode] = useState(() => readDashboardViewMode() === 'today');
+ 
+   useEffect(() => {
+     const loadLocalStats = () => {
+@@ -392,6 +394,28 @@ const Dashboard: React.FC = () => {
+         </section>
+       </header>
+ 
++      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
++        <div className="flex rounded-2xl border border-slate-100 bg-slate-50 p-1 gap-1">
++          <button
++            type="button"
++            onClick={() => { writeDashboardViewMode('today'); setIsTodayMode(true); }}
++            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${isTodayMode ? 'bg-stellenbosch-maroon text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
++          >
++            Today Mode
++          </button>
++          <button
++            type="button"
++            onClick={() => { writeDashboardViewMode('full'); setIsTodayMode(false); }}
++            className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${!isTodayMode ? 'bg-stellenbosch-maroon text-white shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
++          >
++            Full Dashboard
++          </button>
++        </div>
++        {isTodayMode && (
++          <p className="text-xs text-slate-400">Today Mode shows only the sections you need for immediate study decisions.</p>
++        )}
++      </div>
++
+       <section className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-10">
+         <MetricCard icon={<BookOpen />} label="Active modules" value={modules.length} note="S1 + S2 shells" />
+         <MetricCard icon={<LineChart />} label="Avg confidence" value={`${avgConfidence}%`} note={readinessLabel(avgConfidence)} tone={riskTone(avgConfidence)} />
+@@ -590,6 +614,7 @@ const Dashboard: React.FC = () => {
+         )}
+       </section>
+ 
++      {!isTodayMode && (
+       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+         <div className="flex items-center gap-3 mb-5">
+           <div className="w-11 h-11 rounded-2xl bg-stellenbosch-maroon/5 text-stellenbosch-maroon flex items-center justify-center shrink-0">
+@@ -831,6 +856,7 @@ const Dashboard: React.FC = () => {
+           </div>
+         )}
+       </section>
++      )}
+ 
+       <section className="editorial-panel mb-10 p-7">
+         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+@@ -968,6 +994,7 @@ const Dashboard: React.FC = () => {
+         )}
+       </section>
+ 
++      {!isTodayMode && (<>
+       <section className="editorial-panel mb-10 p-7">
+         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+           <div>
+@@ -1097,6 +1124,7 @@ const Dashboard: React.FC = () => {
+           </div>
+         )}
+       </section>
++      </>)}
+ 
+       <section className="editorial-panel mb-10 p-6">
+         <div className="flex items-center gap-3 mb-5">
+@@ -1121,6 +1149,7 @@ const Dashboard: React.FC = () => {
+         )}
+       </section>
+ 
++      {!isTodayMode && (<>
+       <section className="editorial-panel mb-10 p-7">
+         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+           <div>
+@@ -1309,6 +1338,7 @@ const Dashboard: React.FC = () => {
+           )}
+         </section>
+       </div>
++      </>)}
+ 
+       <section className="bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-sm mb-10">
+         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+@@ -1414,6 +1444,7 @@ const Dashboard: React.FC = () => {
+         )}
+       </section>
+ 
++      {!isTodayMode && (<>
+       <section className="bg-white rounded-[2.5rem] p-7 border border-slate-100 shadow-sm mb-10">
+         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5 mb-6">
+           <div>
+@@ -1581,6 +1612,7 @@ const Dashboard: React.FC = () => {
+           </Link>
+         </section>
+       </div>
++      </>)}
+     </div>
+   );
+ };
+-- 
+2.50.1 (Apple Git-155)
+
