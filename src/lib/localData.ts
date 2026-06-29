@@ -14,8 +14,10 @@ export const BACKUP_KEYS = [
   'baccllb-dashboard',
   'baccllb-topic-mastery',
   'baccllb-mistake-bank',
+  'baccllb-class-log',
 ];
 
+export const LOCAL_CLASS_LOG_KEY = 'baccllb-class-log';
 export const LOCAL_PROFILE_KEY = 'baccllb-profile';
 export const LOCAL_TASKS_KEY = 'baccllb-tasks';
 export const LOCAL_TIMER_SESSIONS_KEY = 'baccllb-timer-sessions';

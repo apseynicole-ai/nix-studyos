@@ -14,6 +14,7 @@ const LegalVerifier = lazy(() => import('./pages/LegalVerifier'));
 const StudyAI = lazy(() => import('./pages/StudyAI'));
 const Timer = lazy(() => import('./pages/Timer'));
 const Settings = lazy(() => import('./pages/Settings'));
+const ClassLog = lazy(() => import('./pages/ClassLog'));
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
                 <Route path="/legal-verifier" element={<LegalVerifier />} />
                 <Route path="/ai" element={<StudyAI />} />
                 <Route path="/timer" element={<Timer />} />
+                <Route path="/class-log" element={<ClassLog />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Suspense>
