@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Settings,
   ClipboardList,
+  NotebookPen,
 } from 'lucide-react';
 import { signOutUser } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
@@ -23,6 +24,7 @@ const navItems = [
   { to: '/marks', icon: <LineChart size={21} />, label: 'Marks' },
   { to: '/planner', icon: <CalendarDays size={21} />, label: 'Plan' },
   { to: '/mistakes', icon: <ClipboardList size={21} />, label: 'Mistakes' },
+  { to: '/class-log', icon: <NotebookPen size={21} />, label: 'Classes' },
   { to: '/exam-vault', icon: <ShieldCheck size={21} />, label: 'Vault' },
   { to: '/settings', icon: <Settings size={21} />, label: 'Settings' },
 ];
