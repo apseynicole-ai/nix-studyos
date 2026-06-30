@@ -1,0 +1,216 @@
+# Module Configuration File Template
+# Copy this file to: [MODULE_FOLDER]/00_intake/module.yaml
+# Complete all fields. The system reads this file to auto-configure behaviour.
+
+# ============================================================
+# IDENTITY
+# ============================================================
+module:
+  code: "FOL178"               # University module code (uppercase)
+  name: "Foundations of Law"  # Full official module name
+  semester: 1                  # 1 or 2
+  year: 2026
+  university: ""               # University name
+  lms: "SocioLearn"           # LMS platform name
+  type: "law"                  # law | quantitative | mixed
+
+# ============================================================
+# COLOUR THEME
+# Matches themes in specs/style-guide.md
+# Override hex values here if module needs a custom theme
+# ============================================================
+theme:
+  preset: "law"               # law | accounting | statistics | economics | custom
+  # If preset is "custom", specify hex values:
+  # primary: "#1a2744"
+  # accent:  "#c9a227"
+  # bg:      "#faf8f3"
+  # border:  "#d4c9a8"
+
+# ============================================================
+# FEATURES
+# Set true/false to enable/disable hub features
+# ============================================================
+features:
+  sidebar: true
+  expand_collapse: true
+  in_page_search: false        # Set true only if topic count > 8
+  topic_tabs: false            # Alternative to sidebar for small modules
+  progress_tracker: false      # Future feature
+  print_mode_button: true
+  mobile_responsive: true
+
+# ============================================================
+# ASSESSMENT STRUCTURE
+# ============================================================
+assessments:
+  - name: "Assignment 1"
+    type: "written"            # written | test | exam | presentation | portfolio
+    weight: 30                 # Percentage weight
+    due: "2026-04-15"         # ISO date
+    status: "pending"         # pending | submitted | graded
+    result: null               # Numeric result or null if not yet graded
+    notes: ""
+
+  - name: "Final Exam"
+    type: "exam"
+    weight: 70
+    due: "2026-06-15"
+    status: "pending"
+    result: null
+    notes: ""
+
+# ============================================================
+# EXAMINATION
+# ============================================================
+exam:
+  date: "2026-06-15"
+  time: "09:00"
+  duration_minutes: 180
+  format: "closed-book"       # open-book | closed-book | online | take-home
+  calculator_permitted: false
+  materials_permitted: []     # List permitted materials, or empty if closed-book
+  scope_status: "confirmed"   # confirmed | estimated | unknown
+  scope_notes: "All topics; higher weighting on Topics 3–5 per lecturer advice"
+
+# ============================================================
+# TOPIC STRUCTURE
+# Define topics in binder order
+# ============================================================
+topics:
+  - id: "topic-1"
+    number: 1
+    name: "Introduction to Law"
+    exam_priority: "medium"   # high | medium | low
+    key_ideas:
+      - "Sources of law"
+      - "Common law and statute"
+      - "The court hierarchy"
+    sources: ["LS_Topic1", "LN_Topic1"]
+
+  - id: "topic-2"
+    number: 2
+    name: "Contract Formation"
+    exam_priority: "high"
+    key_ideas:
+      - "Offer and acceptance"
+      - "Consideration"
+      - "Intention to create legal relations"
+      - "Capacity"
+    sources: ["LS_Topic2", "LS_Topic3", "TD_Tutorial2"]
+
+# Add topics as needed following the same format
+
+# ============================================================
+# LAW-SPECIFIC CONFIGURATION
+# Required when type is "law" or "mixed"
+# ============================================================
+law:
+  case_sheets_required: true
+  firac_templates_required: true
+  essay_templates_required: true
+  problem_question_framework_required: true
+  statutory_interpretation_required: false
+  constitutional_provisions_required: false
+  citation_style: "australian"   # australian | british | us
+  # List all cases that must appear in the hub and case sheets
+  cases_required:
+    - name: "Carlill v Carbolic Smoke Ball Co"
+      citation: "[1893] 1 QB 256"
+      court: "Court of Appeal"
+      year: 1893
+      area_of_law: "contract-offer"
+      source: "LS_Topic2"
+    # Add all required cases following the same format
+
+# ============================================================
+# QUANTITATIVE-SPECIFIC CONFIGURATION
+# Required when type is "quantitative" or "mixed"
+# ============================================================
+quantitative:
+  formula_sheet_required: false    # Set true for quantitative modules
+  worked_examples_required: false
+  graphs_required: false
+  calculation_frameworks_required: false
+  # List all formulas that must appear in the hub
+  formulas_required: []
+  # List all graph types that must be described
+  graphs_required_list: []
+
+# ============================================================
+# BINDER STRUCTURE
+# Defines the physical print assembly order
+# ============================================================
+binder:
+  cover_sheets_required: true
+  case_sheets_required: true      # Law only
+  formula_reference_required: false  # Quantitative only
+  past_papers_included: false
+  blank_notes_pages: true
+  # Assembly order (items appear in this order in the binder)
+  assembly_order:
+    - "module_cover_page"
+    - "module_overview"
+    - "topic_sections"           # Interleaved: cover sheet → topic pages
+    - "case_hub"                 # Law only
+    - "formula_reference"        # Quantitative only
+    - "practice_questions"
+    - "blank_notes"
+
+# ============================================================
+# OUTPUTS REQUIRED
+# Controls which modules run automatically
+# ============================================================
+outputs:
+  cover_sheets: true
+  case_sheets: true            # Law only — ignored for quantitative
+  revision_pack: true
+  exam_pack: true
+  pdf_export: true
+
+# ============================================================
+# PRINT SETTINGS
+# ============================================================
+print:
+  paper_size: "A4"
+  orientation: "portrait"
+  colour: true
+  double_sided: true
+  background_graphics: true
+  hole_punch_margin_mm: 25     # Left margin for hole punching
+  # Chrome print settings reminder is in checklists/print-checklist.md
+
+# ============================================================
+# ARCHIVE SETTINGS
+# ============================================================
+archive:
+  retain_all_versions: true
+  retention_policy: "permanent"  # permanent | 5-years | 2-years
+  successor_module: null         # Module code of next semester equivalent, or null
+
+# ============================================================
+# BUILD STATUS
+# Updated by each module as it completes
+# ============================================================
+build_status:
+  intake: "pending"             # pending | in-progress | complete
+  source_audit: "pending"
+  build_plan: "pending"
+  html_v08: "pending"
+  html_v10: "pending"
+  cover_sheets: "pending"
+  case_sheets: "pending"        # Law only
+  revision_pack: "pending"
+  exam_pack: "pending"
+  archive: "pending"
+
+# ============================================================
+# NOTES
+# Free-form notes for this module
+# ============================================================
+notes: |
+  Add any module-specific notes, known risks, or special requirements here.
+  Examples:
+  - Lecturer uses FIRAC not IRAC — use FIRAC in all templates
+  - Topic 4 content arrives week 6 — hold build planning until then
+  - Past papers available for 2023 and 2024 only
