@@ -13,12 +13,16 @@ import {
   Settings,
   ClipboardList,
   NotebookPen,
+  CalendarCheck,
+  History,
 } from 'lucide-react';
 import { signOutUser } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
 
 const navItems = [
-  { to: '/', icon: <LayoutDashboard size={21} />, label: 'Home' },
+  { to: '/', icon: <CalendarCheck size={21} />, label: 'Today', end: true },
+  { to: '/activity-log', icon: <History size={21} />, label: 'Log' },
+  { to: '/dashboard', icon: <LayoutDashboard size={21} />, label: 'Progress' },
   { to: '/modules', icon: <BookOpen size={21} />, label: 'Modules' },
   { to: '/tasks', icon: <CheckSquare size={21} />, label: 'Tasks' },
   { to: '/marks', icon: <LineChart size={21} />, label: 'Marks' },
@@ -35,7 +39,7 @@ const Navbar: React.FC = () => {
   return (
     <nav className="nav-shell fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-3 rounded-[2rem] z-50 flex items-center gap-3 md:gap-5 max-w-[96vw] overflow-x-auto no-scrollbar">
       {navItems.map((item) => (
-        <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} />
+        <NavItem key={item.to} to={item.to} icon={item.icon} label={item.label} end={item.end} />
       ))}
       <div className="w-12 h-12 shrink-0 rounded-full maroon-gradient flex items-center justify-center -mt-8 shadow-lg shadow-stellenbosch-maroon/30 border-4 border-white/90">
          <NavLink to="/ai" className={({isActive}) => isActive ? 'text-stellenbosch-gold' : 'text-white'} aria-label="LexAI">
@@ -56,10 +60,11 @@ const Navbar: React.FC = () => {
   );
 };
 
-const NavItem: React.FC<{ to: string, icon: React.ReactNode, label: string }> = ({ to, icon, label }) => (
-  <NavLink 
-    to={to} 
-    className={({ isActive }) => 
+const NavItem: React.FC<{ to: string, icon: React.ReactNode, label: string, end?: boolean }> = ({ to, icon, label, end }) => (
+  <NavLink
+    to={to}
+    end={end}
+    className={({ isActive }) =>
       `flex flex-col items-center gap-1 transition-all px-2 shrink-0 ${isActive ? 'text-stellenbosch-maroon scale-105' : 'text-slate-400 hover:text-slate-600'}`
     }
   >

@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthGuard, AuthProvider } from './components/auth/AuthGuard';
 import Navbar from './components/layout/Navbar';
 
+const Today = lazy(() => import('./pages/Today'));
+const ActivityLog = lazy(() => import('./pages/ActivityLog'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Modules = lazy(() => import('./pages/Modules'));
 const Tasks = lazy(() => import('./pages/Tasks'));
@@ -24,7 +26,9 @@ export default function App() {
           <div className="app-shell">
             <Suspense fallback={<RouteLoadingFallback />}>
               <Routes>
-                <Route path="/" element={<Dashboard />} />
+                <Route path="/" element={<Today />} />
+                <Route path="/activity-log" element={<ActivityLog />} />
+                <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/modules" element={<Modules />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/marks" element={<Marks />} />
