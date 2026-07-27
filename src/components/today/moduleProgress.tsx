@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import {
   modulesRepo,
   assessmentsRepo,
-  currentWeekPlan,
+  resolveWeekPlan,
   moduleStatus,
   formatDurationDisplay,
   type Assessment,
@@ -25,7 +25,7 @@ function nextAssessment(moduleId: string, today: string): Assessment | undefined
 }
 
 export function ModuleProgressList({ today, refreshKey = 0 }: { today: string; refreshKey?: number }) {
-  const plan = useMemo(() => currentWeekPlan(), [refreshKey]);
+  const plan = useMemo(() => resolveWeekPlan(today), [refreshKey, today]);
   const rows = useMemo(() => {
     if (!plan) return [];
     return modulesRepo.read().filter((m: Module) => m.active).map((m) => ({
@@ -39,7 +39,7 @@ export function ModuleProgressList({ today, refreshKey = 0 }: { today: string; r
 
   return (
     <section className="mt-8">
-      <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Modules · this week</h2>
+      <h2 className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Modules · {plan.id}{plan.archivedAt ? ' (archived)' : ''}</h2>
       <div className="space-y-2">
         {rows.map(({ module: m, status, weekly, next }) => {
           const s = STATUS[status];

@@ -8,10 +8,14 @@ import type {
   DataChangeAudit,
   Module,
   PendingSession,
+  RecurringActivity,
   ScheduledActivity,
   StudyBlock,
   StudySession,
   StudyTask,
+  TutorialAllocation,
+  TutorialOccurrence,
+  VerificationItem,
   WeeklyPlan,
 } from './types';
 
@@ -38,3 +42,8 @@ export const appStateRepo = new SingletonRepository<AppState>(SS_KEYS.appState);
 
 export const activeSessionRepo = new SingletonRepository<ActiveSession | null>(SS_KEYS.activeSession);
 export const pendingSessionRepo = new SingletonRepository<PendingSession | null>(SS_KEYS.pendingSession);
+
+export const recurringActivitiesRepo = new CollectionRepository<RecurringActivity>(SS_KEYS.recurringActivities);
+export const tutorialAllocationsRepo = new CollectionRepository<TutorialAllocation>(SS_KEYS.tutorialAllocations);
+export const tutorialOccurrencesRepo = new CollectionRepository<TutorialOccurrence>(SS_KEYS.tutorialOccurrences);
+export const verificationItemsRepo = new CollectionRepository<VerificationItem>(SS_KEYS.verificationItems);

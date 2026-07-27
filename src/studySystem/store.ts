@@ -23,6 +23,11 @@ export const SS_KEYS = {
   // Persisted study-session timer (spec §11 safety): survives refresh/reopen.
   activeSession: 'baccllb-ss-active-session',
   pendingSession: 'baccllb-ss-pending-session',
+  // Recurring timetable layer (Phase D).
+  recurringActivities: 'baccllb-ss-recurring-activities',
+  tutorialAllocations: 'baccllb-ss-tutorial-allocations',
+  tutorialOccurrences: 'baccllb-ss-tutorial-occurrences',
+  verificationItems: 'baccllb-ss-verification-items',
 } as const;
 
 export type SsKey = (typeof SS_KEYS)[keyof typeof SS_KEYS];
@@ -34,6 +39,10 @@ export const REFERENCE_KEYS: readonly SsKey[] = [
   SS_KEYS.scheduledActivities,
   SS_KEYS.studyBlocks,
   SS_KEYS.weeklyPlans,
+  SS_KEYS.recurringActivities,
+  SS_KEYS.tutorialAllocations,
+  SS_KEYS.tutorialOccurrences,
+  SS_KEYS.verificationItems,
 ];
 
 /** User data a re-seed must never overwrite. */

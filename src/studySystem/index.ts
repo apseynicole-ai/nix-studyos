@@ -13,6 +13,17 @@ export * from './dailyCompletion';
 export * from './studyTime';
 export * from './moduleWeekly';
 export * from './moduleStatus';
+export * from './conflicts';
+export * from './currentWeek';
+export * from './weeklyReset';
+export * from './recurring/weekGenerator';
+export {
+  RECURRING_ACTIVITIES,
+  TUTORIAL_ALLOCATIONS,
+  TUTORIAL_OCCURRENCES,
+  STUDY_BLOCK_TEMPLATE,
+  WEEK_BUDGET,
+} from './recurring/timetableSeed';
 export { bootstrapSemester2, isBootstrapped, type BootstrapResult } from './seed/bootstrap';
 export {
   BOOTSTRAP_SOURCE_LABEL,

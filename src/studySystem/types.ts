@@ -252,6 +252,89 @@ export interface SessionCompletion {
   notCompletedReason?: CouldNotCompleteReason | null;
 }
 
+// --- Recurring timetable layer (Phase D) ----------------------------------------
+
+export type RecurringActivityType = 'lecture' | 'practical' | 'async' | 'optional_qa' | 'support';
+
+/** A recurring timetable commitment (Nicole's confirmed personal MySUN schedule). */
+export interface RecurringActivity {
+  id: string;            // stable recurrence id
+  moduleId: string;
+  activityType: RecurringActivityType;
+  dayOfWeek: number;     // 1 = Monday … 7 = Sunday (ISO)
+  startTime: string;
+  endTime: string;
+  venue?: string | null;
+  required: boolean;
+  weight: number;        // Daily-Completion weight (lecture/practical = 1; optional = 0)
+  validFrom: string;     // ISO date
+  validUntil?: string | null;
+  source: string;
+  notes?: string;
+}
+
+/** A tutorial ALLOCATION — who/group/day/time/venue. Separate from OCCURRENCE. */
+export interface TutorialAllocation {
+  id: string;
+  moduleId: string;
+  group: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  venue?: string | null; // may be null / TBC
+  source: string;
+  notes?: string;
+}
+
+export type TutorialOccurrenceStatus = 'CONFIRMED_ACTIVE' | 'CONFIRMED_NOT_ACTIVE' | 'TBC';
+
+/** Whether a given tutorial allocation actually runs in a given week. */
+export interface TutorialOccurrence {
+  id: string;            // `${allocationId}:${weekId}`
+  allocationId: string;
+  weekId: string;
+  status: TutorialOccurrenceStatus;
+  source: string;
+}
+
+/** A week-agnostic study-block time slot; the generator stamps dates onto it. */
+export interface StudyBlockTemplate {
+  id: string;            // stable template id
+  moduleId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  plannedMinutes: number;
+  linkedAssessmentId?: string | null;
+}
+
+export type VerificationKind = 'tutorial_tbc' | 'conflict' | 'content_tbc' | 'allocation_check';
+
+/** A TBC / action item surfaced by week generation (a lightweight inbox). */
+export interface VerificationItem {
+  id: string;            // deterministic per week
+  weekId: string;
+  kind: VerificationKind;
+  moduleId?: string;
+  title: string;
+  detail?: string;
+  status: 'open' | 'resolved';
+  createdAt: string;
+}
+
+export type ConflictSeverity = 'hard' | 'soft';
+
+/** A detected schedule conflict (never auto-resolved). */
+export interface WeekConflict {
+  id: string;
+  weekId: string;
+  date: string;
+  aLabel: string;
+  bLabel: string;
+  severity: ConflictSeverity;
+  reason: string;
+}
+
 export interface AppState {
   schemaVersion: number;
   currentWeekId: string | null;

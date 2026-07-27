@@ -28,6 +28,10 @@ export const BACKUP_KEYS = [
   'baccllb-ss-app-state',
   'baccllb-ss-active-session',
   'baccllb-ss-pending-session',
+  'baccllb-ss-recurring-activities',
+  'baccllb-ss-tutorial-allocations',
+  'baccllb-ss-tutorial-occurrences',
+  'baccllb-ss-verification-items',
 ];
 
 export const LOCAL_CLASS_LOG_KEY = 'baccllb-class-log';

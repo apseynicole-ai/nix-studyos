@@ -5,6 +5,7 @@ import Navbar from './components/layout/Navbar';
 
 const Today = lazy(() => import('./pages/Today'));
 const ActivityLog = lazy(() => import('./pages/ActivityLog'));
+const WeekReset = lazy(() => import('./pages/WeekReset'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Modules = lazy(() => import('./pages/Modules'));
 const Tasks = lazy(() => import('./pages/Tasks'));
@@ -28,6 +29,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Today />} />
                 <Route path="/activity-log" element={<ActivityLog />} />
+                <Route path="/week" element={<WeekReset />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/modules" element={<Modules />} />
                 <Route path="/tasks" element={<Tasks />} />

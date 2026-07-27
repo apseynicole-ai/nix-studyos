@@ -18,6 +18,7 @@ import {
   weeklyPlansRepo,
 } from '../repositories';
 import { STUDY_SYSTEM_SCHEMA_VERSION } from '../store';
+import { seedRecurringBase } from '../recurring/weekGenerator';
 import {
   ACTIVE_WEEK_ID,
   BOOTSTRAP_SOURCE_LABEL,
@@ -50,6 +51,7 @@ export function bootstrapSemester2(): BootstrapResult {
   scheduledActivitiesRepo.upsertMany(WEEK15_SCHEDULED_ACTIVITIES);
   studyBlocksRepo.upsertMany(WEEK15_STUDY_BLOCKS);
   weeklyPlansRepo.upsertMany([WEEK15_PLAN]);
+  seedRecurringBase(); // Phase D recurring timetable base (idempotent)
 
   const bootstrappedAt = new Date().toISOString();
   appStateRepo.update(

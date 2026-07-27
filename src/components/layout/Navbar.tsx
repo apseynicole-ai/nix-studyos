@@ -15,6 +15,7 @@ import {
   NotebookPen,
   CalendarCheck,
   History,
+  CalendarRange,
 } from 'lucide-react';
 import { signOutUser } from '../../lib/firebase';
 import { useAuth } from '../auth/AuthGuard';
@@ -22,6 +23,7 @@ import { useAuth } from '../auth/AuthGuard';
 const navItems = [
   { to: '/', icon: <CalendarCheck size={21} />, label: 'Today', end: true },
   { to: '/activity-log', icon: <History size={21} />, label: 'Log' },
+  { to: '/week', icon: <CalendarRange size={21} />, label: 'Week' },
   { to: '/dashboard', icon: <LayoutDashboard size={21} />, label: 'Progress' },
   { to: '/modules', icon: <BookOpen size={21} />, label: 'Modules' },
   { to: '/tasks', icon: <CheckSquare size={21} />, label: 'Tasks' },

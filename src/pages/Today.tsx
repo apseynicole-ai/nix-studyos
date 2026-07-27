@@ -18,6 +18,7 @@ import {
   elapsedSeconds,
   logUnplannedActivity,
   dailyCompletion,
+  ensureUpcomingWeeks,
   SessionConflictError,
   type Module,
   type SessionCompletion,
@@ -40,9 +41,12 @@ const Today: React.FC = () => {
   const [banner, setBanner] = useState<string | null>(null);
   const [pendingOpen, setPendingOpen] = useState(false);
 
-  // One-time bootstrap so the reference layer exists (idempotent).
+  // One-time bootstrap so the reference layer exists (idempotent), then ensure the current
+  // and next teaching weeks are generated so the app never expires after Week 15.
   useEffect(() => {
     if (!isBootstrapped()) bootstrapSemester2();
+    const names = new Map(modulesRepo.read().map((m) => [m.id, m.shortName] as const));
+    ensureUpcomingWeeks(localTodayISO(), (id) => names.get(id) ?? id);
     if (getPendingSession()) setPendingOpen(true);
     setRefresh((n) => n + 1);
   }, []);
