@@ -22,15 +22,15 @@ const D = {
 } as const;
 
 export const SEMESTER2_MODULES: Module[] = [
-  { id: 'foundations178', code: 'FOL178', name: 'Foundations of Law 178', shortName: 'Foundations', area: 'Law', semester: 'Year', defaultWeeklyMinutes: 225, target: 70, active: true, colour: 'from-lime-200 to-stone-100' },
-  { id: 'finacc178', code: 'FAC178', name: 'Financial Accounting 178', shortName: 'FinAcc', area: 'Accounting', semester: 'Year', defaultWeeklyMinutes: 180, target: 70, active: true, colour: 'from-emerald-200 to-lime-100' },
-  { id: 'conlaw178', code: 'CON178', name: 'Introduction to Constitutional Law & Statutory Interpretation 178', shortName: 'Con Law', area: 'Law', semester: 'Year', defaultWeeklyMinutes: 165, target: 70, active: true, colour: 'from-violet-200 to-fuchsia-100' },
-  { id: 'lawpersons144', code: 'LPR144', name: 'Law of Persons 144', shortName: 'Law of Persons', area: 'Law', semester: 'S2', defaultWeeklyMinutes: 180, target: 70, active: true, colour: 'from-orange-200 to-amber-100' },
-  { id: 'econ144', code: 'ECO144', name: 'Economics 144', shortName: 'Economics', area: 'Economics', semester: 'S2', defaultWeeklyMinutes: 180, target: 70, active: true, colour: 'from-sky-200 to-cyan-100', predecessorId: 'econ114' },
-  { id: 'sds188', code: 'SDS188', name: 'Statistics & Data Science 188', shortName: 'Statistics', area: 'Quantitative', semester: 'S2', defaultWeeklyMinutes: 120, target: 70, active: true, colour: 'from-indigo-200 to-cyan-100' },
-  { id: 'toi142', code: 'TOI142', name: 'Theory of Interest 142', shortName: 'Theory of Interest', area: 'Quantitative', semester: 'S2', defaultWeeklyMinutes: 120, target: 70, active: true, colour: 'from-rose-200 to-pink-100' },
-  { id: 'dla142', code: 'DLA142', name: 'DLA 142 (Xero)', shortName: 'DLA 142', area: 'Digital', semester: 'S2', defaultWeeklyMinutes: 75, target: 70, active: true, colour: 'from-teal-200 to-emerald-100', predecessorId: 'dla112' },
-  { id: 'dla152', code: 'DLA152', name: 'DLA 152 (Excel)', shortName: 'DLA 152', area: 'Digital', semester: 'S2', defaultWeeklyMinutes: 75, target: 70, active: true, colour: 'from-cyan-200 to-teal-100', predecessorId: 'dla122' },
+  { id: 'foundations178', code: 'FOL178', name: 'Foundations of Law 178', shortName: 'Foundations', area: 'Law', semester: 'Year', defaultWeeklyMinutes: 225, active: true, colour: 'from-lime-200 to-stone-100' },
+  { id: 'finacc178', code: 'FAC178', name: 'Financial Accounting 178', shortName: 'FinAcc', area: 'Accounting', semester: 'Year', defaultWeeklyMinutes: 180, active: true, colour: 'from-emerald-200 to-lime-100' },
+  { id: 'conlaw178', code: 'CON178', name: 'Introduction to Constitutional Law & Statutory Interpretation 178', shortName: 'Con Law', area: 'Law', semester: 'Year', defaultWeeklyMinutes: 165, active: true, colour: 'from-violet-200 to-fuchsia-100' },
+  { id: 'lawpersons144', code: 'LPR144', name: 'Law of Persons 144', shortName: 'Law of Persons', area: 'Law', semester: 'S2', defaultWeeklyMinutes: 180, active: true, colour: 'from-orange-200 to-amber-100' },
+  { id: 'econ144', code: 'ECO144', name: 'Economics 144', shortName: 'Economics', area: 'Economics', semester: 'S2', defaultWeeklyMinutes: 180, active: true, colour: 'from-sky-200 to-cyan-100', predecessorId: 'econ114' },
+  { id: 'sds188', code: 'SDS188', name: 'Statistics & Data Science 188', shortName: 'Statistics', area: 'Quantitative', semester: 'S2', defaultWeeklyMinutes: 120, active: true, colour: 'from-indigo-200 to-cyan-100' },
+  { id: 'toi142', code: 'TOI142', name: 'Theory of Interest 142', shortName: 'Theory of Interest', area: 'Quantitative', semester: 'S2', defaultWeeklyMinutes: 120, active: true, colour: 'from-rose-200 to-pink-100' },
+  { id: 'dla142', code: 'DLA142', name: 'DLA 142 (Xero)', shortName: 'DLA 142', area: 'Digital', semester: 'S2', defaultWeeklyMinutes: 75, active: true, colour: 'from-teal-200 to-emerald-100', predecessorId: 'dla112' },
+  { id: 'dla152', code: 'DLA152', name: 'DLA 152 (Excel)', shortName: 'DLA 152', area: 'Digital', semester: 'S2', defaultWeeklyMinutes: 75, active: true, colour: 'from-cyan-200 to-teal-100', predecessorId: 'dla122' },
 ];
 
 const SRC = 'ASSESSMENT_MASTER_REGISTER.md (reconciled 27 Jul 2026)';
@@ -124,11 +124,11 @@ function sb(p: Omit<StudyBlock, 'weight' | 'isIndependentObligation'> & { indepe
 
 export const WEEK15_STUDY_BLOCKS: StudyBlock[] = [
   // Monday
-  sb({ id: 'sb-mon-econ', moduleId: 'econ144', date: D.mon, startTime: '13:15', endTime: '14:15', plannedMinutes: 60, taskText: 'CORE Unit 1 models; draw labour-market / real-wage diagram from memory ×2' }),
+  sb({ id: 'sb-mon-econ', moduleId: 'econ144', date: D.mon, startTime: '13:15', endTime: '14:00', plannedMinutes: 45, taskText: 'CORE Unit 1 models; draw labour-market / real-wage diagram from memory ×2' }),
   sb({ id: 'sb-mon-found', moduleId: 'foundations178', date: D.mon, startTime: '18:30', endTime: '19:30', plannedMinutes: 60, taskText: 'Theme 8 — Evans-Jones pp 9–15; 5-line summary from memory + start learning questions' }),
   sb({ id: 'sb-mon-lop', moduleId: 'lawpersons144', date: D.mon, startTime: '19:45', endTime: '20:30', plannedMinutes: 45, taskText: 'Read the current study-guide section (Study Unit 1); notes + 3 retrieval questions' }),
   // Tuesday
-  sb({ id: 'sb-tue-stats', moduleId: 'sds188', date: D.tue, startTime: '11:15', endTime: '12:00', plannedMinutes: 45, taskText: "This chapter's tutorial problems in Excel (before Thu practical)" }),
+  sb({ id: 'sb-tue-stats', moduleId: 'sds188', date: D.tue, startTime: '11:15', endTime: '12:15', plannedMinutes: 60, taskText: "This chapter's tutorial problems in Excel (before Thu practical)" }),
   sb({ id: 'sb-tue-finacc', moduleId: 'finacc178', date: D.tue, startTime: '13:00', endTime: '14:00', plannedMinutes: 60, taskText: 'IAS 2 Inventory: revise Examples 9–13; closed-book attempt Q4/Q4b; read theory no. 7; review Recording 4 (NB). Attempt → mark.' }),
   sb({ id: 'sb-tue-toi', moduleId: 'toi142', date: D.tue, startTime: '15:00', endTime: '16:00', plannedMinutes: 60, taskText: 'EMSLearn §1.3.2–1.4 on HP 10bII+; complete weekly AF before 16:00 (aim ≥50%)', independent: true }),
   // Wednesday
@@ -146,21 +146,23 @@ export const WEEK15_STUDY_BLOCKS: StudyBlock[] = [
   // Saturday
   sb({ id: 'sb-sat-finacc', moduleId: 'finacc178', date: D.sat, startTime: '09:00', endTime: '10:00', plannedMinutes: 60, taskText: 'IAS 2 Inventory: assignment Question 22 + Question 3; revise the week (esp. NRV). Attempt → mark → diagnose → redo.' }),
   sb({ id: 'sb-sat-conlaw', moduleId: 'conlaw178', date: D.sat, startTime: '10:15', endTime: '11:15', plannedMinutes: 60, taskText: 'Answer 3 Theme-1 study-guide questions closed-book' }),
-  sb({ id: 'sb-sat-stats', moduleId: 'sds188', date: D.sat, startTime: '11:30', endTime: '12:15', plannedMinutes: 45, taskText: "Reproduce this week's Excel functions from memory; finish tutorial problems" }),
-  sb({ id: 'sb-sat-lop-quiz', moduleId: 'lawpersons144', date: D.sat, startTime: '14:30', endTime: '15:30', plannedMinutes: 60, taskText: 'Take the Study Unit 1 quiz (1 h; closes Sun 2 Aug 23:59; highest grade)', independent: true }),
+  sb({ id: 'sb-sat-stats', moduleId: 'sds188', date: D.sat, startTime: '11:30', endTime: '12:30', plannedMinutes: 60, taskText: "Reproduce this week's Excel functions from memory; finish tutorial problems" }),
+  sb({ id: 'sb-sat-lop-quiz', moduleId: 'lawpersons144', date: D.sat, startTime: '14:30', endTime: '15:30', plannedMinutes: 60, taskText: 'Take the Study Unit 1 quiz (1 h; closes Sun 2 Aug 23:59; highest grade)', independent: true, linkedAssessmentId: 'lawpersons144-SU1-quiz' }),
   sb({ id: 'sb-sat-econ', moduleId: 'econ144', date: D.sat, startTime: '15:45', endTime: '16:30', plannedMinutes: 45, taskText: 'Write "why involuntary unemployment exists" in own words + redo remaining wrong Qs' }),
   sb({ id: 'sb-sat-toi', moduleId: 'toi142', date: D.sat, startTime: '16:45', endTime: '17:15', plannedMinutes: 30, taskText: "Redo this week's tutorial problems unaided on the HP 10bII+" }),
   // Sunday
   sb({ id: 'sb-sun-found-1', moduleId: 'foundations178', date: D.sun, startTime: '09:00', endTime: '09:45', plannedMinutes: 45, taskText: 'Start the Semester-1 recall list (can / can\'t recall)' }),
   sb({ id: 'sb-sun-found-2', moduleId: 'foundations178', date: D.sun, startTime: '10:00', endTime: '10:45', plannedMinutes: 45, taskText: 'Retrieval on 3 weakest recall-list items + 2 whole-year gap-questions' }),
-  sb({ id: 'sb-sun-lop', moduleId: 'lawpersons144', date: D.sun, startTime: '11:00', endTime: '11:45', plannedMinutes: 45, taskText: 'Closed-book: answer remaining retrieval questions from the week' }),
-  sb({ id: 'sb-sun-econ', moduleId: 'econ144', date: D.sun, startTime: '14:00', endTime: '14:45', plannedMinutes: 45, taskText: 'CORE Unit 1 review + one more graph from memory' }),
-  sb({ id: 'sb-sun-dla152', moduleId: 'dla152', date: D.sun, startTime: '15:00', endTime: '15:45', plannedMinutes: 45, taskText: 'Start the A1 project scaffold workbook (early start, not polishing)' }),
+  sb({ id: 'sb-sun-lop', moduleId: 'lawpersons144', date: D.sun, startTime: '11:00', endTime: '11:30', plannedMinutes: 30, taskText: 'Closed-book: answer remaining retrieval questions from the week' }),
+  sb({ id: 'sb-sun-toi', moduleId: 'toi142', date: D.sun, startTime: '11:45', endTime: '12:15', plannedMinutes: 30, taskText: 'Extra Theory of Interest practice: redo a mixed set unaided on the HP 10bII+' }),
+  sb({ id: 'sb-sun-econ', moduleId: 'econ144', date: D.sun, startTime: '14:00', endTime: '14:30', plannedMinutes: 30, taskText: 'CORE Unit 1 review + one more graph from memory' }),
+  sb({ id: 'sb-sun-dla152', moduleId: 'dla152', date: D.sun, startTime: '15:00', endTime: '15:30', plannedMinutes: 30, taskText: 'Start the A1 project scaffold workbook (early start, not polishing)' }),
 ];
 
-// Budget table (planning baseline). NB: the per-module daily-block sums differ slightly
-// from this table in the source (e.g. daily plan gives LoP 195 / Econ 210 vs budget 180),
-// but BOTH reconcile to the 1320-minute (22.0 h) weekly total. Preserved as-is, not "fixed".
+// Budget table (deliberate per-module Week 15 budget, 22.0 h). Phase C.1: the study blocks
+// above were adjusted so that for EVERY module sum(StudyBlock.plannedMinutes) EXACTLY equals
+// perModuleBudgetMinutes[module] (enforced by a test), while preserving the 1320-minute total,
+// day loads, live academic tasks, and no time overlaps.
 export const WEEK15_PLAN: WeeklyPlan = {
   id: ACTIVE_WEEK_ID,
   weekStart: D.mon,

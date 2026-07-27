@@ -125,13 +125,14 @@ describe('bootstrapSemester2', () => {
 
   it('preserves a user-added reference record while updating seeded ones', () => {
     bootstrapSemester2();
-    modulesRepo.upsert({ ...modulesRepo.getById('foundations178')!, target: 88 });
-    modulesRepo.upsert({ id: 'custom-mod', code: 'X', name: 'Custom', shortName: 'X', area: 'Personal', semester: 'S2', defaultWeeklyMinutes: 0, target: 50, active: true, colour: '' });
+    modulesRepo.upsert({ ...modulesRepo.getById('foundations178')!, defaultWeeklyMinutes: 999 });
+    modulesRepo.upsert({ id: 'custom-mod', code: 'X', name: 'Custom', shortName: 'X', area: 'Personal', semester: 'S2', defaultWeeklyMinutes: 0, active: true, colour: '' });
 
     bootstrapSemester2(); // re-seed
 
     // seeded module reset to seed value, custom user module retained
-    expect(modulesRepo.getById('foundations178')!.target).toBe(70);
+    expect(modulesRepo.getById('foundations178')!.defaultWeeklyMinutes).toBe(225);
+    expect(modulesRepo.getById('foundations178')!.target == null).toBe(true);
     expect(modulesRepo.getById('custom-mod')).toBeDefined();
     expect(modulesRepo.read()).toHaveLength(10);
   });

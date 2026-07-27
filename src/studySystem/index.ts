@@ -9,6 +9,10 @@ export * from './attendance';
 export * from './session';
 export * from './dayView';
 export * from './logView';
+export * from './dailyCompletion';
+export * from './studyTime';
+export * from './moduleWeekly';
+export * from './moduleStatus';
 export { bootstrapSemester2, isBootstrapped, type BootstrapResult } from './seed/bootstrap';
 export {
   BOOTSTRAP_SOURCE_LABEL,

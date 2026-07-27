@@ -5,7 +5,7 @@
 // (guard against a second START and against a duplicate for another module). Elapsed minutes
 // are stored EXACT (spec §1B); display rounding happens elsewhere.
 
-import { activeSessionRepo, pendingSessionRepo, studySessionsRepo } from './repositories';
+import { activeSessionRepo, assessmentsRepo, pendingSessionRepo, studyBlocksRepo, studySessionsRepo, weeklyPlansRepo } from './repositories';
 import { createTask } from './tasks';
 import type {
   ActiveSession,
@@ -14,8 +14,28 @@ import type {
   StudySession,
   StudyLocation,
   StudySessionStatus,
+  TaskPriority,
   TaskSource,
 } from './types';
+
+const H48_MS = 48 * 60 * 60 * 1000;
+
+/** Locked follow-up escalation (spec §3/§15.5): P1 when a module assessment/submission is due
+ *  within 48 h of the session; otherwise the P2 default. */
+export function followUpPriority(moduleId: string, onDate: string): TaskPriority {
+  const anchor = Date.parse(`${onDate}T00:00:00`);
+  const dueSoon = assessmentsRepo.read().some((a) => {
+    if (a.moduleId !== moduleId || !a.date) return false;
+    const due = Date.parse(`${a.date}T23:59:59`);
+    return due >= anchor && due - anchor <= H48_MS;
+  });
+  return dueSoon ? 'P1' : 'P2';
+}
+
+function currentWeekId(): string | null {
+  const plans = weeklyPlansRepo.read();
+  return plans.length ? plans[plans.length - 1].id : null;
+}
 
 function newId(prefix: string): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return `${prefix}-${crypto.randomUUID()}`;
@@ -96,15 +116,18 @@ export function discardPendingSession(): void {
 
 function persistSession(session: StudySession, completion: SessionCompletion): StudySession {
   studySessionsRepo.upsert(session);
-  // Follow-up capture (spec §3 / §15.5): defaults MUST DO / P2. AI may later propose otherwise.
+  // Follow-up capture (spec §3 / §15.5): default MUST DO / P2, escalated to P1 when due ≤48h.
   if (completion.followUpRequired && completion.followUpText?.trim()) {
+    const block = session.studyBlockId ? studyBlocksRepo.getById(session.studyBlockId) : undefined;
     createTask({
       moduleId: session.moduleId,
       title: completion.followUpText.trim(),
       category: 'MUST_DO',
-      priority: 'P2',
+      priority: followUpPriority(session.moduleId, session.date),
       source: 'study_followup',
       linkedStudyBlockId: session.studyBlockId,
+      linkedAssessmentId: block?.linkedAssessmentId ?? null,
+      plannedWeekId: currentWeekId(),
     });
   }
   return session;

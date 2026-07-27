@@ -68,8 +68,9 @@ export interface Module {
   semester: Semester;
   /** Nominal per-week private-study budget in minutes (WeeklyPlan overrides per week). */
   defaultWeeklyMinutes: number;
-  /** User-tunable planning target (%). Default, not a sourced academic fact. */
-  target: number;
+  /** User-chosen planning target (%). Optional — NOT seeded, not an authoritative academic
+   *  fact. Absent unless Nicole sets it in preferences. */
+  target?: number | null;
   active: boolean;
   colour: string;
   /** Cross-semester continuity pointer (e.g. S1 predecessor id), for reference only. */
@@ -124,6 +125,9 @@ export interface StudyBlock {
   /** The block's purpose/output (spec §1A dedup anchor). */
   taskText: string;
   linkedTaskId?: string | null;
+  /** When set, this block is the planned work for an assessment/milestone; completing it
+   *  satisfies that obligation so the assessment is not counted again on its due date (§2.3). */
+  linkedAssessmentId?: string | null;
   /** Locked Daily-Completion weight for a planned private-study block (spec §1A) = 2. */
   weight: number;
   /** Drives §1A deduplication — true only when it is an obligation beyond the block. */
@@ -191,6 +195,10 @@ export interface StudyTask {
   createdAt: string;
   completedAt?: string | null;
   linkedStudyBlockId?: string | null;
+  linkedAssessmentId?: string | null;
+  /** Explicit current-week association (e.g. "2026-W15"). Null/absent = not week-assigned;
+   *  week membership then falls back to due date / linked block (spec §4.1 current-week scope). */
+  plannedWeekId?: string | null;
   carriedOver: boolean;
   carryOverFromId?: string | null;
   why?: string;

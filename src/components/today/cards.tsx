@@ -14,12 +14,16 @@ const STATE_BADGE: Record<string, string> = {
 
 export function DailyHeader({
   dateLabel,
+  dailyPercent,
+  bonusWork,
   actualMinutes,
   plannedMinutes,
   doneCount,
   totalCount,
 }: {
   dateLabel: string;
+  dailyPercent: number | null;
+  bonusWork: number;
   actualMinutes: number;
   plannedMinutes: number;
   doneCount: number;
@@ -29,21 +33,40 @@ export function DailyHeader({
   return (
     <header className="mb-6">
       <p className="page-kicker mb-1">Today</p>
-      <h1 className="font-display text-3xl md:text-4xl text-stellenbosch-maroon leading-tight mb-5">{dateLabel}</h1>
+      <h1 className="font-display text-3xl md:text-4xl text-stellenbosch-maroon leading-tight mb-4">{dateLabel}</h1>
 
-      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
-        <div className="flex items-baseline justify-between mb-1">
-          <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-slate-400">Private study</span>
-          <span className="text-sm font-bold text-slate-700 tabular-nums">
-            {formatDurationDisplay(actualMinutes)} <span className="text-slate-300">/</span> {formatDurationDisplay(plannedMinutes)}
-          </span>
+      <div className="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm space-y-4">
+        {/* Indicator 1 — weighted Daily Completion (§1A). Separate from Private Study. */}
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-slate-400">Daily completion</span>
+            <span className="text-sm font-bold text-stellenbosch-maroon tabular-nums">
+              {dailyPercent === null ? '—' : `${dailyPercent}%`}
+              <span className="ml-1 font-normal text-slate-400">of today’s plan</span>
+            </span>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full rounded-full maroon-gradient transition-all" style={{ width: `${dailyPercent ?? 0}%` }} />
+          </div>
         </div>
-        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-          <div className="h-full rounded-full maroon-gradient transition-all" style={{ width: `${studyPct}%` }} />
+
+        {/* Indicator 2 — Private Study time (§1B). */}
+        <div>
+          <div className="flex items-baseline justify-between mb-1">
+            <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-slate-400">Private study</span>
+            <span className="text-sm font-bold text-slate-700 tabular-nums">
+              {formatDurationDisplay(actualMinutes)} <span className="text-slate-300">/</span> {formatDurationDisplay(plannedMinutes)}
+            </span>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+            <div className="h-full rounded-full bg-emerald-500/80 transition-all" style={{ width: `${studyPct}%` }} />
+          </div>
         </div>
-        <p className="mt-3 text-xs text-slate-400">
-          {doneCount} of {totalCount} planned items done today
-        </p>
+
+        <div className="flex items-center justify-between text-xs text-slate-400">
+          <span>{doneCount} of {totalCount} acted on</span>
+          {bonusWork > 0 && <span className="font-bold text-amber-600">BONUS WORK: {bonusWork} {bonusWork === 1 ? 'ACTIVITY' : 'ACTIVITIES'}</span>}
+        </div>
       </div>
     </header>
   );

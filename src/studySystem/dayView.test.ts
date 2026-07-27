@@ -62,9 +62,9 @@ describe('buildDayFeed', () => {
 
 describe('buildDaySummary (private study actual vs planned)', () => {
   it('sums planned block minutes and exact actual minutes (incl. unplanned)', () => {
-    // Monday planned blocks: econ 60 + found 60 + lop 45 = 165
+    // Monday planned blocks (Phase C.1 budget fix): econ 45 + found 60 + lop 45 = 150
     const before = buildDaySummary(MON);
-    expect(before.plannedStudyMinutes).toBe(165);
+    expect(before.plannedStudyMinutes).toBe(150);
     expect(before.actualStudyMinutes).toBe(0);
 
     startSession({ moduleId: 'foundations178', studyBlockId: 'sb-mon-found' }, T0);

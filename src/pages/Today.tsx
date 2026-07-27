@@ -17,6 +17,7 @@ import {
   getPendingSession,
   elapsedSeconds,
   logUnplannedActivity,
+  dailyCompletion,
   SessionConflictError,
   type Module,
   type SessionCompletion,
@@ -24,6 +25,7 @@ import {
 } from '../studySystem';
 import { ClassCard, DailyHeader, StudyCard } from '../components/today/cards';
 import { LogActivitySheet, PostSessionSheet } from '../components/today/sheets';
+import { ModuleProgressList } from '../components/today/moduleProgress';
 
 function localTodayISO(): string {
   const d = new Date();
@@ -70,6 +72,7 @@ const Today: React.FC = () => {
 
   const feed = useMemo(() => buildDayFeed(date), [date, refresh, now]);
   const summary = useMemo(() => buildDaySummary(date), [date, refresh]);
+  const completion = useMemo(() => dailyCompletion(date), [date, refresh]);
   const pending = getPendingSession();
 
   const doneCount = feed.filter((i) => i.state === 'COMPLETED' || i.state === 'PARTIALLY_COMPLETED').length;
@@ -135,6 +138,8 @@ const Today: React.FC = () => {
 
       <DailyHeader
         dateLabel={dateLabel}
+        dailyPercent={completion.percent}
+        bonusWork={completion.bonusWork}
         actualMinutes={summary.actualStudyMinutes}
         plannedMinutes={summary.plannedStudyMinutes}
         doneCount={doneCount}
@@ -179,6 +184,8 @@ const Today: React.FC = () => {
       >
         <Plus size={17} /> Log activity
       </button>
+
+      <ModuleProgressList today={date} refreshKey={refresh} />
 
       {pendingOpen && pending && (
         <PostSessionSheet

@@ -126,7 +126,59 @@ export interface NewTaskInput {
   dueDate?: string | null;
   source?: TaskSource;
   linkedStudyBlockId?: string | null;
+  linkedAssessmentId?: string | null;
+  plannedWeekId?: string | null;
   why?: string;
+}
+
+/** A migrated legacy task is Semester-1 history — archived/read-only, never in the active S2 view. */
+export function isArchivedTask(task: StudyTask): boolean {
+  return task.source === 'legacy_migration';
+}
+
+export function listActiveTasks(): StudyTask[] {
+  return tasksRepo.read().filter((t) => !isArchivedTask(t));
+}
+
+export function listArchivedTasks(): StudyTask[] {
+  return tasksRepo.read().filter(isArchivedTask);
+}
+
+export function setTaskStatus(id: string, status: TaskStatus): StudyTask | undefined {
+  const task = tasksRepo.getById(id);
+  if (!task) return undefined;
+  const updated: StudyTask = {
+    ...task,
+    status,
+    completedAt: status === 'done' ? task.completedAt ?? new Date().toISOString() : null,
+  };
+  tasksRepo.upsert(updated);
+  return updated;
+}
+
+export interface TaskEdit {
+  title?: string;
+  moduleId?: string;
+  category?: TaskCategory;
+  priority?: TaskPriority;
+  dueDate?: string | null;
+  why?: string;
+}
+
+export function updateTaskFields(id: string, patch: TaskEdit): StudyTask | undefined {
+  const task = tasksRepo.getById(id);
+  if (!task) return undefined;
+  const updated: StudyTask = {
+    ...task,
+    ...patch,
+    title: patch.title !== undefined ? patch.title.trim() : task.title,
+  };
+  tasksRepo.upsert(updated);
+  return updated;
+}
+
+export function deleteTask(id: string): void {
+  tasksRepo.remove(id);
 }
 
 export function createTask(input: NewTaskInput): StudyTask {
@@ -143,6 +195,8 @@ export function createTask(input: NewTaskInput): StudyTask {
     createdAt: now,
     completedAt: null,
     linkedStudyBlockId: input.linkedStudyBlockId ?? null,
+    linkedAssessmentId: input.linkedAssessmentId ?? null,
+    plannedWeekId: input.plannedWeekId ?? null,
     carriedOver: false,
     why: input.why,
   };
