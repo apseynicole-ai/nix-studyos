@@ -24,6 +24,7 @@ import {
   type StudyBlock,
   type StudyTask,
   type VerificationItem,
+  type WeeklyPlan,
 } from '../studySystem';
 
 const KIND_TONE: Record<string, string> = {
@@ -32,6 +33,27 @@ const KIND_TONE: Record<string, string> = {
   content_tbc: 'border-slate-200 bg-slate-50 text-slate-500',
   allocation_check: 'border-sky-200 bg-sky-50 text-sky-700',
 };
+
+export function selectCurrentWeekVerificationItems(
+  items: VerificationItem[],
+  currentWeekId: string | null,
+): VerificationItem[] {
+  if (!currentWeekId) return [];
+  return items.filter((v) => v.weekId === currentWeekId && v.status === 'open' && v.kind !== 'content_tbc');
+}
+
+export function detectCurrentPlanConflicts(
+  currentPlan: WeeklyPlan | undefined,
+  moduleName?: (id: string) => string,
+) {
+  if (!currentPlan) return [];
+  return detectWeekConflicts(
+    currentPlan.id,
+    currentPlan.weekStart,
+    currentPlan.weekEnd,
+    moduleName,
+  );
+}
 
 const WeekReset: React.FC = () => {
   const today = localTodayISO();
@@ -83,16 +105,14 @@ const WeekReset: React.FC = () => {
   };
 
   const verification = useMemo(() => {
-    const ids = [currentWeekId, nextWeekId].filter(Boolean) as string[];
-    return verificationItemsRepo.read().filter((v: VerificationItem) => ids.includes(v.weekId) && v.status === 'open' && v.kind !== 'content_tbc');
+    return selectCurrentWeekVerificationItems(verificationItemsRepo.read(), currentWeekId);
     // content_tbc is noisy for all 9 modules; surface tutorial/conflict/allocation here.
-  }, [refresh, currentWeekId, nextWeekId]);
+  }, [refresh, currentWeekId]);
 
   const conflicts = useMemo(() => {
-    if (!nextPlan) return [];
-    return detectWeekConflicts(nextPlan.id, nextPlan.weekStart, nextPlan.weekEnd, moduleName);
+    return detectCurrentPlanConflicts(currentPlan, moduleName);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refresh, nextPlan?.id]);
+  }, [refresh, currentPlan]);
 
   const carried = useMemo(() => tasksRepo.read().filter((t: StudyTask) => t.carriedOver && t.status !== 'done'), [refresh]);
 
