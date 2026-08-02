@@ -15,6 +15,23 @@ export const BACKUP_KEYS = [
   'baccllb-topic-mastery',
   'baccllb-mistake-bank',
   'baccllb-class-log',
+  // Study System (Phase A) stores — reference + transactional layers.
+  'baccllb-ss-modules',
+  'baccllb-ss-assessments',
+  'baccllb-ss-scheduled-activities',
+  'baccllb-ss-study-blocks',
+  'baccllb-ss-weekly-plans',
+  'baccllb-ss-study-sessions',
+  'baccllb-ss-activity-log',
+  'baccllb-ss-tasks',
+  'baccllb-ss-data-change-audit',
+  'baccllb-ss-app-state',
+  'baccllb-ss-active-session',
+  'baccllb-ss-pending-session',
+  'baccllb-ss-recurring-activities',
+  'baccllb-ss-tutorial-allocations',
+  'baccllb-ss-tutorial-occurrences',
+  'baccllb-ss-verification-items',
 ];
 
 export const LOCAL_CLASS_LOG_KEY = 'baccllb-class-log';
