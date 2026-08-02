@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarClock, ArrowRight, Check, X, RefreshCw } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { AlertTriangle, CalendarClock, ArrowRight, BookOpen, Check, Save, X, RefreshCw } from 'lucide-react';
 import {
   modulesRepo,
+  studyBlocksRepo,
   verificationItemsRepo,
   tasksRepo,
   resolveWeekPlan,
@@ -10,12 +12,16 @@ import {
   ensureWeek,
   weeklyPlansRepo,
   detectWeekConflicts,
+  canRunWeeklyReset,
   runWeeklyReset,
+  isPlaceholderStudyTask,
+  updateStudyBlockTaskText,
   suggestSlot,
   acceptCarryOverSlot,
   leaveUnscheduled,
   localTodayISO,
   type Module,
+  type StudyBlock,
   type StudyTask,
   type VerificationItem,
 } from '../studySystem';
@@ -30,6 +36,8 @@ const KIND_TONE: Record<string, string> = {
 const WeekReset: React.FC = () => {
   const today = localTodayISO();
   const [refresh, setRefresh] = useState(0);
+  const [instructionDrafts, setInstructionDrafts] = useState<Record<string, string>>({});
+  const [instructionError, setInstructionError] = useState<string | null>(null);
   const bump = () => setRefresh((n) => n + 1);
   const modules = useMemo(() => modulesRepo.read(), [refresh]);
   const moduleName = (id: string) => modules.find((m: Module) => m.id === id)?.shortName ?? id;
@@ -48,6 +56,31 @@ const WeekReset: React.FC = () => {
   }, [nextWeekId]);
 
   const nextPlan = nextWeekId ? weeklyPlansRepo.getById(nextWeekId) : undefined;
+  const currentStudyBlocks = useMemo(() => {
+    if (!currentPlan) return [];
+    return studyBlocksRepo
+      .read()
+      .filter((block) => block.date >= currentPlan.weekStart && block.date <= currentPlan.weekEnd)
+      .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime));
+  }, [refresh, currentPlan]);
+  const placeholderCount = currentStudyBlocks.filter((block) => isPlaceholderStudyTask(block.taskText)).length;
+  const resetAllowed = currentPlan ? canRunWeeklyReset(today, currentPlan) : false;
+
+  const saveInstruction = (block: StudyBlock) => {
+    const submitted = instructionDrafts[block.id] ?? block.taskText;
+    if (!submitted.trim()) {
+      setInstructionError(block.id);
+      return;
+    }
+    const updated = updateStudyBlockTaskText(block.id, submitted);
+    if (!updated) {
+      setInstructionError(block.id);
+      return;
+    }
+    setInstructionDrafts((drafts) => ({ ...drafts, [block.id]: updated.taskText }));
+    setInstructionError(null);
+    bump();
+  };
 
   const verification = useMemo(() => {
     const ids = [currentWeekId, nextWeekId].filter(Boolean) as string[];
@@ -64,7 +97,7 @@ const WeekReset: React.FC = () => {
   const carried = useMemo(() => tasksRepo.read().filter((t: StudyTask) => t.carriedOver && t.status !== 'done'), [refresh]);
 
   const doReset = () => {
-    if (!currentWeekId || !nextWeekId) return;
+    if (!currentPlan || !currentWeekId || !nextWeekId || !canRunWeeklyReset(today, currentPlan)) return;
     if (!confirm(`Run the weekly reset from ${currentWeekId} to ${nextWeekId}? This archives the completed week and carries unfinished required work forward.`)) return;
     runWeeklyReset(currentWeekId, nextWeekId, moduleName);
     bump();
@@ -90,11 +123,72 @@ const WeekReset: React.FC = () => {
             <p className="text-xs text-emerald-600 font-bold">{nextPlan ? 'Prepared' : 'Not prepared'}</p>
           </div>
         </div>
-        <button onClick={doReset} className="mt-4 w-full flex items-center justify-center gap-2 rounded-2xl maroon-gradient py-3 text-sm font-bold text-white active:scale-95">
+        <button
+          onClick={doReset}
+          disabled={!resetAllowed}
+          className={`mt-4 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold transition ${resetAllowed ? 'maroon-gradient text-white active:scale-95' : 'cursor-not-allowed bg-slate-200 text-slate-400'}`}
+        >
           <RefreshCw size={16} /> Run weekly reset → {nextWeekId}
         </button>
-        <p className="mt-2 text-xs text-slate-400 text-center">Archives the completed week (logs preserved), carries unfinished required work forward, advances the current week.</p>
+        <p className="mt-2 text-xs text-slate-400 text-center">
+          {!currentPlan
+            ? 'Weekly reset is unavailable because there is no current weekly plan.'
+            : currentPlan.frozen || currentPlan.archivedAt
+              ? 'This weekly plan is frozen or has already been archived.'
+              : today < currentPlan.weekEnd
+                ? `Weekly reset becomes available on ${format(parseISO(currentPlan.weekEnd), 'EEEE, d MMMM')}.`
+                : 'Archives the completed week (logs preserved), carries unfinished required work forward, advances the current week.'}
+        </p>
       </div>
+
+      <section className="mb-5 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-start gap-3">
+          <BookOpen size={18} className="mt-0.5 text-stellenbosch-maroon" />
+          <div>
+            <h2 className="font-display text-xl text-stellenbosch-maroon">Plan this week’s study blocks</h2>
+            <p className={`mt-1 text-xs font-bold ${placeholderCount > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+              {placeholderCount > 0
+                ? `${placeholderCount} study block${placeholderCount === 1 ? '' : 's'} still need instructions`
+                : 'All study blocks have instructions'}
+            </p>
+          </div>
+        </div>
+
+        {currentStudyBlocks.length === 0 ? (
+          <p className="text-sm text-slate-400">No study blocks are scheduled inside the current weekly plan.</p>
+        ) : (
+          <div className="space-y-3">
+            {currentStudyBlocks.map((block) => (
+              <div key={block.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+                  <span className="font-bold text-slate-700">{format(parseISO(block.date), 'EEE d MMM')}</span>
+                  <span className="text-slate-500">{block.startTime}–{block.endTime}</span>
+                  <span className="font-bold uppercase text-stellenbosch-maroon/70">{moduleName(block.moduleId)}</span>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    value={instructionDrafts[block.id] ?? block.taskText}
+                    onChange={(event) => {
+                      setInstructionDrafts((drafts) => ({ ...drafts, [block.id]: event.target.value }));
+                      if (instructionError === block.id) setInstructionError(null);
+                    }}
+                    aria-label={`Study instruction for ${moduleName(block.moduleId)} on ${block.date}`}
+                    className={`min-w-0 flex-1 rounded-xl border bg-white px-3 py-2 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-stellenbosch-maroon/15 ${instructionError === block.id ? 'border-red-300' : 'border-slate-200'}`}
+                  />
+                  <button
+                    onClick={() => saveInstruction(block)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-stellenbosch-maroon px-4 py-2 text-xs font-bold text-white active:scale-95"
+                  >
+                    <Save size={13} /> Save
+                  </button>
+                </div>
+                {instructionError === block.id && <p className="mt-1.5 text-xs font-medium text-red-600">Enter a non-empty instruction before saving.</p>}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {conflicts.length > 0 && (
         <Section title="Conflicts — action required" icon={<AlertTriangle size={16} className="text-red-500" />}>

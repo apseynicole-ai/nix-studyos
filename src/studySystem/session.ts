@@ -5,7 +5,8 @@
 // (guard against a second START and against a duplicate for another module). Elapsed minutes
 // are stored EXACT (spec §1B); display rounding happens elsewhere.
 
-import { activeSessionRepo, assessmentsRepo, pendingSessionRepo, studyBlocksRepo, studySessionsRepo, weeklyPlansRepo } from './repositories';
+import { activeSessionRepo, assessmentsRepo, pendingSessionRepo, studyBlocksRepo, studySessionsRepo } from './repositories';
+import { resolveWeekId } from './currentWeek';
 import { createTask } from './tasks';
 import type {
   ActiveSession,
@@ -30,11 +31,6 @@ export function followUpPriority(moduleId: string, onDate: string): TaskPriority
     return due >= anchor && due - anchor <= H48_MS;
   });
   return dueSoon ? 'P1' : 'P2';
-}
-
-function currentWeekId(): string | null {
-  const plans = weeklyPlansRepo.read();
-  return plans.length ? plans[plans.length - 1].id : null;
 }
 
 function newId(prefix: string): string {
@@ -127,7 +123,7 @@ function persistSession(session: StudySession, completion: SessionCompletion): S
       source: 'study_followup',
       linkedStudyBlockId: session.studyBlockId,
       linkedAssessmentId: block?.linkedAssessmentId ?? null,
-      plannedWeekId: currentWeekId(),
+      plannedWeekId: resolveWeekId(session.date),
     });
   }
   return session;

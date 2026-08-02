@@ -7,6 +7,7 @@ export * from './s1Archive';
 export * from './display';
 export * from './attendance';
 export * from './session';
+export * from './studyBlocks';
 export * from './dayView';
 export * from './logView';
 export * from './dailyCompletion';

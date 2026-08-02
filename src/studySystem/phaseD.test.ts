@@ -12,7 +12,7 @@ import {
 } from './recurring/weekGenerator';
 import { WEEK_BUDGET, TUTORIAL_ALLOCATIONS } from './recurring/timetableSeed';
 import { detectConflicts, detectWeekConflicts } from './conflicts';
-import { runWeeklyReset, suggestSlot, acceptCarryOverSlot } from './weeklyReset';
+import { canRunWeeklyReset, runWeeklyReset, suggestSlot, acceptCarryOverSlot } from './weeklyReset';
 import { resolveWeekPlan } from './currentWeek';
 import {
   appStateRepo,
@@ -149,6 +149,19 @@ describe('week generation invariants', () => {
 });
 
 describe('Sunday reset', () => {
+  it('allows reset only on or after weekEnd for an active plan', () => {
+    const plan = { ...weeklyPlansRepo.getById('2026-W15')!, frozen: false, archivedAt: null };
+    expect(canRunWeeklyReset('2026-08-01', plan)).toBe(false);
+    expect(canRunWeeklyReset('2026-08-02', plan)).toBe(true);
+    expect(canRunWeeklyReset('2026-08-03', plan)).toBe(true);
+  });
+
+  it('rejects frozen and archived plans', () => {
+    const plan = weeklyPlansRepo.getById('2026-W15')!;
+    expect(canRunWeeklyReset(plan.weekEnd, { ...plan, frozen: true })).toBe(false);
+    expect(canRunWeeklyReset(plan.weekEnd, { ...plan, archivedAt: '2026-08-02T20:00:00.000Z' })).toBe(false);
+  });
+
   it('archives Week 15, preserves logs, advances currentWeekId, and is idempotent', () => {
     // A completed session + a could-not-complete session in W15 (preserved as history).
     const t0 = Date.parse('2026-07-28T13:00:00Z');

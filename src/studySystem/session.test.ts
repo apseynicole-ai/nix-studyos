@@ -14,7 +14,8 @@ import {
   stopSession,
   totalActualMinutesForDate,
 } from './session';
-import { studySessionsRepo, tasksRepo } from './repositories';
+import { studySessionsRepo, tasksRepo, weeklyPlansRepo } from './repositories';
+import type { WeeklyPlan } from './types';
 
 const T0 = Date.parse('2026-07-27T13:00:00.000Z');
 
@@ -74,6 +75,37 @@ describe('count-up session timer (persistence + safety)', () => {
     expect(tasks[0].source).toBe('study_followup');
     expect(tasks[0].linkedStudyBlockId).toBe('sb-tue-finacc');
     expect(tasks[0].title).toBe('Redo Q4');
+  });
+
+  it('assigns a follow-up to the week containing the session date regardless of plan insertion order', () => {
+    const currentPlan: WeeklyPlan = {
+      id: '2026-W15',
+      weekStart: '2026-07-27',
+      weekEnd: '2026-08-02',
+      objective: 'Current week',
+      perModuleBudgetMinutes: {},
+      totalPlannedMinutes: 0,
+      frozen: false,
+    };
+    const futurePlan: WeeklyPlan = {
+      ...currentPlan,
+      id: '2026-W16',
+      weekStart: '2026-08-03',
+      weekEnd: '2026-08-09',
+      objective: 'Future week',
+    };
+
+    for (const plans of [[currentPlan, futurePlan], [futurePlan, currentPlan]]) {
+      installMemoryStorage();
+      weeklyPlansRepo.write(plans);
+      startSession({ moduleId: 'finacc178', studyBlockId: 'sb-tue-finacc' }, T0);
+      stopSession(T0 + 40 * 60000);
+      completeSession({ status: 'PARTIALLY_COMPLETED', location: 'Library', followUpRequired: true, followUpText: 'Redo Q4' });
+
+      const [followUp] = tasksRepo.read();
+      expect(followUp.plannedWeekId).toBe(currentPlan.id);
+      expect(followUp.plannedWeekId).not.toBe(futurePlan.id);
+    }
   });
 
   it('does not create a task when no follow-up is required', () => {

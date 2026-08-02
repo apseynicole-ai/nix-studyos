@@ -38,6 +38,11 @@ export interface ResetResult {
   carriedOverTaskIds: string[];
 }
 
+/** A week can be archived only once its Sunday end date has arrived. */
+export function canRunWeeklyReset(today: string, plan: WeeklyPlan): boolean {
+  return today >= plan.weekEnd && !plan.frozen && !plan.archivedAt;
+}
+
 function fromWeekTask(t: StudyTask, plan: WeeklyPlan, weekBlockIds: Set<string>): boolean {
   if (t.plannedWeekId === plan.id) return true;
   if (t.dueDate && t.dueDate >= plan.weekStart && t.dueDate <= plan.weekEnd) return true;
