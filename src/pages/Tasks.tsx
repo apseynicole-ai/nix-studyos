@@ -1,3 +1,4 @@
+import { modules as legacyModules } from '../data/modules';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Pencil, Trash2, Check, Archive, RotateCcw, Link2 } from 'lucide-react';
 import {
@@ -42,6 +43,23 @@ const SOURCE_LABEL: Record<string, string> = {
   legacy_migration: 'Legacy (S1)',
 };
 
+// Snapshot metadata can be direct or preserved by the existing legacy migration.
+function isSnapshotTask(task: StudyTask): boolean {
+  const metadata = task as { source?: unknown; snapshotActionId?: unknown };
+  return [metadata, task.legacy].some((item) =>
+    item?.source === 'academic-snapshot' ||
+    (typeof item?.snapshotActionId === 'string' && item.snapshotActionId.trim().length > 0),
+  );
+}
+
+const SnapshotBadge: React.FC<{ task: StudyTask; moduleCode?: string }> = ({ task, moduleCode }) =>
+  isSnapshotTask(task) ? (
+    <>
+      <span className="rounded-full bg-stellenbosch-maroon/10 px-2 py-0.5 text-[10px] font-bold text-stellenbosch-maroon">Academic Snapshot</span>
+      {moduleCode && <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">{moduleCode}</span>}
+    </>
+  ) : null;
+
 const Tasks: React.FC = () => {
   const [tab, setTab] = useState<'active' | 'archived'>('active');
   const [refresh, setRefresh] = useState(0);
@@ -62,6 +80,17 @@ const Tasks: React.FC = () => {
   const bump = () => setRefresh((n) => n + 1);
   const modules = useMemo(() => modulesRepo.read(), [refresh]);
   const moduleName = (id: string) => modules.find((m: Module) => m.id === id)?.shortName ?? id;
+
+  const snapshotModuleCode = (task: StudyTask) => {
+    if (!isSnapshotTask(task)) return undefined;
+    const code = modules.find((m) => m.id === task.moduleId)?.code
+      ?? legacyModules.find((m) => m.id === task.moduleId)?.code;
+    if (code) return code;
+    // Unmatched snapshot module codes are retained as the legacy category.
+    const category = task.legacy?.category;
+    return typeof category === 'string' && /^[A-Z]{2,5}\s?\d{3}$/i.test(category.trim())
+      ? category.trim().toUpperCase() : undefined;
+  };
 
   const active = useMemo(() => listActiveTasks(), [refresh]);
   const archived = useMemo(() => listArchivedTasks(), [refresh]);
@@ -120,7 +149,7 @@ const Tasks: React.FC = () => {
               editingId === task.id ? (
                 <EditTaskRow key={task.id} task={task} modules={modules} onDone={() => { setEditingId(null); bump(); }} />
               ) : (
-                <TaskRow key={task.id} task={task} moduleName={moduleName(task.moduleId)}
+                <TaskRow key={task.id} task={task} moduleName={moduleName(task.moduleId)} moduleCode={snapshotModuleCode(task)}
                   onToggle={() => { setTaskStatus(task.id, task.status === 'done' ? 'open' : 'done'); bump(); }}
                   onEdit={() => setEditingId(task.id)}
                   onDelete={() => { deleteTask(task.id); bump(); }} />
@@ -133,11 +162,12 @@ const Tasks: React.FC = () => {
           <p className="mb-3 text-sm text-slate-400">Read-only Semester-1 task history (migrated; the legacy store is preserved).</p>
           {archived.length === 0 && <div className="rounded-3xl border border-dashed border-slate-200 bg-white/60 p-8 text-center text-slate-400">No archived tasks.</div>}
           {archived.map((task) => (
-            <div key={task.id} className="rounded-2xl border border-slate-100 bg-slate-50/60 p-4 opacity-80">
-              <div className="flex items-center gap-2 mb-1">
+            <div key={task.id} className={`rounded-2xl border bg-slate-50/60 p-4 opacity-80 ${isSnapshotTask(task) ? 'border-stellenbosch-maroon/20' : 'border-slate-100'}`}>
+              <div className={`flex items-center gap-2 mb-1 ${isSnapshotTask(task) ? 'flex-wrap' : ''}`}>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${CAT_TONE[task.category]}`}>{CAT_LABEL[task.category]}</span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIO_TONE[task.priority]}`}>{task.priority}</span>
                 <span className="text-[10px] font-bold uppercase text-slate-400">{moduleName(task.moduleId)}</span>
+                <SnapshotBadge task={task} moduleCode={snapshotModuleCode(task)} />
               </div>
               <p className={`font-medium ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-700'}`}>{task.title}</p>
             </div>
@@ -148,8 +178,8 @@ const Tasks: React.FC = () => {
   );
 };
 
-const TaskRow: React.FC<{ task: StudyTask; moduleName: string; onToggle: () => void; onEdit: () => void; onDelete: () => void }> = ({ task, moduleName, onToggle, onEdit, onDelete }) => (
-  <div className={`group rounded-2xl border p-4 shadow-sm ${task.status === 'done' ? 'border-slate-100 bg-slate-50 opacity-70' : 'border-slate-100 bg-white'}`}>
+const TaskRow: React.FC<{ task: StudyTask; moduleName: string; moduleCode?: string; onToggle: () => void; onEdit: () => void; onDelete: () => void }> = ({ task, moduleName, moduleCode, onToggle, onEdit, onDelete }) => (
+  <div className={`group rounded-2xl border p-4 shadow-sm ${isSnapshotTask(task) ? 'ring-1 ring-stellenbosch-maroon/20' : ''} ${task.status === 'done' ? 'border-slate-100 bg-slate-50 opacity-70' : 'border-slate-100 bg-white'}`}>
     <div className="flex items-start gap-3">
       <button onClick={onToggle} className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${task.status === 'done' ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-200 hover:border-stellenbosch-maroon'}`}>
         {task.status === 'done' && <Check size={15} />}
@@ -159,6 +189,7 @@ const TaskRow: React.FC<{ task: StudyTask; moduleName: string; onToggle: () => v
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${CAT_TONE[task.category]}`}>{CAT_LABEL[task.category]}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIO_TONE[task.priority]}`}>{task.priority}</span>
           <span className="text-[10px] font-bold uppercase text-stellenbosch-maroon/70">{moduleName}</span>
+          <SnapshotBadge task={task} moduleCode={moduleCode} />
           {task.status === 'carried_over' && <span className="rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-bold uppercase text-orange-700">carried over</span>}
         </div>
         <p className={`font-bold ${task.status === 'done' ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.title}</p>
